@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mosquito Open World 3D</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>🦟 Mosquito Open World 🦟</h1>
+        
+        <div class="stats-box">
+            <p>🩸 Sangue Coletado: <span id="contador-sangue">0</span></p>
+            <p>⚡ Capacidade de Carga: <span id="poder-clique">1</span></p>
+            <p>💨 Nível das Asas: <span id="nivel-asas">1</span></p>
+            <p style="font-size: 11px; color: #ff6b81; margin-top: 5px;">Use as setas ou W,A,S,D para voar pelo quarto!</p>
+        </div>
+
+        <div id="webgl-container"></div>
+
+        <div class="shop-area">
+            <button id="btn-evoluir" class="btn-shop">Evoluir Asas/Velocidade (Custo: <span id="custo-upgrade">10</span>)</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+/* Faz o site ocupar a tela inteira sem margens */
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #1a1a2e;
+    color: #ffffff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden; /* Evita barras de rolagem */
+}
+
+/* Painel do jogo ocupando toda a tela */
+.game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background-color: #16213e;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Título e Status flutuando no topo */
+h1 {
+    position: absolute;
+    top: 15px;
+    left: 20px;
+    font-size: 22px;
+    color: #e94560;
+    z-index: 10;
+    margin: 0;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+
+.stats-box {
+    position: absolute;
+    top: 60px;
+    left: 20px;
+    background-color: rgba(15, 52, 96, 0.85);
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    z-index: 10;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.stats-box p {
+    margin: 5px 0;
+}
+
+/* Área 3D expandida para a tela inteira */
+#webgl-container {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Loja / Botão flutuando no canto inferior */
+.shop-area {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    width: 350px;
+}
+
+.btn-shop {
+    background-color: #4e9f3d;
+    color: white;
+    border: none;
+    font-size: 15px;
+    font-weight: bold;
+    padding: 15px;
+    width: 100%;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.btn-shop:hover {
+    background-color: #5cbf47;
+}
