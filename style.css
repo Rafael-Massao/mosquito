@@ -1,84 +1,66 @@
-/* Faz o site ocupar a tela inteira sem margens */
-body, html {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    background-color: #1a1a2e;
-    color: #ffffff;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    overflow: hidden; /* Evita barras de rolagem */
+:root{
+  --noite:#0d0a12; --painel:rgba(22,14,28,.82); --sangue:#e8294b; --sangue-claro:#ff7a90;
+  --lampada:#ffb45c; --osso:#efe6dc; --mudo:#a89aa8;
+  --titulo:'Syne',Georgia,serif; --texto:'Figtree','Segoe UI',system-ui,sans-serif;
 }
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--noite);color:var(--osso);font-family:var(--texto)}
+#webgl-container{position:fixed;inset:0}
+#webgl-container canvas{display:block}
+small{color:var(--mudo);font-size:.8rem}
 
-/* Painel do jogo ocupando toda a tela */
-.game-container {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    background-color: #16213e;
-    display: flex;
-    flex-direction: column;
-}
+/* HUD */
+.hud{position:fixed;top:18px;left:22px;display:flex;align-items:flex-end;gap:28px;pointer-events:none;text-shadow:0 2px 12px #000}
+.sangue span{font:800 3.2rem/1 var(--titulo);color:var(--sangue-claro);display:block}
+.estagio b{font:600 1.15rem var(--titulo);display:block}
+.combo{font:800 1.4rem var(--titulo);color:var(--lampada);animation:pulsa .5s ease-out}
+.stamina{position:fixed;top:22px;right:22px;width:150px;height:8px;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden}
+.stamina i{display:block;height:100%;width:100%;background:var(--lampada);transition:background .2s}
+.stamina i.baixa{background:var(--sangue)}
 
-/* Título e Status flutuando no topo */
-h1 {
-    position: absolute;
-    top: 15px;
-    left: 20px;
-    font-size: 22px;
-    color: #e94560;
-    z-index: 10;
-    margin: 0;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-}
+/* Upgrades */
+.upgrades{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:10px;width:min(720px,94vw)}
+.up{flex:1;text-align:left;background:var(--painel);color:var(--osso);border:1px solid rgba(255,255,255,.1);
+  border-radius:10px;padding:10px 12px;font:inherit;cursor:pointer;display:grid;gap:2px;position:relative;backdrop-filter:blur(6px)}
+.up b{font:600 1rem var(--titulo)}
+.up .desc{color:var(--mudo);font-size:.8rem}
+.up .info{font-size:.85rem}
+.up em{font-style:normal;font-weight:600}
+.up kbd{position:absolute;top:8px;right:10px;font:600 .75rem var(--texto);color:var(--mudo);border:1px solid rgba(255,255,255,.2);border-radius:4px;padding:0 6px}
+.up.pode{border-color:var(--sangue);box-shadow:0 0 18px rgba(232,41,75,.35)}
+.up:not(.pode){opacity:.6}
+.up:focus-visible,#btn-jogar:focus-visible{outline:2px solid var(--lampada);outline-offset:2px}
 
-.stats-box {
-    position: absolute;
-    top: 60px;
-    left: 20px;
-    background-color: rgba(15, 52, 96, 0.85);
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 14px;
-    z-index: 10;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-}
+/* Toast e evolução */
+#toast{position:fixed;left:50%;top:68%;transform:translateX(-50%);font:600 1.2rem var(--titulo);color:var(--sangue-claro);
+  opacity:0;pointer-events:none;text-shadow:0 2px 10px #000}
+#toast.mostra{animation:sobe 1s ease-out forwards}
+#evo{position:fixed;inset:0;display:grid;place-content:center;text-align:center;pointer-events:none;opacity:0;
+  background:radial-gradient(circle,rgba(232,41,75,.35),transparent 60%)}
+#evo b{font:800 clamp(2.5rem,8vw,6rem) var(--titulo);color:var(--osso);text-shadow:0 0 30px var(--sangue)}
+#evo span{font:600 1.4rem var(--titulo);color:var(--lampada)}
+#evo.mostra{animation:evo 2s ease-out forwards}
 
-.stats-box p {
-    margin: 5px 0;
-}
+/* Menu */
+#menu{position:fixed;inset:0;display:grid;place-items:center;z-index:10;
+  background:radial-gradient(ellipse at 50% 30%,rgba(120,20,50,.35),transparent 55%),rgba(8,5,12,.94)}
+#menu[hidden]{display:none}
+.painel{width:min(520px,92vw);background:var(--painel);border:1px solid rgba(232,41,75,.3);border-radius:16px;padding:36px}
+.painel h1{margin:0 0 8px;font:800 clamp(2.6rem,9vw,4rem)/1 var(--titulo);color:var(--sangue)}
+.sub{color:var(--mudo);line-height:1.5;margin:0 0 22px}
+.controles{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;margin:0 0 26px}
+.controles div{display:grid}
+dt{font-weight:600}
+dd{margin:0;color:var(--mudo);font-size:.85rem}
+#btn-jogar{width:100%;padding:15px;font:800 1.1rem var(--titulo);color:#fff;background:var(--sangue);border:0;border-radius:10px;cursor:pointer;transition:transform .15s,background .15s}
+#btn-jogar:hover{background:#ff3d5f;transform:translateY(-2px)}
+.save{margin:12px 0 0;text-align:center;color:var(--mudo);font-size:.8rem;min-height:1em}
 
-/* Área 3D expandida para a tela inteira */
-#webgl-container {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
+@keyframes sobe{0%{opacity:0;transform:translate(-50%,10px)}15%{opacity:1}100%{opacity:0;transform:translate(-50%,-30px)}}
+@keyframes evo{0%{opacity:0;transform:scale(.8)}20%{opacity:1;transform:scale(1.05)}80%{opacity:1}100%{opacity:0;transform:scale(1.15)}}
+@keyframes pulsa{from{transform:scale(1.4)}to{transform:scale(1)}}
 
-/* Loja / Botão flutuando no canto inferior */
-.shop-area {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10;
-    width: 350px;
+@media (max-width:600px){
+  .upgrades{flex-direction:column;bottom:10px}.up .desc{display:none}.stamina{top:auto;bottom:190px;right:22px}
 }
-
-.btn-shop {
-    background-color: #4e9f3d;
-    color: white;
-    border: none;
-    font-size: 15px;
-    font-weight: bold;
-    padding: 15px;
-    width: 100%;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: 0.2s;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-}
-
-.btn-shop:hover {
-    background-color: #5cbf47;
-}
+@media (prefers-reduced-motion:reduce){#toast.mostra,#evo.mostra,.combo{animation-duration:.01s}}

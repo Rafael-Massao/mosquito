@@ -1,2824 +1,604 @@
-
+"use strict";
 // ============================================================
-// 🦟 MOSQUITO 3D SIMULATOR
-// Versão melhorada
-// ============================================================
-
-// ============================================================
-// CONFIGURAÇÕES GERAIS
+// MOSQUITO: EVOLUÇÃO NOTURNA  (Three.js r128)
 // ============================================================
 
-let sangue = 0;
-let poderColeta = 1;
-let nivelAsas = 1;
-let custoUpgrade = 10;
-
-let velocidadeVoo = 4.0;
-let velocidadeMaxima = 4.0;
-let aceleracao = 12.0;
-let desaceleracao = 8.0;
-
-let jogoIniciado = false;
-let jogoPausado = false;
-
-const TAMANHO_MUNDO = 30;
-const ALTURA_MINIMA = -3;
-const ALTURA_MAXIMA = 10;
-
-// ============================================================
-// ELEMENTOS HTML
-// ============================================================
-
-const txtSangue = document.getElementById("contador-sangue");
-const txtPoder = document.getElementById("poder-clique");
-const txtNivelAsas = document.getElementById("nivel-asas");
-const txtCusto = document.getElementById("custo-upgrade");
-const btnEvoluir = document.getElementById("btn-evoluir");
-const container3D = document.getElementById("webgl-container");
-
-// ============================================================
-// FUNÇÕES DO HUD
-// ============================================================
-
-function atualizarTela() {
-    if (txtSangue) txtSangue.innerText = Math.floor(sangue);
-    if (txtPoder) txtPoder.innerText = poderColeta;
-    if (txtNivelAsas) txtNivelAsas.innerText = nivelAsas;
-    if (txtCusto) txtCusto.innerText = custoUpgrade;
-}
-
-// ============================================================
-// MENU INICIAL
-// ============================================================
-
-const menuInicial = document.createElement("div");
-
-menuInicial.id = "menu-inicial";
-
-menuInicial.style.cssText = `
-    position: fixed;
-    inset: 0;
-    width: 100vw;
-    height: 100vh;
-
-    background:
-        radial-gradient(circle at center, rgba(80, 0, 30, 0.35), transparent 45%),
-        rgba(5, 5, 15, 0.96);
-
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-
-    z-index: 99999;
-
-    color: white;
-    font-family: Arial, sans-serif;
-    text-align: center;
-
-    backdrop-filter: blur(8px);
-`;
-
-menuInicial.innerHTML = `
-    <div style="
-        padding: 45px;
-        border: 1px solid rgba(255, 0, 68, 0.25);
-        border-radius: 20px;
-        background: rgba(20, 10, 25, 0.75);
-        box-shadow: 0 0 60px rgba(255, 0, 68, 0.15);
-        max-width: 650px;
-    ">
-
-        <h1 style="
-            font-size: 3.5rem;
-            margin: 0 0 12px;
-            color: #ff0044;
-            text-shadow: 0 0 25px rgba(255,0,68,0.7);
-        ">
-            🦟 Mosquito 3D Simulator
-        </h1>
-
-        <p style="
-            margin-bottom: 28px;
-            color: #aaa;
-            font-size: 1.15rem;
-        ">
-            Explore o mundo, sugue sangue e evolua seu mosquito.
-        </p>
-
-        <div style="
-            margin-bottom: 28px;
-            padding: 18px;
-            border-radius: 12px;
-            background: rgba(255,255,255,0.04);
-            color: #bbb;
-            line-height: 1.8;
-        ">
-            <strong style="color:#66ff99;">CONTROLES</strong><br>
-            🖱️ Mouse — olhar<br>
-            ⬆️ W / S — voar para frente/trás<br>
-            ⬅️ A / D — virar<br>
-            ESC — pausar
-        </div>
-
-        <button id="btn-jogar" style="
-            padding: 16px 55px;
-            font-size: 1.25rem;
-
-            background: linear-gradient(
-                135deg,
-                #ff0044,
-                #c40036
-            );
-
-            color: white;
-            border: none;
-            border-radius: 10px;
-
-            cursor: pointer;
-            font-weight: bold;
-
-            box-shadow:
-                0 5px 25px rgba(255,0,68,0.4);
-
-            transition: 0.2s;
-        ">
-            JOGAR
-        </button>
-
-    </div>
-`;
-
-document.body.appendChild(menuInicial);
-
-const btnJogar = document.getElementById("btn-jogar");
-
-btnJogar.addEventListener("mouseenter", () => {
-    btnJogar.style.transform = "scale(1.06)";
-});
-
-btnJogar.addEventListener("mouseleave", () => {
-    btnJogar.style.transform = "scale(1)";
-});
-
-// ============================================================
-// CENA THREE.JS
-// ============================================================
-
-const cena = new THREE.Scene();
-
-cena.background = new THREE.Color(0x080811);
-
-cena.fog = new THREE.Fog(
-    0x080811,
-    25,
-    100
-);
-
-// ============================================================
-// CÂMERA
-// ============================================================
-
-const camera = new THREE.PerspectiveCamera(
-    70,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-);
-
-camera.position.set(0, 2, 5);
-
-// ============================================================
-// RENDERIZADOR
-// ============================================================
-
-const renderizador = new THREE.WebGLRenderer({
-    antialias: true,
-    powerPreference: "high-performance"
-});
-
-renderizador.setSize(
-    window.innerWidth,
-    window.innerHeight
-);
-
-renderizador.setPixelRatio(
-    Math.min(window.devicePixelRatio, 2)
-);
-
-container3D.appendChild(
-    renderizador.domElement
-);
-
-// ============================================================
-// ILUMINAÇÃO
-// ============================================================
-
-const luzAmbiente = new THREE.AmbientLight(
-    0xffffff,
-    1.1
-);
-
-cena.add(luzAmbiente);
-
-const luzPrincipal = new THREE.DirectionalLight(
-    0xffffff,
-    1.5
-);
-
-luzPrincipal.position.set(
-    10,
-    20,
-    10
-);
-
-cena.add(luzPrincipal);
-
-const luzVermelha = new THREE.PointLight(
-    0xff0044,
-    2,
-    30
-);
-
-luzVermelha.position.set(
-    0,
-    5,
-    0
-);
-
-cena.add(luzVermelha);
-
-// ============================================================
-// CHÃO
-// ============================================================
-
-const chaoGeo = new THREE.PlaneGeometry(
-    TAMANHO_MUNDO * 2,
-    TAMANHO_MUNDO * 2
-);
-
-const chaoMat = new THREE.MeshStandardMaterial({
-    color: 0x151522,
-    roughness: 0.95,
-    metalness: 0
-});
-
-const chao = new THREE.Mesh(
-    chaoGeo,
-    chaoMat
-);
-
-chao.rotation.x = -Math.PI / 2;
-chao.position.y = -5;
-
-cena.add(chao);
-
-// ============================================================
-// GRID DO MUNDO
-// ============================================================
-
-const grid = new THREE.GridHelper(
-    TAMANHO_MUNDO * 2,
-    30,
-    0x442233,
-    0x20202d
-);
-
-grid.position.y = -4.95;
-
-cena.add(grid);
-
-// ============================================================
-// 🦟 MODELO 3D DO MOSQUITO — VERSÃO CORRIGIDA
-// ============================================================
-
-const mosquitoGrupo = new THREE.Group();
-
-// ============================================================
-// MATERIAIS
-// ============================================================
-
-const matCorpo = new THREE.MeshStandardMaterial({
-    color: 0x18181c,
-    roughness: 0.48,
-    metalness: 0.05
-});
-
-const matCabeca = new THREE.MeshStandardMaterial({
-    color: 0x222228,
-    roughness: 0.4
-});
-
-const matAbdomen = new THREE.MeshStandardMaterial({
-    color: 0x3b2025,
-    roughness: 0.55
-});
-
-const matFaixa = new THREE.MeshStandardMaterial({
-    color: 0x111116,
-    roughness: 0.65
-});
-
-const matOlhos = new THREE.MeshStandardMaterial({
-    color: 0x030305,
-    roughness: 0.08,
-    metalness: 0.25
-});
-
-const matPernas = new THREE.MeshStandardMaterial({
-    color: 0x0b0b0e,
-    roughness: 0.75
-});
-
-const matBico = new THREE.MeshStandardMaterial({
-    color: 0x070709,
-    roughness: 0.25,
-    metalness: 0.15
-});
-
-const matAsa = new THREE.MeshStandardMaterial({
-    color: 0xd8e9ef,
-    transparent: true,
-    opacity: 0.38,
-    side: THREE.DoubleSide,
-    roughness: 0.2
-});
-
-
-// ============================================================
-// FUNÇÃO PARA CRIAR UM TUBO ENTRE DOIS PONTOS
-// ============================================================
-
-function criarSegmento(
-    inicio,
-    fim,
-    raio,
-    material
-) {
-    const direcao = new THREE.Vector3()
-        .subVectors(fim, inicio);
-
-    const comprimento = direcao.length();
-
-    const geometria = new THREE.CylinderGeometry(
-        raio,
-        raio * 0.85,
-        comprimento,
-        6
-    );
-
-    const mesh = new THREE.Mesh(
-        geometria,
-        material
-    );
-
-    const meio = new THREE.Vector3()
-        .addVectors(inicio, fim)
-        .multiplyScalar(0.5);
-
-    mesh.position.copy(meio);
-
-    mesh.quaternion.setFromUnitVectors(
-        new THREE.Vector3(0, 1, 0),
-        direcao.normalize()
-    );
-
-    return mesh;
-}
-
-
-// ============================================================
-// TÓRAX
-// ============================================================
-
-const torax = new THREE.Mesh(
-    new THREE.SphereGeometry(
-        0.17,
-        18,
-        14
-    ),
-    matCorpo
-);
-
-torax.scale.set(
-    1.0,
-    0.9,
-    1.35
-);
-
-torax.position.set(
-    0,
-    0,
-    0.05
-);
-
-mosquitoGrupo.add(torax);
-
-
-// ============================================================
-// CABEÇA
-// ============================================================
-
-const cabeca = new THREE.Mesh(
-    new THREE.SphereGeometry(
-        0.125,
-        16,
-        12
-    ),
-    matCabeca
-);
-
-cabeca.scale.set(
-    1.1,
-    0.95,
-    1.0
-);
-
-cabeca.position.set(
-    0,
-    0.02,
-    -0.25
-);
-
-mosquitoGrupo.add(cabeca);
-
-
-// ============================================================
-// OLHOS
-// ============================================================
-
-const olhoE = new THREE.Mesh(
-    new THREE.SphereGeometry(
-        0.09,
-        14,
-        12
-    ),
-    matOlhos
-);
-
-olhoE.scale.set(
-    0.72,
-    1.0,
-    0.8
-);
-
-olhoE.position.set(
-    0.105,
-    0.045,
-    -0.29
-);
-
-mosquitoGrupo.add(olhoE);
-
-
-const olhoD = olhoE.clone();
-
-olhoD.position.x = -0.105;
-
-mosquitoGrupo.add(olhoD);
-
-
-// ============================================================
-// PEQUENO BRILHO DOS OLHOS
-// ============================================================
-
-const brilhoE = new THREE.Mesh(
-    new THREE.SphereGeometry(
-        0.015,
-        8,
-        8
-    ),
-    new THREE.MeshBasicMaterial({
-        color: 0xff6688
-    })
-);
-
-brilhoE.position.set(
-    0.13,
-    0.075,
-    -0.35
-);
-
-mosquitoGrupo.add(brilhoE);
-
-
-const brilhoD = brilhoE.clone();
-
-brilhoD.position.x = -0.13;
-
-mosquitoGrupo.add(brilhoD);
-
-
-// ============================================================
-// ABDÔMEN — CORPO CONTÍNUO
-// ============================================================
-
-const abdomenGrupo = new THREE.Group();
-
-abdomenGrupo.position.set(
-    0,
-    0,
-    0.38
-);
-
-mosquitoGrupo.add(
-    abdomenGrupo
-);
-
-
-// Corpo principal usando vários elipsoides
-// sobrepostos para não criar buracos.
-
-const abdomen1 = new THREE.Mesh(
-    new THREE.SphereGeometry(
-        0.22,
-        16,
-        12
-    ),
-    matAbdomen
-);
-
-abdomen1.scale.set(
-    0.82,
-    0.82,
-    1.35
-);
-
-abdomen1.position.z = 0.15;
-
-abdomenGrupo.add(
-    abdomen1
-);
-
-
-const abdomen2 = new THREE.Mesh(
-    new THREE.SphereGeometry(
-        0.18,
-        16,
-        12
-    ),
-    matAbdomen
-);
-
-abdomen2.scale.set(
-    0.72,
-    0.72,
-    1.5
-);
-
-abdomen2.position.z = 0.42;
-
-abdomenGrupo.add(
-    abdomen2
-);
-
-
-const abdomen3 = new THREE.Mesh(
-    new THREE.SphereGeometry(
-        0.12,
-        14,
-        10
-    ),
-    matAbdomen
-);
-
-abdomen3.scale.set(
-    0.65,
-    0.65,
-    1.45
-);
-
-abdomen3.position.z = 0.68;
-
-abdomenGrupo.add(
-    abdomen3
-);
-
-
-// ============================================================
-// FAIXAS DO ABDÔMEN
-// ============================================================
-
-const faixasAbdomen = [
-    0.12,
-    0.30,
-    0.48,
-    0.64
+const MUNDO = 30, YMIN = -3.5, YMAX = 12;
+const ESTAGIOS = [
+  { min: 0,  nome: "Larva voadora",     cor: 0xffb45c },
+  { min: 3,  nome: "Pernilongo",        cor: 0xff3355 },
+  { min: 7,  nome: "Caçador noturno",   cor: 0xd83cff },
+  { min: 12, nome: "Vampiro alado",     cor: 0x39d9ff },
+  { min: 18, nome: "Mosquito de laboratório", cor: 0x55ff55 },
+  { min: 25, nome: "Praga dos pântanos", cor: 0xff8833 },
+  { min: 35, nome: "Terror da madrugada", cor: 0xff2266 },
+  { min: 48, nome: "Rei do enxame",     cor: 0xffd84d },
+  { min: 65, nome: "Sugador ancestral", cor: 0x9900ff },
+  { min: 85, nome: "Deus carmesim",     cor: 0xffffff },
 ];
+const UPS = { 
+  asas: { base: 12 }, 
+  tromba: { base: 15 }, 
+  estomago: { base: 20 },
+  corpo: { base: 18 }
+};
+const CHAVE_SAVE = "mosquito-evolucao-v1";
 
-for (const z of faixasAbdomen) {
+const $ = (id) => document.getElementById(id);
+const clamp = THREE.MathUtils.clamp;
 
-    const faixa = new THREE.Mesh(
-        new THREE.TorusGeometry(
-            0.14,
-            0.012,
-            6,
-            18
-        ),
-        matFaixa
-    );
+// ------------------------------------------------------------
+// ESTADO E SAVE
+// ------------------------------------------------------------
+let S = {
+  sangue: 0,
+  nv: { asas: 0, tromba: 0, estomago: 0, corpo: 0 }
+};
+try {
+  const salvo = JSON.parse(localStorage.getItem(CHAVE_SAVE));
+  if (salvo && salvo.nv) S = salvo;
+} catch (e) { /* sem save */ }
 
-    faixa.rotation.x =
-        Math.PI / 2;
+const salvar = () => { try { localStorage.setItem(CHAVE_SAVE, JSON.stringify(S)); } catch (e) {} };
+const nivelTotal = () => S.nv.asas + S.nv.tromba + S.nv.estomago;
+const estagioAtual = () => [...ESTAGIOS].reverse().find((e) => nivelTotal() >= e.min);
+const custo = (k) => Math.floor(UPS[k].base * Math.pow(1.55, S.nv[k]));
+const velMax = () => 4 + S.nv.asas * 0.5;
+const raioColeta = () => 0.9 + S.nv.tromba * 0.15;
+const valorGota = () => 1 + S.nv.estomago * 2;
 
-    faixa.scale.set(
-        0.9,
-        0.9,
-        1
-    );
+let jogando = false, travado = false, arrastando = false;
+let stamina = 100, combo = 0, comboT = 0;
 
-    faixa.position.z = z;
-
-    abdomenGrupo.add(
-        faixa
-    );
+// ------------------------------------------------------------
+// HUD
+// ------------------------------------------------------------
+function atualizarHUD() {
+  $("sangue").textContent = Math.floor(S.sangue);
+  $("estagio").textContent = estagioAtual().nome;
+  $("nivel").textContent = nivelTotal();
+  for (const k in UPS) {
+    document.querySelector(`[data-nv="${k}"]`).textContent = "nv " + S.nv[k];
+    document.querySelector(`[data-custo="${k}"]`).textContent = custo(k);
+    document.querySelector(`[data-up="${k}"]`).classList.toggle("pode", S.sangue >= custo(k));
+  }
 }
 
+function retrigger(el, classe) {
+  el.classList.remove(classe); void el.offsetWidth; el.classList.add(classe);
+}
+function toast(txt) { $("toast").textContent = txt; retrigger($("toast"), "mostra"); }
 
-// ============================================================
-// PONTA DO ABDÔMEN
-// ============================================================
+// ------------------------------------------------------------
+// CENA E CENÁRIO (MALHAS REAIS PARA COLISÃO)
+// ------------------------------------------------------------
+const cena = new THREE.Scene();
+cena.background = new THREE.Color(0x0e0c18);
+cena.fog = new THREE.Fog(0x0e0c18, 30, 110);
 
-const pontaAbdomen = new THREE.Mesh(
-    new THREE.SphereGeometry(
-        0.09,
-        12,
-        10
-    ),
-    matAbdomen
-);
+const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 500);
+const renderizador = new THREE.WebGLRenderer({ antialias: true });
+renderizador.setSize(innerWidth, innerHeight);
+renderizador.setPixelRatio(Math.min(devicePixelRatio, 2));
+$("webgl-container").appendChild(renderizador.domElement);
 
-pontaAbdomen.scale.set(
-    0.7,
-    0.7,
-    1.5
-);
+// Iluminação
+cena.add(new THREE.AmbientLight(0x6b5c7a, 0.8));
 
-pontaAbdomen.position.z =
-    0.87;
+const luzAbajur = new THREE.PointLight(0xffa24c, 2.2, 45);
+luzAbajur.position.set(-18, 5, -12);
+cena.add(luzAbajur);
 
-abdomenGrupo.add(
-    pontaAbdomen
-);
+const lua = new THREE.DirectionalLight(0x7692ff, 0.7);
+lua.position.set(20, 30, 15);
+cena.add(lua);
 
+// Lista global de malhas (Mesh) para colisão por polígonos reais
+const malhasColisao = [];
 
-// ============================================================
-// PROBÓSCIDE
-// ============================================================
-
-const proboscideInicio =
-    new THREE.Vector3(
-        0,
-        -0.005,
-        -0.32
-    );
-
-const proboscideFim =
-    new THREE.Vector3(
-        0,
-        -0.015,
-        -1.0
-    );
-
-const proboscide =
-    criarSegmento(
-        proboscideInicio,
-        proboscideFim,
-        0.009,
-        matBico
-    );
-
-mosquitoGrupo.add(
-    proboscide
-);
-
-
-// ============================================================
-// ANTENAS
-// ============================================================
-
-function criarAntena(lado) {
-
-    const grupo =
-        new THREE.Group();
-
-    const base =
-        new THREE.Vector3(
-            lado * 0.055,
-            0.08,
-            -0.31
-        );
-
-    const meio =
-        new THREE.Vector3(
-            lado * 0.13,
-            0.23,
-            -0.34
-        );
-
-    const ponta =
-        new THREE.Vector3(
-            lado * 0.22,
-            0.38,
-            -0.43
-        );
-
-    grupo.add(
-        criarSegmento(
-            base,
-            meio,
-            0.006,
-            matPernas
-        )
-    );
-
-    grupo.add(
-        criarSegmento(
-            meio,
-            ponta,
-            0.003,
-            matPernas
-        )
-    );
-
-    return grupo;
+function registrarMalhaColisao(mesh) {
+  cena.add(mesh);
+  malhasColisao.push(mesh);
+  return mesh;
 }
 
-mosquitoGrupo.add(
-    criarAntena(1),
-    criarAntena(-1)
+// Materiais do Cenário
+const matPiso = new THREE.MeshStandardMaterial({ color: 0x3d2618, roughness: 0.6 });
+const matParede = new THREE.MeshStandardMaterial({ color: 0x221d2b, roughness: 0.9 });
+const matSofa = new THREE.MeshStandardMaterial({ color: 0x314659, roughness: 0.8 });
+const matAlmofada = new THREE.MeshStandardMaterial({ color: 0xc25953, roughness: 0.7 });
+const matMesa = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.5 });
+const matCadeira = new THREE.MeshStandardMaterial({ color: 0x803d29, roughness: 0.7 });
+const matTV = new THREE.MeshStandardMaterial({ color: 0x050508, roughness: 0.2 });
+const matTapete = new THREE.MeshStandardMaterial({ color: 0x5c5468, roughness: 0.95 });
+
+// 1. Piso e Paredes
+const piso = new THREE.Mesh(new THREE.BoxGeometry(MUNDO * 2, 2, MUNDO * 2), matPiso);
+piso.position.set(0, YMIN - 1, 0);
+registrarMalhaColisao(piso);
+
+const paredeFundo = new THREE.Mesh(new THREE.BoxGeometry(MUNDO * 2, YMAX - YMIN + 20, 2), matParede);
+paredeFundo.position.set(0, (YMAX + YMIN) / 2, -MUNDO - 1);
+registrarMalhaColisao(paredeFundo);
+
+const paredeEsq = new THREE.Mesh(new THREE.BoxGeometry(2, YMAX - YMIN + 20, MUNDO * 2), matParede);
+paredeEsq.position.set(-MUNDO - 1, (YMAX + YMIN) / 2, 0);
+registrarMalhaColisao(paredeEsq);
+
+const paredeDir = new THREE.Mesh(new THREE.BoxGeometry(2, YMAX - YMIN + 20, MUNDO * 2), matParede);
+paredeDir.position.set(MUNDO + 1, (YMAX + YMIN) / 2, 0);
+registrarMalhaColisao(paredeDir);
+
+const paredeFrente = new THREE.Mesh(new THREE.BoxGeometry(MUNDO * 2, YMAX - YMIN + 20, 2), matParede);
+paredeFrente.position.set(0, (YMAX + YMIN) / 2, MUNDO + 1);
+registrarMalhaColisao(paredeFrente);
+
+// 2. Tapete
+const tapete = new THREE.Mesh(new THREE.BoxGeometry(24, 0.1, 18), matTapete);
+tapete.position.set(0, YMIN + 0.05, 0);
+cena.add(tapete);
+
+// 3. Sofá (Modelagem com malhas individuais reais)
+const sofaPos = new THREE.Vector3(0, YMIN + 1.6, -10);
+
+const sofaAssento = new THREE.Mesh(new THREE.BoxGeometry(18, 3.2, 7.5), matSofa);
+sofaAssento.position.copy(sofaPos);
+registrarMalhaColisao(sofaAssento);
+
+const sofaEncosto = new THREE.Mesh(new THREE.BoxGeometry(18, 6.5, 2.2), matSofa);
+sofaEncosto.position.set(0, 3.2, -2.65).add(sofaPos);
+registrarMalhaColisao(sofaEncosto);
+
+const sofaBracoEsq = new THREE.Mesh(new THREE.BoxGeometry(2.8, 4.5, 7.8), matSofa);
+sofaBracoEsq.position.set(-9.4, 0.8, 0).add(sofaPos);
+registrarMalhaColisao(sofaBracoEsq);
+
+const sofaBracoDir = new THREE.Mesh(new THREE.BoxGeometry(2.8, 4.5, 7.8), matSofa);
+sofaBracoDir.position.set(9.4, 0.8, 0).add(sofaPos);
+registrarMalhaColisao(sofaBracoDir);
+
+const alm1 = new THREE.Mesh(new THREE.BoxGeometry(4, 3, 1.2), matAlmofada);
+alm1.position.set(-5, 2, -1.5).add(sofaPos);
+alm1.rotation.x = 0.2;
+registrarMalhaColisao(alm1);
+
+const alm2 = new THREE.Mesh(new THREE.BoxGeometry(4, 3, 1.2), matAlmofada);
+alm2.position.set(5, 2, -1.5).add(sofaPos);
+alm2.rotation.x = 0.2;
+registrarMalhaColisao(alm2);
+
+// 4. Mesa de Centro
+const mesaPos = new THREE.Vector3(0, YMIN, 1);
+const tampoMesa = new THREE.Mesh(new THREE.BoxGeometry(11, 0.6, 6), matMesa);
+tampoMesa.position.set(0, 2.2, 0).add(mesaPos);
+registrarMalhaColisao(tampoMesa);
+
+[[-4.5, 1.1, -2.4], [4.5, 1.1, -2.4], [-4.5, 1.1, 2.4], [4.5, 1.1, 2.4]].forEach(([px, py, pz]) => {
+  const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 2.2, 8), matMesa);
+  pe.position.set(px, py, pz).add(mesaPos);
+  registrarMalhaColisao(pe);
+});
+
+// 5. Poltrona Inclinada
+// 5. Cadeira / Poltrona Realista e Proporcional
+const cadPos = new THREE.Vector3(14, YMIN, 0);
+
+// Assento
+const cadAssento = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.6, 4.5), matCadeira);
+cadAssento.position.set(0, 1.8, 0).add(cadPos);
+cadAssento.rotation.y = -Math.PI / 3;
+registrarMalhaColisao(cadAssento);
+
+// Encosto (Proporcional e levemente inclinado)
+const cadEncosto = new THREE.Mesh(new THREE.BoxGeometry(4.5, 3.5, 0.5), matCadeira);
+cadEncosto.position.set(0, 3.8, -2.0).applyAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 3).add(cadPos);
+cadEncosto.rotation.y = -Math.PI / 3;
+cadEncosto.rotation.x = 0;
+registrarMalhaColisao(cadEncosto);
+
+// 4 Pernas da Cadeira
+[[-1.8, 0.9, -1.8], [1.8, 0.9, -1.8], [-1.8, 0.9, 1.8], [1.8, 0.9, 1.8]].forEach(([px, py, pz]) => {
+  const pePerna = new THREE.Vector3(px, py, pz).applyAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 3).add(cadPos);
+  const pernaCad = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.8, 8), matMesa);
+  pernaCad.position.copy(pePerna);
+  registrarMalhaColisao(pernaCad);
+});
+
+// 6. Rack e TV
+const rackPos = new THREE.Vector3(0, YMIN, 20);
+const corpoRack = new THREE.Mesh(new THREE.BoxGeometry(20, 4, 5.5), matMesa);
+corpoRack.position.set(0, 2, 0).add(rackPos);
+registrarMalhaColisao(corpoRack);
+
+const tvTela = new THREE.Mesh(new THREE.BoxGeometry(15, 8.5, 0.6), matTV);
+tvTela.position.set(0, 8.5, 0).add(rackPos);
+registrarMalhaColisao(tvTela);
+
+// 7. Abajur Cilíndrico
+const abajurPos = new THREE.Vector3(-18, YMIN, -15);
+const baseAbajur = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 0.3, 16), matMesa);
+baseAbajur.position.set(0, 0.15, 0).add(abajurPos);
+registrarMalhaColisao(baseAbajur);
+
+const hasteAbajur = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 11, 12), matMesa);
+hasteAbajur.position.set(0, 5.5, 0).add(abajurPos);
+registrarMalhaColisao(hasteAbajur);
+
+const cupulaAbajur = new THREE.Mesh(
+  new THREE.CylinderGeometry(1.8, 2.8, 3, 16, 1, true),
+  new THREE.MeshStandardMaterial({ color: 0xffd8a8, roughness: 0.3, side: THREE.DoubleSide })
 );
+cupulaAbajur.position.set(0, 10, 0).add(abajurPos);
+registrarMalhaColisao(cupulaAbajur);
 
+// ------------------------------------------------------------
+// MOSQUITO
+// ------------------------------------------------------------
+const mosquito = new THREE.Group();
+const mat = (cor, extra = {}) => new THREE.MeshStandardMaterial({ color: cor, roughness: 0.5, ...extra });
+const matCorpo = mat(0x1c1c22), matAbd = mat(0x3b2025), matPerna = mat(0x0b0b0e, { roughness: 0.8 });
+const matOlho = new THREE.MeshStandardMaterial({ color: 0x050507, emissive: 0x000000, emissiveIntensity: 1.0, roughness: 0.1 });
+const matAsa = new THREE.MeshStandardMaterial({ color: 0xd8e9ef, transparent: true, opacity: 0.45, side: THREE.DoubleSide });
 
-// ============================================================
-// PALPOS
-// ============================================================
-
-function criarPalpo(lado) {
-
-    const inicio =
-        new THREE.Vector3(
-            lado * 0.065,
-            -0.005,
-            -0.32
-        );
-
-    const fim =
-        new THREE.Vector3(
-            lado * 0.11,
-            -0.12,
-            -0.43
-        );
-
-    return criarSegmento(
-        inicio,
-        fim,
-        0.005,
-        matPernas
-    );
+function tubo(a, b, r, m) {
+  const d = new THREE.Vector3().subVectors(b, a);
+  const t = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.85, d.length(), 6), m);
+  t.position.copy(a).addScaledVector(d, 0.5);
+  t.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
+  return t;
+}
+function elipsoide(r, sx, sy, sz, m, x, y, z) {
+  const e = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), m);
+  e.scale.set(sx, sy, sz); e.position.set(x, y, z); return e;
 }
 
-mosquitoGrupo.add(
-    criarPalpo(1),
-    criarPalpo(-1)
-);
-
-
-// ============================================================
-// ASAS
-// ============================================================
+const torax = elipsoide(0.17, 1, 0.9, 1.35, matCorpo, 0, 0, 0.05);
+mosquito.add(torax);
+mosquito.add(elipsoide(0.125, 1.1, 0.95, 1, matCorpo, 0, 0.02, -0.25));
+const olhos = [1, -1].map((l) => {
+  const o = elipsoide(0.09, 0.72, 1, 0.8, matOlho, l * 0.105, 0.045, -0.29);
+  mosquito.add(o); return o;
+});
+const abdomen = new THREE.Group(); abdomen.position.z = 0.38; mosquito.add(abdomen);
+abdomen.add(elipsoide(0.22, 0.82, 0.82, 1.35, matAbd, 0, 0, 0.15));
+abdomen.add(elipsoide(0.18, 0.72, 0.72, 1.5, matAbd, 0, 0, 0.42));
+abdomen.add(elipsoide(0.11, 0.65, 0.65, 1.45, matAbd, 0, 0, 0.68));
+const probóscide = tubo(new THREE.Vector3(0, 0, -0.32), new THREE.Vector3(0, -0.015, -1), 0.009, matPerna);
+mosquito.add(probóscide);
 
 function criarAsa(lado) {
-
-    const grupo =
-        new THREE.Group();
-
-    grupo.position.set(
-        lado * 0.14,
-        0.13,
-        0.0
-    );
-
-    const forma =
-        new THREE.Shape();
-
-    forma.moveTo(0, 0);
-
-    forma.quadraticCurveTo(
-        0.30,
-        0.10,
-        0.72,
-        0.04
-    );
-
-    forma.quadraticCurveTo(
-        0.90,
-        0.01,
-        0.98,
-        -0.06
-    );
-
-    forma.quadraticCurveTo(
-        0.72,
-        -0.15,
-        0.35,
-        -0.10
-    );
-
-    forma.quadraticCurveTo(
-        0.12,
-        -0.07,
-        0,
-        0
-    );
-
-    const asa = new THREE.Mesh(
-        new THREE.ShapeGeometry(
-            forma
-        ),
-        matAsa
-    );
-
-    // IMPORTANTE:
-    // espelhamos apenas no eixo X
-    // sem inverter a geometria inteira.
-
-    asa.scale.x = lado;
-
-    asa.rotation.z =
-        lado * 0.08;
-
-    grupo.add(
-        asa
-    );
-
-
-    // Veia central
-    const veiaInicio =
-        new THREE.Vector3(
-            lado * 0.02,
-            0.002,
-            0
-        );
-
-    const veiaFim =
-        new THREE.Vector3(
-            lado * 0.75,
-            0.002,
-            0
-        );
-
-    const veia =
-        criarSegmento(
-            veiaInicio,
-            veiaFim,
-            0.0025,
-            new THREE.MeshBasicMaterial({
-                color: 0x9caeb5,
-                transparent: true,
-                opacity: 0.35
-            })
-        );
-
-    grupo.add(
-        veia
-    );
-
-    return grupo;
+  const f = new THREE.Shape();
+  f.moveTo(0, 0); f.quadraticCurveTo(0.3, 0.1, 0.72, 0.04); f.quadraticCurveTo(0.9, 0.01, 0.98, -0.06);
+  f.quadraticCurveTo(0.72, -0.15, 0.35, -0.1); f.quadraticCurveTo(0.12, -0.07, 0, 0);
+  const malha = new THREE.Mesh(new THREE.ShapeGeometry(f), matAsa);
+  malha.rotation.x = -Math.PI / 2; malha.scale.x = lado;
+  const pivo = new THREE.Group(); pivo.position.set(lado * 0.12, 0.13, 0.02); pivo.add(malha);
+  mosquito.add(pivo); return pivo;
 }
-
-const asaE =
-    criarAsa(1);
-
-const asaD =
-    criarAsa(-1);
-
-mosquitoGrupo.add(
-    asaE,
-    asaD
-);
-
-
-// ============================================================
-// PERNAS — 6 PERNAS REAIS
-// ============================================================
+const asas = [criarAsa(1), criarAsa(-1)];
 
 const pernas = [];
-
-function criarPerna(
-    lado,
-    z,
-    tipo
-) {
-
-    const grupo =
-        new THREE.Group();
-
-    grupo.position.set(
-        lado * 0.10,
-        -0.07,
-        z
-    );
-
-    let joelho;
-    let ponta;
-
-    // Perna dianteira
-    if (tipo === 0) {
-
-        joelho =
-            new THREE.Vector3(
-                lado * 0.28,
-                -0.18,
-                z + 0.03
-            );
-
-        ponta =
-            new THREE.Vector3(
-                lado * 0.48,
-                -0.10,
-                z - 0.18
-            );
-
-    }
-
-    // Perna do meio
-    else if (tipo === 1) {
-
-        joelho =
-            new THREE.Vector3(
-                lado * 0.32,
-                -0.28,
-                z
-            );
-
-        ponta =
-            new THREE.Vector3(
-                lado * 0.62,
-                -0.48,
-                z
-            );
-
-    }
-
-    // Perna traseira
-    else {
-
-        joelho =
-            new THREE.Vector3(
-                lado * 0.28,
-                -0.20,
-                z - 0.02
-            );
-
-        ponta =
-            new THREE.Vector3(
-                lado * 0.55,
-                -0.08,
-                z + 0.20
-            );
-    }
-
-    const inicio =
-        new THREE.Vector3(
-            0,
-            0,
-            0
-        );
-
-    grupo.add(
-        criarSegmento(
-            inicio,
-            joelho,
-            0.008,
-            matPernas
-        )
-    );
-
-    grupo.add(
-        criarSegmento(
-            joelho,
-            ponta,
-            0.005,
-            matPernas
-        )
-    );
-
-    mosquitoGrupo.add(
-        grupo
-    );
-
-    pernas.push(
-        grupo
-    );
+function criarPerna(lado, z, joelho, ponta) {
+  const g = new THREE.Group(); g.position.set(lado * 0.12, -0.05, z);
+  const j = new THREE.Vector3(lado * joelho[0], joelho[1], joelho[2]);
+  const p = new THREE.Vector3(lado * ponta[0], ponta[1], ponta[2]);
+  g.add(tubo(new THREE.Vector3(), j, 0.012, matPerna), tubo(j, p, 0.007, matPerna));
+  mosquito.add(g); pernas.push(g);
+}
+for (const l of [1, -1]) {
+  criarPerna(l, -0.13, [0.25, -0.13, -0.08], [0.55, -0.3, -0.3]);
+  criarPerna(l, 0, [0.3, -0.16, 0], [0.68, -0.34, 0]);
+  criarPerna(l, 0.13, [0.28, -0.12, 0.06], [0.72, -0.3, 0.36]);
 }
 
+mosquito.position.set(0, 2, 5);
+cena.add(mosquito);
 
-// Três pares
-criarPerna(1, 0.16, 0);
-criarPerna(-1, 0.16, 0);
+function aplicarEvolucaoVisual() {
+  const n = nivelTotal();
+  const est = estagioAtual();
 
-criarPerna(1, 0.00, 1);
-criarPerna(-1, 0.00, 1);
+  const escalaCorpo = 1 + S.nv.corpo * 0.12;
+  torax.scale.set(escalaCorpo, escalaCorpo, escalaCorpo);
 
-criarPerna(1, -0.16, 2);
-criarPerna(-1, -0.16, 2);
+  const escalaAsas = 1 + S.nv.asas * 0.18;
+  asas.forEach((asa) => asa.scale.set(escalaAsas, escalaAsas, escalaAsas));
 
+  const escalaTromba = 1 + S.nv.tromba * 0.25;
+  probóscide.scale.set(1, 1, escalaTromba);
+  probóscide.position.z = -(1 * (escalaTromba)) / 5;
 
-// ============================================================
-// ✨ BRILHO DE EVOLUÇÃO DO MOSQUITO
-// ============================================================
+  abdomen.scale.set(
+    1 + S.nv.estomago * 0.08,
+    1 + S.nv.estomago * 0.08,
+    1 + S.nv.estomago * 0.12
+  );
 
-let evolucaoBrilhando = false;
-let tempoBrilho = 0;
-let luzEvolucao = null;
-
-// Guarda as cores normais
-const coresNormais = {
-    corpo: matCorpo.color.clone(),
-    cabeca: matCabeca.color.clone(),
-    abdomen: matAbdomen.color.clone()
-};
-
-
-// ============================================================
-// LUZ QUE FICA DENTRO DO MOSQUITO
-// ============================================================
-
-luzEvolucao = new THREE.PointLight(
-    0xff0044,
-    0,
-    5
-);
-
-luzEvolucao.position.set(
-    0,
-    0,
-    0
-);
-
-mosquitoGrupo.add(
-    luzEvolucao
-);
-
-
-// ============================================================
-// COMEÇAR BRILHO
-// ============================================================
-
-function iniciarBrilhoEvolucao() {
-
-    evolucaoBrilhando = true;
-    tempoBrilho = 0;
-
-    // Luz começa forte
-    luzEvolucao.intensity = 5;
-
-    // Cor do corpo fica vermelha
-    matCorpo.color.setHex(
-        0xff174f
-    );
-
-    matCabeca.color.setHex(
-        0xff174f
-    );
-
-    matAbdomen.color.setHex(
-        0xff174f
-    );
-
-    // Emissive deixa o material realmente emitir luz
-    matCorpo.emissive.setHex(
-        0xff003c
-    );
-
-    matCabeca.emissive.setHex(
-        0xff003c
-    );
-
-    matAbdomen.emissive.setHex(
-        0xff003c
-    );
-
-    matCorpo.emissiveIntensity = 2.5;
-    matCabeca.emissiveIntensity = 2.5;
-    matAbdomen.emissiveIntensity = 2.5;
-
-    // Começa pequeno para dar efeito de transformação
-    mosquitoGrupo.scale.multiplyScalar(
-        0.85
-    );
+  matOlho.emissive.setHex(est.cor);
+  matAsa.color.setHex(n >= 10 ? 0xcfeaff : n >= 6 ? 0xf0d8ff : 0xd8e9ef);
+  matAbd.color.setHex(n >= 10 ? 0x5b241f : n >= 6 ? 0x432035 : 0x3b2025);
 }
 
+// ------------------------------------------------------------
+// GOTAS DE SANGUE E PARTÍCULAS
+// ------------------------------------------------------------
+const gotas = [];
+const geoGota = new THREE.SphereGeometry(0.2, 16, 12);
+const geoHalo = new THREE.SphereGeometry(0.42, 12, 10);
 
-// ============================================================
-// ATUALIZAR BRILHO
-// ============================================================
-
-function atualizarBrilhoEvolucao(delta) {
-
-    if (!evolucaoBrilhando) {
-        return;
-    }
-
-    tempoBrilho += delta;
-
-    // Duração total
-    const duracao = 1.5;
-
-    const progresso =
-        tempoBrilho / duracao;
-
-    // --------------------------------------------
-    // PULSAÇÃO DA LUZ
-    // --------------------------------------------
-
-    const pulso =
-        Math.sin(
-            tempoBrilho * 18
-        );
-
-    luzEvolucao.intensity =
-        4.5 +
-        pulso * 2.5;
-
-
-    // --------------------------------------------
-    // PULSAÇÃO DO MOSQUITO
-    // --------------------------------------------
-
-    const escalaBase =
-        1.0 +
-        (nivelAsas - 1) * 0.08;
-
-    const escalaPulso =
-        escalaBase +
-        Math.sin(
-            tempoBrilho * 14
-        ) * 0.08;
-
-    mosquitoGrupo.scale.set(
-        escalaPulso,
-        escalaPulso,
-        escalaPulso
-    );
-
-
-    // --------------------------------------------
-    // FIM DO BRILHO
-    // --------------------------------------------
-
-    if (
-        tempoBrilho >= duracao
-    ) {
-
-        evolucaoBrilhando = false;
-
-        luzEvolucao.intensity = 0;
-
-        // Restaurar cores
-        matCorpo.color.copy(
-            coresNormais.corpo
-        );
-
-        matCabeca.color.copy(
-            coresNormais.cabeca
-        );
-
-        matAbdomen.color.copy(
-            coresNormais.abdomen
-        );
-
-        // Remover emissive
-        matCorpo.emissive.setHex(
-            0x000000
-        );
-
-        matCabeca.emissive.setHex(
-            0x000000
-        );
-
-        matAbdomen.emissive.setHex(
-            0x000000
-        );
-
-        matCorpo.emissiveIntensity = 0;
-        matCabeca.emissiveIntensity = 0;
-        matAbdomen.emissiveIntensity = 0;
-
-        // Voltar para o tamanho normal
-        mosquitoGrupo.scale.set(
-            escalaBase,
-            escalaBase,
-            escalaBase
-        );
-    }
+function posicaoAleatoria(alvo) {
+  return alvo.set((Math.random() - 0.5) * MUNDO * 1.6, YMIN + 1 + Math.random() * (YMAX - YMIN - 2), (Math.random() - 0.5) * MUNDO * 1.6);
 }
-
-
-// ============================================================
-// ESCALA FINAL
-// ============================================================
-
-mosquitoGrupo.scale.set(
-    1.15,
-    1.15,
-    1.15
-);
-
-
-// ============================================================
-// POSIÇÃO INICIAL
-// ============================================================
-
-mosquitoGrupo.position.set(
-    0,
-    2,
-    5
-);
-
-cena.add(
-    mosquitoGrupo
-);
-
-// ============================================================
-// 🦟 SISTEMA DE EVOLUÇÃO VISUAL
-// ============================================================
-
-function atualizarEvolucaoMosquito() {
-
-    // --------------------------------------------
-    // ESCALA GERAL DO CORPO
-    // --------------------------------------------
-
-    const escalaCorpo =
-        1.0 + (nivelAsas - 1) * 0.08;
-
-    mosquitoGrupo.scale.set(
-        escalaCorpo,
-        escalaCorpo,
-        escalaCorpo
-    );
-
-
-    // --------------------------------------------
-    // TAMANHO DAS ASAS
-    // --------------------------------------------
-
-    const escalaAsas =
-        1.0 + (nivelAsas - 1) * 0.18;
-
-    asaE.scale.set(
-        escalaAsas,
-        escalaAsas,
-        escalaAsas
-    );
-
-    asaD.scale.set(
-        escalaAsas,
-        escalaAsas,
-        escalaAsas
-    );
-
-
-    // --------------------------------------------
-    // COR DAS ASAS
-    // --------------------------------------------
-
-    if (nivelAsas >= 4) {
-
-        matAsa.color.setHex(
-            0xffb3c7
-        );
-
-        matAsa.opacity = 0.48;
-
-    } else if (nivelAsas >= 2) {
-
-        matAsa.color.setHex(
-            0xe6f5ff
-        );
-
-        matAsa.opacity = 0.42;
-
-    } else {
-
-        matAsa.color.setHex(
-            0xd8e9ef
-        );
-
-        matAsa.opacity = 0.38;
-
-    }
-
-
-    // --------------------------------------------
-    // ABDÔMEN
-    // --------------------------------------------
-
-    const escalaAbdomen =
-        1.0 +
-        Math.min(
-            nivelAsas - 1,
-            8
-        ) * 0.08;
-
-    abdomenGrupo.scale.set(
-        1,
-        1,
-        escalaAbdomen
-    );
-
-
-    // --------------------------------------------
-    // OLHOS
-    // --------------------------------------------
-
-    const tamanhoOlhos =
-        1.0 +
-        Math.min(
-            nivelAsas - 1,
-            6
-        ) * 0.08;
-
-    olhoE.scale.set(
-        0.72 * tamanhoOlhos,
-        tamanhoOlhos,
-        0.8 * tamanhoOlhos
-    );
-
-    olhoD.scale.copy(
-        olhoE.scale
-    );
-
-
-    // --------------------------------------------
-    // FERRÃO / PROBÓSCIDE
-    // --------------------------------------------
-
-    const tamanhoBico =
-        1.0 +
-        Math.min(
-            nivelAsas - 1,
-            10
-        ) * 0.07;
-
-    proboscide.scale.z =
-        tamanhoBico;
-
-
-    // --------------------------------------------
-    // PERNAS
-    // --------------------------------------------
-
-    const tamanhoPernas =
-        1.0 +
-        Math.min(
-            nivelAsas - 1,
-            8
-        ) * 0.06;
-
-    for (const perna of pernas) {
-
-        perna.scale.set(
-            tamanhoPernas,
-            tamanhoPernas,
-            tamanhoPernas
-        );
-
-    }
-
-
-    // --------------------------------------------
-    // EVOLUÇÕES ESPECIAIS
-    // --------------------------------------------
-
-    atualizarEfeitosEvolucao();
+function criarGota() {
+  const dourada = Math.random() < 0.15;
+  const cor = dourada ? 0xffd84d : 0xff1744;
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(geoGota, new THREE.MeshStandardMaterial({ color: cor, emissive: cor, emissiveIntensity: 0.9, roughness: 0.2 })));
+  g.add(new THREE.Mesh(geoHalo, new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: 0.14, depthWrite: false })));
+  g.userData = { dourada, fase: Math.random() * 6.28, volta: 0, ativa: true };
+  if (dourada) g.scale.setScalar(1.4);
+  posicaoAleatoria(g.position);
+  cena.add(g); gotas.push(g);
 }
-
-// ============================================================
-// ✨ EFEITOS ESPECIAIS DA EVOLUÇÃO
-// ============================================================
-
-// ============================================================
-// 🦟 AURA EVOLUTIVA DO MOSQUITO
-// ============================================================
-
-let grupoAura = null;
-
-const auraMateriais = [];
-
-function criarAuraMosquito() {
-
-    // Se já existir, remove
-    if (grupoAura) {
-        mosquitoGrupo.remove(grupoAura);
-    }
-
-    grupoAura = new THREE.Group();
-
-    grupoAura.position.set(
-        0,
-        0,
-        0
-    );
-
-    // ========================================================
-    // ANEL 1
-    // ========================================================
-
-    const material1 =
-        new THREE.MeshBasicMaterial({
-            color: 0xff174f,
-            transparent: true,
-            opacity: 0.22,
-            side: THREE.DoubleSide,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-        });
-
-    auraMateriais.push(material1);
-
-    const anel1 =
-        new THREE.Mesh(
-            new THREE.TorusGeometry(
-                0.48,
-                0.018,
-                8,
-                40
-            ),
-            material1
-        );
-
-    anel1.rotation.x =
-        Math.PI / 2;
-
-    grupoAura.add(
-        anel1
-    );
-
-
-    // ========================================================
-    // ANEL 2
-    // ========================================================
-
-    const material2 =
-        new THREE.MeshBasicMaterial({
-            color: 0xff003c,
-            transparent: true,
-            opacity: 0.16,
-            side: THREE.DoubleSide,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-        });
-
-    auraMateriais.push(material2);
-
-    const anel2 =
-        new THREE.Mesh(
-            new THREE.TorusGeometry(
-                0.62,
-                0.012,
-                8,
-                40
-            ),
-            material2
-        );
-
-    anel2.rotation.x =
-        Math.PI / 3;
-
-    grupoAura.add(
-        anel2
-    );
-
-
-    // ========================================================
-    // ANEL 3
-    // ========================================================
-
-    const material3 =
-        new THREE.MeshBasicMaterial({
-            color: 0xff6688,
-            transparent: true,
-            opacity: 0.12,
-            side: THREE.DoubleSide,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-        });
-
-    auraMateriais.push(material3);
-
-    const anel3 =
-        new THREE.Mesh(
-            new THREE.TorusGeometry(
-                0.75,
-                0.009,
-                8,
-                40
-            ),
-            material3
-        );
-
-    anel3.rotation.x =
-        -Math.PI / 4;
-
-    grupoAura.add(
-        anel3
-    );
-
-
-    // ========================================================
-    // NÚCLEO DA AURA
-    // ========================================================
-
-    const materialNucleo =
-        new THREE.MeshBasicMaterial({
-            color: 0xff003c,
-            transparent: true,
-            opacity: 0.045,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-        });
-
-    auraMateriais.push(
-        materialNucleo
-    );
-
-    const nucleo =
-        new THREE.Mesh(
-            new THREE.SphereGeometry(
-                0.48,
-                16,
-                16
-            ),
-            materialNucleo
-        );
-
-    grupoAura.add(
-        nucleo
-    );
-
-
-    // Aura começa desligada
-    grupoAura.visible =
-        nivelAsas >= 2;
-
-    mosquitoGrupo.add(
-        grupoAura
-    );
-}
-
-// ============================================================
-// ✨ ANIMAR AURA
-// ============================================================
-
-function animarAura(delta) {
-
-    if (!grupoAura) return;
-
-    if (nivelAsas < 2) {
-        grupoAura.visible = false;
-        return;
-    }
-
-    grupoAura.visible = true;
-
-    const tempoAura =
-        performance.now() * 0.001;
-
-    // ========================================================
-    // PULSAÇÃO
-    // ========================================================
-
-    const pulso =
-        1 +
-        Math.sin(
-            tempoAura * 4
-        ) * 0.08;
-
-    grupoAura.scale.set(
-        pulso,
-        pulso,
-        pulso
-    );
-
-
-    // ========================================================
-    // ROTAÇÃO DOS ANÉIS
-    // ========================================================
-
-    if (grupoAura.children[0]) {
-
-        grupoAura.children[0].rotation.z +=
-            delta * 1.8;
-
-    }
-
-    if (grupoAura.children[1]) {
-
-        grupoAura.children[1].rotation.y +=
-            delta * 2.4;
-
-    }
-
-    if (grupoAura.children[2]) {
-
-        grupoAura.children[2].rotation.x +=
-            delta * 1.5;
-
-    }
-
-
-    // ========================================================
-    // INTENSIDADE NORMAL
-    // ========================================================
-
-    let intensidade =
-        1 +
-        (nivelAsas - 2) * 0.12;
-
-
-    // ========================================================
-    // SHIFT = AURA MAIS FORTE
-    // ========================================================
-
-    if (sprintAtivo) {
-
-        intensidade *= 1.8;
-
-    }
-
-
-    // ========================================================
-    // PULSO DE LUZ
-    // ========================================================
-
-    for (
-        const material of auraMateriais
-    ) {
-
-        material.opacity =
-            material.userData?.opacidadeBase
-                ? material.userData.opacidadeBase *
-                  intensidade
-                : material.opacity;
-
-    }
-
-}
-
-function atualizarEfeitosEvolucao() {
-
-    // Remove aura anterior
-    if (auraMosquito) {
-
-        mosquitoGrupo.remove(
-            auraMosquito
-        );
-
-        auraMosquito.geometry.dispose();
-        auraMosquito.material.dispose();
-
-        auraMosquito = null;
-    }
-
-
-    // --------------------------------------------
-    // NÍVEL 4+ → AURA
-    // --------------------------------------------
-
-    if (nivelAsas >= 4) {
-
-        const tamanhoAura =
-            0.35 +
-            (nivelAsas - 4) * 0.08;
-
-        auraMosquito =
-            new THREE.Mesh(
-
-                new THREE.SphereGeometry(
-                    tamanhoAura,
-                    16,
-                    16
-                ),
-
-                new THREE.MeshBasicMaterial({
-                    color:
-                        nivelAsas >= 7
-                            ? 0xff0044
-                            : 0xff3355,
-
-                    transparent: true,
-
-                    opacity: 0.12,
-
-                    wireframe: true
-                })
-
-            );
-
-        mosquitoGrupo.add(
-            auraMosquito
-        );
-    }
-}
-
-
-
-// ============================================================
-// ESCALA GERAL DO MOSQUITO
-// ============================================================
-
-mosquitoGrupo.scale.set(
-    1.15,
-    1.15,
-    1.15
-);
-
-// ============================================================
-// POSIÇÃO INICIAL
-// ============================================================
-
-mosquitoGrupo.position.set(
-    0,
-    2,
-    5
-);
-
-cena.add(
-    mosquitoGrupo
-);
-
-// ============================================================
-// POSIÇÃO INICIAL
-// ============================================================
-
-mosquitoGrupo.position.set(
-    0,
-    2,
-    5
-);
-
-cena.add(
-    mosquitoGrupo
-);
-
-// ============================================================
-// CONTROLES
-// ============================================================
-
-const teclas = {};
-
-window.addEventListener(
-    "keydown",
-    (e) => {
-
-        const tecla =
-            e.key.toLowerCase();
-
-        teclas[tecla] = true;
-
-        // ====================================================
-        // 🦟 TECLA E — EVOLUIR
-        // ====================================================
-
-        if (
-            tecla === "e" &&
-            !e.repeat &&
-            jogoIniciado &&
-            !jogoPausado
-        ) {
-
-            evoluirMosquito();
-
-        }
-
-        // ====================================================
-        // ESC — PAUSAR
-        // ====================================================
-
-        if (e.key === "Escape") {
-
-            if (jogoIniciado) {
-
-                jogoPausado =
-                    !jogoPausado;
-
-                if (jogoPausado) {
-
-                    document.exitPointerLock();
-
-                } else {
-
-                    container3D.requestPointerLock();
-
-                }
-
-            }
-
-        }
-
-    }
-);
-
-window.addEventListener(
-    "keyup",
-    (e) => {
-
-        teclas[
-            e.key.toLowerCase()
-        ] = false;
-
-    }
-);
-
-// ============================================================
-// MOUSE / CÂMERA
-// ============================================================
-
-let anguloRotacaoY = 0;
-let anguloRotacaoX = 0;
-
-const sensibilidade = 0.0025;
-
-container3D.addEventListener(
-    "mousemove",
-    (e) => {
-
-        if (!jogoIniciado) return;
-        if (jogoPausado) return;
-
-        anguloRotacaoY -=
-            e.movementX *
-            sensibilidade;
-
-        anguloRotacaoX -=
-            e.movementY *
-            sensibilidade;
-
-        const limiteVertical =
-            Math.PI / 2.4;
-
-        anguloRotacaoX =
-            THREE.MathUtils.clamp(
-                anguloRotacaoX,
-                -limiteVertical,
-                limiteVertical
-            );
-
-    }
-);
-
-// ============================================================
-// POINTER LOCK
-// ============================================================
-
-btnJogar.addEventListener(
-    "click",
-    () => {
-
-        container3D.requestPointerLock();
-
-    }
-);
-
-document.addEventListener(
-    "pointerlockchange",
-    () => {
-
-        if (
-            document.pointerLockElement ===
-            container3D
-        ) {
-
-            jogoIniciado = true;
-            jogoPausado = false;
-
-            menuInicial.style.display =
-                "none";
-
-        } else {
-
-            if (jogoIniciado) {
-
-                jogoPausado = true;
-
-            }
-
-            menuInicial.style.display =
-                "flex";
-
-        }
-
-    }
-);
-
-// ============================================================
-// FONTES DE SANGUE
-// ============================================================
-
-const fontesSangue = [];
-
-const sangueGeo =
-    new THREE.SphereGeometry(
-        0.45,
-        16,
-        16
-    );
-
-const sangueMat =
-    new THREE.MeshStandardMaterial({
-        color: 0xff003c,
-        emissive: 0x660018,
-        emissiveIntensity: 1.8,
-        roughness: 0.3
-    });
-
-function criarFonteSangue(
-    x,
-    y,
-    z
-) {
-
-    const fonte =
-        new THREE.Mesh(
-            sangueGeo,
-            sangueMat.clone()
-        );
-
-    fonte.position.set(
-        x,
-        y,
-        z
-    );
-
-    fonte.userData.velocidade =
-        1 + Math.random();
-
-    fonte.userData.offset =
-        Math.random() * Math.PI * 2;
-
-    cena.add(fonte);
-
-    fontesSangue.push(
-        fonte
-    );
-}
-
-// Criar várias fontes
-for (let i = 0; i < 15; i++) {
-
-    criarFonteSangue(
-        (Math.random() - 0.5) *
-            TAMANHO_MUNDO * 2,
-
-        -2 +
-            Math.random() * 10,
-
-        (Math.random() - 0.5) *
-            TAMANHO_MUNDO * 2
-    );
-
-}
-
-// ============================================================
-// PARTÍCULAS DE COLETA
-// ============================================================
+for (let i = 0; i < 16; i++) criarGota();
 
 const particulas = [];
+const geoPart = new THREE.SphereGeometry(0.03, 6, 6);
+function explodir(pos, cor) {
+  for (let i = 0; i < 12; i++) {
+    const p = new THREE.Mesh(geoPart, new THREE.MeshBasicMaterial({ color: cor, transparent: true }));
+    p.position.copy(pos);
+    p.userData = { v: new THREE.Vector3((Math.random() - 0.5) * 3, Math.random() * 2.5, (Math.random() - 0.5) * 3), vida: 1 };
+    cena.add(p); particulas.push(p);
+  }
+}
 
-function criarParticulas(
-    posicao
-) {
+function coletar(g) {
+  const u = g.userData;
+  combo = comboT > 0 ? Math.min(combo + 1, 5) : 1;
+  comboT = 4;
+  const ganho = valorGota() * (u.dourada ? 5 : 1) * combo;
+  S.sangue += ganho;
+  explodir(g.position, u.dourada ? 0xffd84d : 0xff1744);
+  u.ativa = false; g.visible = false; u.volta = 6;
+  toast(`+${ganho} sangue`);
+  atualizarHUD();
+}
 
-    for (let i = 0; i < 12; i++) {
+// ------------------------------------------------------------
+// EVOLUIR
+// ------------------------------------------------------------
+function evoluir(k) {
+  if (!jogando) return;
+  if (S.sangue < custo(k)) { toast("Sangue insuficiente"); return; }
+  const antes = estagioAtual();
+  S.sangue -= custo(k);
+  S.nv[k]++;
+  aplicarEvolucaoVisual();
+  atualizarHUD();
+  salvar();
+  const depois = estagioAtual();
+  if (depois !== antes) {
+    $("evo-txt").textContent = depois.nome;
+    retrigger($("evo"), "mostra");
+  } else {
+    toast(`${{ asas: "Asas", tromba: "Tromba", estomago: "Estômago", corpo: "Corpo" }[k]} nv ${S.nv[k]}`);
+  }
+}
+document.querySelectorAll(".up").forEach((b) => b.addEventListener("click", () => evoluir(b.dataset.up)));
 
-        const particula =
-            new THREE.Mesh(
-                new THREE.SphereGeometry(
-                    0.025,
-                    6,
-                    6
-                ),
-                new THREE.MeshBasicMaterial({
-                    color: 0xff174f
-                })
-            );
+// ------------------------------------------------------------
+// CONTROLES E RAYCASTING DE SUPERFÍCIE REAL (360 GRUS)
+// ------------------------------------------------------------
+const teclas = {};
+let yaw = 0, pitch = 0;
+const vel = new THREE.Vector3();
 
-        particula.position.copy(
-            posicao
-        );
+addEventListener("keydown", (e) => {
+  const k = e.key.toLowerCase();
+  teclas[k] = true;
+  if ([" ", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) e.preventDefault();
+  if (e.repeat) return;
+  if (k === "1") evoluir("asas");
+  if (k === "2") evoluir("tromba");
+  if (k === "3") evoluir("estomago");
+  if (k === "4") evoluir("corpo");
+});
+addEventListener("keyup", (e) => { teclas[e.key.toLowerCase()] = false; });
+addEventListener("blur", () => { for (const k in teclas) teclas[k] = false; });
 
-        particula.userData.velocidade =
-            new THREE.Vector3(
-                (Math.random() - 0.5) * 3,
-                (Math.random() - 0.5) * 3,
-                (Math.random() - 0.5) * 3
-            );
+addEventListener("mousemove", (e) => {
+  if (!jogando || !(travado || arrastando)) return;
+  yaw -= e.movementX * 0.0025;
+  pitch = clamp(pitch - e.movementY * 0.0025, -1.2, 1.2);
+});
+renderizador.domElement.addEventListener("mousedown", () => {
+  if (jogando && !travado) arrastando = true;
+});
+addEventListener("mouseup", () => { arrastando = false; });
 
-        particula.userData.vida =
-            1;
+function pausar(titulo) {
+  $("menu").hidden = false;
+  $("menu").querySelector("h1").textContent = titulo;
+  $("btn-jogar").textContent = "Continuar";
+}
+function iniciar() {
+  jogando = true;
+  $("menu").hidden = true;
+  renderizador.domElement.requestPointerLock?.();
+}
+$("btn-jogar").addEventListener("click", iniciar);
 
-        cena.add(
-            particula
-        );
+document.addEventListener("pointerlockchange", () => {
+  travado = document.pointerLockElement === renderizador.domElement;
+  if (!travado && jogando) { jogando = false; pausar("Pausado"); }
+});
+document.addEventListener("pointerlockerror", () => { jogando = true; $("menu").hidden = true; });
 
-        particulas.push(
-            particula
-        );
+$("save-info").textContent = nivelTotal() > 0 ? `Progresso salvo: ${estagioAtual().nome}, ${Math.floor(S.sangue)} de sangue.` : "";
 
+const euler = new THREE.Euler(0, 0, 0, "YXZ");
+const frente = new THREE.Vector3(), direita = new THREE.Vector3(), alvoVel = new THREE.Vector3(), tmp = new THREE.Vector3();
+let t = 0;
+
+// RAYCASTER COM ZERO FOLGA (Colagem perfeita nas malhas)
+const raycaster = new THREE.Raycaster();
+const RAIO_CORPO = 0.55; // Raio de distanciamento físico das superfícies
+
+// 6 Direções cardeais para varredura de obstáculo
+
+const direcoesVarredura = [
+  new THREE.Vector3(1, 0, 0),
+  new THREE.Vector3(-1, 0, 0),
+  new THREE.Vector3(0, 1, 0),
+  new THREE.Vector3(0, -1, 0),
+  new THREE.Vector3(0, 0, 1),
+  new THREE.Vector3(0, 0, -1)
+];
+
+function resolverColisaoRaycast() {
+  // Raio bem curtinho para garantir que só detecte quando estiver encostando de verdade na malha
+  const raioFisico = 0.18;
+
+  for (const dir of direcoesVarredura) {
+    raycaster.set(mosquito.position, dir);
+    raycaster.far = raioFisico;
+
+    const intersecoes = raycaster.intersectObjects(malhasColisao, false);
+    if (intersecoes.length > 0) {
+      const toque = intersecoes[0];
+      const penetracao = raioFisico - toque.distance;
+      
+      // Empurra milimetricamente para fora do objeto
+      mosquito.position.addScaledVector(dir, -penetracao);
     }
-
+  }
 }
 
-function atualizarParticulas(
-    delta
-) {
+function mover(dt) {
+  euler.set(pitch, yaw, 0, "YXZ");
 
-    for (
-        let i = particulas.length - 1;
-        i >= 0;
-        i--
-    ) {
+  frente.set(0, 0, -1).applyEuler(euler);
+  direita.set(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
 
-        const p =
-            particulas[i];
+  alvoVel.set(0, 0, 0);
 
-        p.position.x +=
-            p.userData.velocidade.x *
-            delta;
+  if (teclas.w || teclas.arrowup) alvoVel.add(frente);
+  if (teclas.s || teclas.arrowdown) alvoVel.sub(frente);
+  if (teclas.d || teclas.arrowright) alvoVel.add(direita);
+  if (teclas.a || teclas.arrowleft) alvoVel.sub(direita);
 
-        p.position.y +=
-            p.userData.velocidade.y *
-            delta;
+  if (teclas[" "]) alvoVel.y += 1;
+  if (teclas.control) alvoVel.y -= 1;
 
-        p.position.z +=
-            p.userData.velocidade.z *
-            delta;
+  if (alvoVel.lengthSq() > 0) alvoVel.normalize();
 
-        p.userData.vida -=
-            delta * 1.5;
+  const correndo = teclas.shift && stamina > 5 && alvoVel.lengthSq() > 0;
 
-        p.scale.setScalar(
-            Math.max(
-                p.userData.vida,
-                0
-            )
-        );
+// O nível do corpo aumenta a stamina máxima (100 base + 15 por nível) e regenera mais rápido
+  const staminaMaxima = 100 + S.nv.corpo * 15;
+  const taxaRegen = 25 + S.nv.corpo * 4; // Regenera mais rápido por nível de corpo
+  const taxaGasto = 35;
 
-        if (
-            p.userData.vida <= 0
-        ) {
+  stamina = clamp(stamina + (correndo ? -taxaGasto : taxaRegen) * dt, 0, staminaMaxima);
+  
+  // Atualiza a barra de progresso considerando o teto dinâmico da stamina
+  $("stamina").style.width = (stamina / staminaMaxima) * 100 + "%";
+  $("stamina").classList.toggle("baixa", stamina < (staminaMaxima * 0.25));
 
-            cena.remove(p);
+  alvoVel.multiplyScalar(velMax() * (correndo ? 2 : 1));
 
-            p.geometry.dispose();
-            p.material.dispose();
+  vel.lerp(alvoVel, Math.min(1, (alvoVel.lengthSq() > 0 ? 10 : 6) * dt));
 
-            particulas.splice(
-                i,
-                1
-            );
+  // Aplica movimento com prevenção de colisão em Raycast real
+  mosquito.position.addScaledVector(vel, dt);
 
-        }
+  // Varredura de colisão poligonil
+  resolverColisaoRaycast();
 
+  // Rotações
+  mosquito.rotation.order = "YXZ";
+  mosquito.rotation.y = yaw;
+
+  const pitchDesejado = clamp(pitch * 0.6, -0.65, 0.65);
+  mosquito.rotation.x += (pitchDesejado - mosquito.rotation.x) * Math.min(1, 8 * dt);
+
+  const rollDesejado = correndo ? -0.18 : 0;
+  mosquito.rotation.z += (rollDesejado - mosquito.rotation.z) * Math.min(1, 5 * dt);
+}
+
+function animarCorpo(dt, ativo) {
+  const freq = 40 + nivelTotal() * 1.5;
+  const bater = Math.sin(t * freq) * (ativo ? 0.7 : 0.35);
+  asas[0].rotation.z = bater; asas[1].rotation.z = -bater;
+  pernas.forEach((p, i) => { p.rotation.z = Math.sin(t * 7 + i) * 0.08 * (i % 2 ? -1 : 1); });
+  abdomen.scale.y = 1 + Math.sin(t * 4) * 0.02;
+  if (!ativo) mosquito.position.y += Math.sin(t * 2) * 0.002;
+}
+
+function camera3p(dt) {
+  tmp.set(0, 0.9, 4);
+  tmp.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+  tmp.add(mosquito.position);
+
+  camera.position.lerp(tmp, 1 - Math.exp(-8 * dt));
+
+  const direcaoOlhar = new THREE.Vector3(0, 0, -1);
+  direcaoOlhar.applyEuler(euler.set(pitch * 0.6, yaw, 0, "YXZ"));
+
+  const alvo = mosquito.position.clone();
+  alvo.addScaledVector(direcaoOlhar, 8);
+
+  camera.lookAt(alvo);
+}
+
+function atualizarMundo(dt) {
+  if (comboT > 0) { comboT -= dt; if (comboT <= 0) combo = 0; }
+  $("combo").hidden = combo < 2;
+  $("combo-n").textContent = combo;
+
+  const raio = raioColeta();
+  for (const g of gotas) {
+    const u = g.userData;
+    if (!u.ativa) {
+      u.volta -= dt;
+      if (u.volta <= 0) { posicaoAleatoria(g.position); g.visible = true; u.ativa = true; }
+      continue;
     }
+    u.fase += dt;
+    g.children[0].position.y = Math.sin(u.fase * 2) * 0.08;
+    g.children[1].scale.setScalar(1 + Math.sin(u.fase * 3) * 0.12);
+    if (g.position.distanceTo(mosquito.position) < raio) coletar(g);
+  }
 
+  for (let i = particulas.length - 1; i >= 0; i--) {
+    const p = particulas[i], u = p.userData;
+    u.v.y -= 4 * dt; p.position.addScaledVector(u.v, dt);
+    u.vida -= dt * 1.4; p.scale.setScalar(Math.max(u.vida, 0.01)); p.material.opacity = u.vida;
+    if (u.vida <= 0) { cena.remove(p); p.material.dispose(); particulas.splice(i, 1); }
+  }
 }
 
-// ============================================================
-// COLETA DE SANGUE
-// ============================================================
-
-function coletarSangue(
-    fonte
-) {
-
-    sangue +=
-        poderColeta;
-
-    criarParticulas(
-        fonte.position
-    );
-
-    fonte.position.set(
-        (Math.random() - 0.5) *
-            TAMANHO_MUNDO * 2,
-
-        ALTURA_MINIMA +
-            Math.random() *
-            (ALTURA_MAXIMA -
-                ALTURA_MINIMA),
-
-        (Math.random() - 0.5) *
-            TAMANHO_MUNDO * 2
-    );
-
-    atualizarTela();
-
+const relogio = new THREE.Clock();
+function laco() {
+  requestAnimationFrame(laco);
+  const dt = Math.min(relogio.getDelta(), 0.05);
+  t += dt;
+  if (jogando) { mover(dt); atualizarMundo(dt); }
+  animarCorpo(dt, jogando);
+  camera3p(dt);
+  renderizador.render(cena, camera);
 }
 
-// ============================================================
-// EVOLUÇÃO DAS ASAS
-// ============================================================
-
-function atualizarVisualAsas() {
-
-    const escala =
-        1 +
-        (nivelAsas - 1) *
-        0.12;
-
-    asaE.scale.set(
-        escala,
-        escala,
-        escala
-    );
-
-    asaD.scale.set(
-        escala,
-        escala,
-        escala
-    );
-
-    const opacidade =
-        Math.min(
-            0.65,
-            0.35 +
-            (nivelAsas - 1) *
-            0.02
-        );
-
-    matAsa.opacity =
-        opacidade;
-
-}
-
-// ============================================================
-// MOVIMENTO
-// ============================================================
-
-const velocidadeAtual =
-    new THREE.Vector3();
-
-function atualizarMovimento(
-    delta
-) {
-
-    let frente = 0;
-    let lateral = 0;
-
-    if (
-        teclas["w"] ||
-        teclas["arrowup"]
-    ) {
-
-        frente += 1;
-
-    }
-
-    if (
-        teclas["s"] ||
-        teclas["arrowdown"]
-    ) {
-
-        frente -= 1;
-
-    }
-
-    if (teclas["a"]) {
-
-        lateral += 1;
-
-    }
-
-    if (teclas["d"]) {
-
-        lateral -= 1;
-
-    }
-
-    // ----------------------------------------
-    // DIREÇÃO
-    // ----------------------------------------
-
-    const direcaoFrente =
-        new THREE.Vector3(
-            -Math.sin(
-                anguloRotacaoY
-            ),
-            Math.sin(
-                anguloRotacaoX
-            ),
-            -Math.cos(
-                anguloRotacaoY
-            )
-        );
-
-    const direcaoLateral =
-        new THREE.Vector3(
-            Math.cos(
-                anguloRotacaoY
-            ),
-            0,
-            -Math.sin(
-                anguloRotacaoY
-            )
-        );
-
-    const movimento =
-        new THREE.Vector3();
-
-    movimento.addScaledVector(
-        direcaoFrente,
-        frente
-    );
-
-    movimento.addScaledVector(
-        direcaoLateral,
-        lateral
-    );
-
-    if (
-        movimento.lengthSq() > 0
-    ) {
-
-        movimento.normalize();
-
-        const velocidadeDesejada =
-            velocidadeMaxima;
-
-        velocidadeAtual.lerp(
-            movimento.multiplyScalar(
-                velocidadeDesejada
-            ),
-            Math.min(
-                1,
-                aceleracao * delta
-            )
-        );
-
-    } else {
-
-        velocidadeAtual.lerp(
-            new THREE.Vector3(0, 0, 0),
-            Math.min(
-                1,
-                desaceleracao * delta
-            )
-        );
-
-    }
-
-    mosquitoGrupo.position.addScaledVector(
-        velocidadeAtual,
-        delta
-    );
-
-    // ----------------------------------------
-    // LIMITES DO MAPA
-    // ----------------------------------------
-
-    mosquitoGrupo.position.x =
-        THREE.MathUtils.clamp(
-            mosquitoGrupo.position.x,
-            -TAMANHO_MUNDO,
-            TAMANHO_MUNDO
-        );
-
-    mosquitoGrupo.position.y =
-        THREE.MathUtils.clamp(
-            mosquitoGrupo.position.y,
-            ALTURA_MINIMA,
-            ALTURA_MAXIMA
-        );
-
-    mosquitoGrupo.position.z =
-        THREE.MathUtils.clamp(
-            mosquitoGrupo.position.z,
-            -TAMANHO_MUNDO,
-            TAMANHO_MUNDO
-        );
-
-}
-
-// ============================================================
-// ANIMAÇÃO DO MOSQUITO
-// ============================================================
-
-let tempo = 0;
-
-function animarMosquito(
-    delta
-) {
-
-    tempo += delta;
-
-    const intensidadeVoo =
-        velocidadeAtual.length() > 0.2
-            ? 1
-            : 0.35;
-
-    // Asas
-    const baterAsas =
-        Math.sin(
-            tempo * 45
-        ) *
-        0.65 *
-        intensidadeVoo;
-
-    asaE.rotation.z =
-        baterAsas;
-
-    asaD.rotation.z =
-        -baterAsas;
-
-    // Pequena oscilação do corpo
-    mosquitoGrupo.position.y +=
-        Math.sin(
-            tempo * 5
-        ) *
-        0.003;
-
-    // Inclinação durante movimento
-    const inclinacao =
-        -velocidadeAtual.length() *
-        0.025;
-
-    mosquitoGrupo.rotation.z =
-        THREE.MathUtils.lerp(
-            mosquitoGrupo.rotation.z,
-            inclinacao,
-            5 * delta
-        );
-
-}
-
-// ============================================================
-// ROTAÇÃO DO MOSQUITO
-// ============================================================
-
-function atualizarRotacao(
-    delta
-) {
-
-    const rotacaoAlvo =
-        anguloRotacaoY;
-
-    mosquitoGrupo.rotation.y =
-        THREE.MathUtils.lerp(
-            mosquitoGrupo.rotation.y,
-            rotacaoAlvo,
-            10 * delta
-        );
-
-}
-
-// ============================================================
-// CÂMERA DE TERCEIRA PESSOA
-// ============================================================
-
-const posicaoCameraDesejada =
-    new THREE.Vector3();
-
-const alvoCamera =
-    new THREE.Vector3();
-
-function atualizarCamera(
-    delta
-) {
-
-    const distancia =
-        3.5;
-
-    const altura =
-        1.1;
-
-    const frenteX =
-        -Math.sin(
-            anguloRotacaoY
-        );
-
-    const frenteZ =
-        -Math.cos(
-            anguloRotacaoY
-        );
-
-    posicaoCameraDesejada.set(
-        mosquitoGrupo.position.x -
-            frenteX * distancia,
-
-        mosquitoGrupo.position.y +
-            altura -
-            Math.sin(
-                anguloRotacaoX
-            ) * distancia,
-
-        mosquitoGrupo.position.z -
-            frenteZ * distancia
-    );
-
-    camera.position.lerp(
-        posicaoCameraDesejada,
-        Math.min(
-            1,
-            8 * delta
-        )
-    );
-
-    alvoCamera.set(
-        mosquitoGrupo.position.x +
-            frenteX * 2,
-
-        mosquitoGrupo.position.y +
-            Math.sin(
-                anguloRotacaoX
-            ) * 2,
-
-        mosquitoGrupo.position.z +
-            frenteZ * 2
-    );
-
-    camera.lookAt(
-        alvoCamera
-    );
-
-}
-
-// ============================================================
-// ANIMAÇÃO DAS FONTES DE SANGUE
-// ============================================================
-
-function atualizarFontesSangue(
-    delta
-) {
-
-    for (
-        const fonte of fontesSangue
-    ) {
-
-        const offset =
-            fonte.userData.offset;
-
-        const velocidade =
-            fonte.userData.velocidade;
-
-        fonte.rotation.y +=
-            delta * velocidade;
-
-        fonte.rotation.x +=
-            delta *
-            velocidade *
-            0.5;
-
-        const escala =
-            1 +
-            Math.sin(
-                tempo * 3 +
-                offset
-            ) *
-            0.15;
-
-        fonte.scale.setScalar(
-            escala
-        );
-
-        fonte.position.y +=
-            Math.sin(
-                tempo * 2 +
-                offset
-            ) *
-            0.002;
-
-    }
-
-}
-
-// ============================================================
-// VERIFICAR COLETA
-// ============================================================
-
-function verificarColeta() {
-
-    for (
-        const fonte of fontesSangue
-    ) {
-
-        const distancia =
-            mosquitoGrupo.position.distanceTo(
-                fonte.position
-            );
-
-        if (
-            distancia < 1.15
-        ) {
-
-            coletarSangue(
-                fonte
-            );
-
-        }
-
-    }
-
-}
-
-// ============================================================
-// 🩸 TEXTO DE EVOLUÇÃO
-// ============================================================
-
-const textoEvolucao = document.createElement("div");
-
-textoEvolucao.id = "texto-evolucao";
-
-textoEvolucao.innerHTML = `
-    <div class="evolucao-titulo">
-        EVOLUÇÃO!
-    </div>
-
-    <div class="evolucao-nivel">
-        NÍVEL <span id="evolucao-nivel">2</span>
-    </div>
-`;
-
-textoEvolucao.style.cssText = `
-    position: fixed;
-    left: 50%;
-    top: 50%;
-
-    transform: translate(-50%, -50%) scale(0.3);
-
-    z-index: 100000;
-
-    pointer-events: none;
-
-    text-align: center;
-
-    font-family: Arial, sans-serif;
-
-    opacity: 0;
-
-    transition:
-        opacity 0.2s ease,
-        transform 0.45s cubic-bezier(.17,.67,.3,1.4);
-
-    display: none;
-`;
-
-document.body.appendChild(
-    textoEvolucao
-);
-
-
-// ============================================================
-// ANIMAÇÃO DO TEXTO
-// ============================================================
-
-function mostrarEvolucao() {
-
-    const nivelTexto =
-        document.getElementById(
-            "evolucao-nivel"
-        );
-
-    nivelTexto.innerText =
-        nivelAsas;
-
-    textoEvolucao.style.display =
-        "block";
-
-    // Força o navegador a reconhecer o estado inicial
-    textoEvolucao.offsetHeight;
-
-    textoEvolucao.style.opacity =
-        "1";
-
-    textoEvolucao.style.transform =
-        "translate(-50%, -50%) scale(1.15)";
-
-
-    // Pequeno atraso para voltar ao tamanho normal
-    setTimeout(() => {
-
-        textoEvolucao.style.transform =
-            "translate(-50%, -50%) scale(1)";
-
-    }, 350);
-
-
-    // Depois desaparece
-    setTimeout(() => {
-
-        textoEvolucao.style.opacity =
-            "0";
-
-        textoEvolucao.style.transform =
-            "translate(-50%, -50%) scale(1.4)";
-
-    }, 1600);
-
-
-    // Remove visualmente depois da animação
-    setTimeout(() => {
-
-        textoEvolucao.style.display =
-            "none";
-
-    }, 2100);
-
-    const estiloEvolucao =
-    document.createElement("style");
-
-    estiloEvolucao.textContent = `
-
-        #texto-evolucao {
-
-            filter:
-                drop-shadow(
-                    0 0 10px rgba(255, 0, 68, 0.9)
-                )
-                drop-shadow(
-                    0 0 30px rgba(255, 0, 68, 0.6)
-                );
-
-        }
-
-
-        .evolucao-titulo {
-
-            color: #ff174f;
-
-            font-size: clamp(
-                45px,
-                7vw,
-                100px
-            );
-
-            font-weight: 900;
-
-            letter-spacing: 8px;
-
-            text-shadow:
-                0 0 5px #ffffff,
-                0 0 15px #ff0044,
-                0 0 35px #ff0044,
-                0 0 70px #ff0044;
-
-        }
-
-
-        .evolucao-nivel {
-
-            margin-top: 8px;
-
-            color: white;
-
-            font-size: clamp(
-                18px,
-                2vw,
-                30px
-            );
-
-            font-weight: bold;
-
-            letter-spacing: 5px;
-
-            text-shadow:
-                0 0 10px #ff0044;
-
-        }
-
-    `;
-
-    document.head.appendChild(
-        estiloEvolucao
-    );
-}
-
-// ============================================================
-// 🦟 EVOLUIR MOSQUITO
-// ============================================================
-
-function evoluirMosquito() {
-
-    if (sangue >= custoUpgrade) {
-
-        sangue -= custoUpgrade;
-
-        nivelAsas++;
-
-        poderColeta += 1;
-
-        velocidadeMaxima += 0.45;
-
-        velocidadeVoo =
-            velocidadeMaxima;
-
-        custoUpgrade =
-            Math.floor(
-                custoUpgrade * 1.5
-            );
-
-        atualizarEvolucaoMosquito();
-
-        iniciarBrilhoEvolucao();
-
-        mostrarEvolucao();
-
-        atualizarTela();
-
-    } else {
-
-        console.log(
-            `🩸 Sangue insuficiente! Você precisa de ${custoUpgrade}.`
-        );
-
-    }
-}
-
-// ============================================================
-// LOOP PRINCIPAL
-// ============================================================
-
-const relogio =
-    new THREE.Clock();
-
-function animar() {
-
-    requestAnimationFrame(
-        animar
-    );
-
-    const delta =
-        Math.min(
-            relogio.getDelta(),
-            0.05
-        );
-
-    // Mesmo pausado, mantém a renderização
-    renderizador.render(
-        cena,
-        camera
-    );
-
-    if (
-        !jogoIniciado ||
-        jogoPausado
-    ) {
-
-        return;
-
-    }
-
-    // Movimento
-    atualizarMovimento(delta);
-
-    // Animações
-    animarMosquito(delta);
-
-    atualizarRotacao(delta);
-
-    atualizarCamera(delta);
-
-    atualizarFontesSangue(delta);
-
-    atualizarParticulas(delta);
-
-    atualizarBrilhoEvolucao(delta);
-
-    verificarColeta();
-
-}
-
-// ============================================================
-// RESIZE
-// ============================================================
-
-window.addEventListener(
-    "resize",
-    () => {
-
-        camera.aspect =
-            window.innerWidth /
-            window.innerHeight;
-
-        camera.updateProjectionMatrix();
-
-        renderizador.setSize(
-            window.innerWidth,
-            window.innerHeight
-        );
-
-    }
-);
-
-// ============================================================
-// INICIALIZAÇÃO
-// ============================================================
-
-atualizarTela();
-
-atualizarVisualAsas();
-
-animar();
+addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderizador.setSize(innerWidth, innerHeight);
+});
+
+// ------------------------------------------------------------
+// INÍCIO
+// ------------------------------------------------------------
+aplicarEvolucaoVisual();
+atualizarHUD();
+laco();
