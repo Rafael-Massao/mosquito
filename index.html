@@ -15,7 +15,16 @@
 <header class="hud">
   <div class="sangue"><span id="sangue">0</span><small>gotas de sangue</small></div>
   <div class="estagio"><b id="estagio">Larva voadora</b><small>Nível <span id="nivel">0</span></small></div>
-  <div class="combo" id="combo" hidden>combo ×<span id="combo-n">1</span></div>
+  
+  <div id="combo-container" hidden>
+    <div id="combo-info">
+      <span id="combo-texto">COMBO</span>
+      <span id="combo-multiplicador">x1</span>
+    </div>
+    <div id="combo-barra-fundo">
+      <div id="combo-barra-fill"></div>
+    </div>
+  </div>
 </header>
 
 <div class="stamina" title="Energia do sprint"><i id="stamina"></i></div>

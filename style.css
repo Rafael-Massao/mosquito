@@ -64,3 +64,55 @@ dd{margin:0;color:var(--mudo);font-size:.85rem}
   .upgrades{flex-direction:column;bottom:10px}.up .desc{display:none}.stamina{top:auto;bottom:190px;right:22px}
 }
 @media (prefers-reduced-motion:reduce){#toast.mostra,#evo.mostra,.combo{animation-duration:.01s}}
+
+/* Barra de Combo Integrada no Topo */
+#combo-container {
+  width: 160px;
+  background: rgba(14, 12, 24, 0.85);
+  border: 2px solid #ff3355;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-family: var(--texto);
+  color: #fff;
+  box-shadow: 0 0 15px rgba(255, 51, 85, 0.4);
+}
+
+#combo-container[hidden] {
+  display: none;
+}
+
+#combo-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+#combo-texto {
+  font-size: 10px;
+  color: #ff8833;
+}
+
+#combo-multiplicador {
+  font-size: 14px;
+  color: #ff3355;
+  text-shadow: 0 0 8px rgba(255, 51, 85, 0.8);
+}
+
+#combo-barra-fundo {
+  width: 100%;
+  height: 6px;
+  background: #221d2b;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+#combo-barra-fill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #ff8833, #ff3355);
+  border-radius: 3px;
+  transition: width 0.1s linear;
+}

@@ -49,6 +49,7 @@ const valorGota = () => 1 + S.nv.estomago * 2;
 
 let jogando = false, travado = false, arrastando = false;
 let stamina = 100, combo = 0, comboT = 0;
+const comboTempoMax = 4.0; // Tempo máximo do combo em segundos
 
 // ------------------------------------------------------------
 // HUD
@@ -180,23 +181,19 @@ registrarMalhaColisao(tampoMesa);
 });
 
 // 5. Poltrona Inclinada
-// 5. Cadeira / Poltrona Realista e Proporcional
 const cadPos = new THREE.Vector3(14, YMIN, 0);
 
-// Assento
 const cadAssento = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.6, 4.5), matCadeira);
 cadAssento.position.set(0, 1.8, 0).add(cadPos);
 cadAssento.rotation.y = -Math.PI / 3;
 registrarMalhaColisao(cadAssento);
 
-// Encosto (Proporcional e levemente inclinado)
 const cadEncosto = new THREE.Mesh(new THREE.BoxGeometry(4.5, 3.5, 0.5), matCadeira);
 cadEncosto.position.set(0, 3.8, -2.0).applyAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 3).add(cadPos);
 cadEncosto.rotation.y = -Math.PI / 3;
 cadEncosto.rotation.x = 0;
 registrarMalhaColisao(cadEncosto);
 
-// 4 Pernas da Cadeira
 [[-1.8, 0.9, -1.8], [1.8, 0.9, -1.8], [-1.8, 0.9, 1.8], [1.8, 0.9, 1.8]].forEach(([px, py, pz]) => {
   const pePerna = new THREE.Vector3(px, py, pz).applyAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 3).add(cadPos);
   const pernaCad = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.8, 8), matMesa);
@@ -356,7 +353,7 @@ function explodir(pos, cor) {
 function coletar(g) {
   const u = g.userData;
   combo = comboT > 0 ? Math.min(combo + 1, 5) : 1;
-  comboT = 4;
+  comboT = comboTempoMax;
   const ganho = valorGota() * (u.dourada ? 5 : 1) * combo;
   S.sangue += ganho;
   explodir(g.position, u.dourada ? 0xffd84d : 0xff1744);
@@ -388,7 +385,7 @@ function evoluir(k) {
 document.querySelectorAll(".up").forEach((b) => b.addEventListener("click", () => evoluir(b.dataset.up)));
 
 // ------------------------------------------------------------
-// CONTROLES E RAYCASTING DE SUPERFÍCIE REAL (360 GRUS)
+// CONTROLES E RAYCASTING DE SUPERFÍCIE REAL (360 GRAUS)
 // ------------------------------------------------------------
 const teclas = {};
 let yaw = 0, pitch = 0;
@@ -441,11 +438,8 @@ const euler = new THREE.Euler(0, 0, 0, "YXZ");
 const frente = new THREE.Vector3(), direita = new THREE.Vector3(), alvoVel = new THREE.Vector3(), tmp = new THREE.Vector3();
 let t = 0;
 
-// RAYCASTER COM ZERO FOLGA (Colagem perfeita nas malhas)
 const raycaster = new THREE.Raycaster();
-const RAIO_CORPO = 0.55; // Raio de distanciamento físico das superfícies
-
-// 6 Direções cardeais para varredura de obstáculo
+const RAIO_CORPO = 0.55;
 
 const direcoesVarredura = [
   new THREE.Vector3(1, 0, 0),
@@ -457,7 +451,6 @@ const direcoesVarredura = [
 ];
 
 function resolverColisaoRaycast() {
-  // Raio bem curtinho para garantir que só detecte quando estiver encostando de verdade na malha
   const raioFisico = 0.18;
 
   for (const dir of direcoesVarredura) {
@@ -468,8 +461,6 @@ function resolverColisaoRaycast() {
     if (intersecoes.length > 0) {
       const toque = intersecoes[0];
       const penetracao = raioFisico - toque.distance;
-      
-      // Empurra milimetricamente para fora do objeto
       mosquito.position.addScaledVector(dir, -penetracao);
     }
   }
@@ -495,14 +486,12 @@ function mover(dt) {
 
   const correndo = teclas.shift && stamina > 5 && alvoVel.lengthSq() > 0;
 
-// O nível do corpo aumenta a stamina máxima (100 base + 15 por nível) e regenera mais rápido
   const staminaMaxima = 100 + S.nv.corpo * 15;
-  const taxaRegen = 25 + S.nv.corpo * 4; // Regenera mais rápido por nível de corpo
+  const taxaRegen = 25 + S.nv.corpo * 4; 
   const taxaGasto = 35;
 
   stamina = clamp(stamina + (correndo ? -taxaGasto : taxaRegen) * dt, 0, staminaMaxima);
   
-  // Atualiza a barra de progresso considerando o teto dinâmico da stamina
   $("stamina").style.width = (stamina / staminaMaxima) * 100 + "%";
   $("stamina").classList.toggle("baixa", stamina < (staminaMaxima * 0.25));
 
@@ -510,13 +499,9 @@ function mover(dt) {
 
   vel.lerp(alvoVel, Math.min(1, (alvoVel.lengthSq() > 0 ? 10 : 6) * dt));
 
-  // Aplica movimento com prevenção de colisão em Raycast real
   mosquito.position.addScaledVector(vel, dt);
-
-  // Varredura de colisão poligonil
   resolverColisaoRaycast();
 
-  // Rotações
   mosquito.rotation.order = "YXZ";
   mosquito.rotation.y = yaw;
 
@@ -553,9 +538,29 @@ function camera3p(dt) {
 }
 
 function atualizarMundo(dt) {
-  if (comboT > 0) { comboT -= dt; if (comboT <= 0) combo = 0; }
-  $("combo").hidden = combo < 2;
-  $("combo-n").textContent = combo;
+  // Gestão da barra de combo e decaimento por tempo
+  if (comboT > 0) {
+    comboT -= dt;
+    if (comboT <= 0) combo = 0;
+  }
+
+  // Atualiza a interface da barra de combo visual com verificação de segurança
+  const containerCombo = $("combo-container");
+  if (containerCombo) {
+    containerCombo.hidden = combo < 2; // Exibe a partir do x2
+    
+    const comboNEl = $("combo-n");
+    if (comboNEl) comboNEl.textContent = combo;
+
+    const multEl = $("combo-multiplicador");
+    if (multEl) multEl.textContent = "x" + combo;
+
+    const fillEl = $("combo-barra-fill");
+    if (fillEl) {
+      const porcentagem = Math.max(0, (comboT / comboTempoMax) * 100);
+      fillEl.style.width = porcentagem + "%";
+    }
+  }
 
   const raio = raioColeta();
   for (const g of gotas) {
