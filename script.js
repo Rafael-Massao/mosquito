@@ -20,6 +20,27 @@ const CFG = {
     { min: 65, nome: "Sugador ancestral",       cor: 0x9900ff },
     { min: 85, nome: "Deus carmesim",           cor: 0xffffff },
   ],
+  // EASTER EGGS: cada um desbloqueia uma skin (K troca, H mostra dicas)
+  SKINS: {
+    arcoiris:   { nome: "Arco-íris",          corpo: 0xff0000, abd: 0x00ff00, brilho: 0xffffff, ei: 0.5,  dica: "Um código clássico de videogame: ↑ ↑ ↓ ↓ ← → ← → B A" },
+    dengue:     { nome: "Aedes aegypti",      corpo: 0x111111, abd: 0xf2f2f2, perna: 0xeeeeee, brilho: 0xffffff, ei: 0.1, dica: "Digite o nome da doença mais famosa que o mosquito transmite" },
+    relojoeiro: { nome: "Relojoeiro dourado", corpo: 0xffd84d, abd: 0xc9a227, brilho: 0xffaa00, ei: 0.35, metal: true, dica: "O tempo voa... encoste no relógio da aula de Biologia" },
+    radioativo: { nome: "Radioativo",         corpo: 0x1a3a1a, abd: 0x39ff14, brilho: 0x39ff14, ei: 0.9, asa: 0xb6ffb0, dica: "Pouse em cima do tanque de larvas do laboratório" },
+    jogador:    { nome: "Craque da quadra",   corpo: 0xff7a1a, abd: 0x1a1a1a, brilho: 0xff7a1a, ei: 0.3,  dica: "Faça uma cesta: atravesse um aro do ginásio de cima para baixo" },
+    fantasma:   { nome: "Fantasma",           corpo: 0xdff4ff, abd: 0xbfe6ff, brilho: 0x88ccff, ei: 0.6, alfa: 0.35, asa: 0xffffff, dica: "Encare seu reflexo no espelho do banheiro" },
+    vampiro:    { nome: "Conde Drácula",      corpo: 0x14000a, abd: 0x8b0000, brilho: 0xff0033, ei: 0.7,  dica: "Pique 10 humanos" },
+  },
+  // HUMANOS: [nome, x1, z1, x2, z2] — andam entre os dois pontos
+  HUMANOS: [
+    ["a professora de Matemática", -55, -39.5, -43, -39.5],
+    ["o professor de Biologia",    -13, -39.5,  -1, -39.5],
+    ["um aluno no corredor",       -60,   2,    60,   2],
+    ["uma aluna no corredor",       50,  -2,   -50,  -2],
+    ["a bibliotecária",             23, -36,    23, -14],
+    ["a merendeira",               -49,  14,   -49,  40],
+    ["um aluno comendo",           -31,  42,   -31,  14],
+    ["o jogador de basquete",        5,  22,    30,  34],
+  ],
   UPS: { asas: { base: 12, nome: "Asas" }, tromba: { base: 15, nome: "Tromba" }, estomago: { base: 20, nome: "Estômago" }, corpo: { base: 18, nome: "Corpo" } },
 };
 const $ = (id) => document.getElementById(id);
@@ -34,12 +55,14 @@ class GameState {
   constructor() {
     this.sangue = 0;
     this.nv = { asas: 0, tromba: 0, estomago: 0, corpo: 0 };
+    this.skins = []; this.skin = null; this.picadas = 0;
     try {
       const s = JSON.parse(localStorage.getItem(CFG.SAVE));
       if (s && s.nv) { this.sangue = +s.sangue || 0; for (const k in this.nv) this.nv[k] = +s.nv[k] || 0; }
+      if (s) { this.skins = Array.isArray(s.skins) ? s.skins.filter((k) => CFG.SKINS[k]) : []; this.skin = CFG.SKINS[s.skin] ? s.skin : null; this.picadas = +s.picadas || 0; }
     } catch (e) { /* sem save */ }
   }
-  salvar() { try { localStorage.setItem(CFG.SAVE, JSON.stringify({ sangue: this.sangue, nv: this.nv })); } catch (e) {} }
+  salvar() { try { localStorage.setItem(CFG.SAVE, JSON.stringify({ sangue: this.sangue, nv: this.nv, skins: this.skins, skin: this.skin, picadas: this.picadas })); } catch (e) {} }
   get total() { return this.nv.asas + this.nv.tromba + this.nv.estomago + this.nv.corpo; }
   get estagio() { let e = CFG.ESTAGIOS[0]; for (const x of CFG.ESTAGIOS) if (this.total >= x.min) e = x; return e; }
   custo(k) { return Math.floor(CFG.UPS[k].base * Math.pow(CFG.CRESCE, this.nv[k])); }
@@ -104,6 +127,9 @@ class AudioSystem {
   dano() { this.tom(150, 50, 0.3, "square", 0.22); this.sopro(0.2, 800, 0.2); }
   alerta() { this.tom(880, 660, 0.15, "square", 0.1); this.tom(880, 660, 0.15, "square", 0.1, 0.22); }
   spray() { this.sopro(1.4, 3200, 0.25); }
+  picada() { this.tom(900, 300, 0.12, "sawtooth", 0.15); this.sopro(0.25, 600, 0.25); this.tom(200, 500, 0.2, "sine", 0.25, 0.1); }
+  tapa() { this.sopro(0.15, 1500, 0.5); this.tom(120, 40, 0.2, "square", 0.3); }
+  egg() { [523, 659, 784, 1047, 1319].forEach((f, i) => this.tom(f, f * 1.01, 0.3, "square", 0.08, i * 0.08)); }
   evolucao() { [440, 554, 659, 880].forEach((f, i) => this.tom(f, f * 1.01, 0.25, "triangle", 0.15, i * 0.1)); }
 }
 
@@ -160,6 +186,56 @@ class UIManager {
   retrigger(el, c) { el.classList.remove(c); void el.offsetWidth; el.classList.add(c); }
   toast(txt) { const e = $("toast"); if (!e) return; e.textContent = txt; this.retrigger(e, "mostra"); }
   evolucao(nome) { $("evo-txt").textContent = nome; this.retrigger($("evo"), "mostra"); }
+  // ---- Menu de escolha de skins (abre com K; skins nao desbloqueadas ficam travadas) ----
+  construirMenuSkins() {
+    if (this.skinMenu) return this.skinMenu;
+    const box = document.createElement("div"); box.id = "menu-skins";
+    box.style.cssText = "position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(6,4,14,.86);z-index:20;font-family:Syne,Figtree,system-ui,sans-serif";
+    box.innerHTML = '<section style="width:min(920px,94vw);max-height:88vh;overflow:auto;background:rgba(14,12,24,.97);border:1px solid rgba(255,216,77,.3);border-radius:16px;padding:26px 30px">'
+      + '<h2 style="margin:0 0 4px;font:800 1.5rem Syne,sans-serif;color:#fff">Skins de mosquito</h2>'
+      + '<p id="skins-contador" style="margin:0 0 18px;font:600 .85rem Figtree,sans-serif;color:#9aa3b2"></p>'
+      + '<div id="skins-grade" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px"></div>'
+      + '<p style="margin:18px 0 0;font:600 .78rem Figtree,sans-serif;color:#7f8798">Ache os easter eggs no jogo para liberar as skins escondidas. K abre este menu, H da uma dica.</p>'
+      + '<button id="skins-fechar" style="margin-top:16px;font:800 .9rem Syne,sans-serif;color:#0e0c18;background:#ffd84d;border:0;border-radius:10px;padding:10px 22px;cursor:pointer">Voltar ao jogo</button>'
+      + '</section>';
+    document.body.appendChild(box);
+    this.skinMenu = box; this.skinsGrade = box.querySelector("#skins-grade"); this.skinsCont = box.querySelector("#skins-contador");
+    box.querySelector("#skins-fechar").addEventListener("click", () => this.fecharSkins());
+    box.addEventListener("click", (e) => { if (e.target === box) this.fecharSkins(); });
+    return box;
+  }
+  abrirSkins(S, aoEscolher) {
+    const box = this.construirMenuSkins();
+    const hex = (c) => "#" + (c >>> 0).toString(16).padStart(6, "0");
+    const card = (id, sk, tem) => {
+      const cor = sk ? hex(sk.brilho) : "#555b66", dono = S.skin === id;
+      const titulo = sk ? (tem ? sk.nome : "???") : "Skin padrão";
+      const nota = !sk ? (dono ? "em uso" : "clique para usar")
+        : tem ? (dono ? "em uso" : "clique para usar")
+        : "🔒 " + sk.dica;
+      const pode = !sk || tem;
+      return '<button data-skin="' + (id || "") + '"' + (pode ? "" : " disabled") + ' style="text-align:left;cursor:' + (pode ? "pointer" : "not-allowed")
+        + ';background:rgba(255,255,255,' + (id && tem ? ".05" : ".02") + ');border:1px solid ' + (dono ? cor : "rgba(255,255,255,.12)")
+        + ';border-radius:12px;padding:14px 16px;color:#eef2f8">'
+        + '<span style="display:flex;align-items:center;gap:9px"><i style="width:14px;height:14px;border-radius:50%;background:' + cor
+        + ';display:inline-block;filter:' + (id && !tem ? "grayscale(1) brightness(.5)" : "none") + '"></i>'
+        + '<b style="font:800 .95rem Syne,sans-serif">' + titulo + '</b></span>'
+        + '<small style="display:block;margin-top:6px;font:600 .74rem/1.45 Figtree,sans-serif;color:#98a0af">' + nota + '</small></button>';
+    };
+    const cards = [card(null, null, true)];
+    for (const id of Object.keys(CFG.SKINS)) cards.push(card(id, CFG.SKINS[id], S.skins.includes(id)));
+    this.skinsGrade.innerHTML = cards.join("");
+    this.skinsCont.textContent = S.skins.length + "/" + Object.keys(CFG.SKINS).length + " desbloqueadas";
+    this.skinsGrade.querySelectorAll("[data-skin]").forEach((b) => b.addEventListener("click", () => {
+      if (b.disabled) return;
+      aoEscolher(b.dataset.skin || null); this.abrirSkins(S, aoEscolher);
+    }));
+    box.style.display = "flex";
+    document.exitPointerLock?.();
+  }
+  menuSkinsAberto() { return !!this.skinMenu && this.skinMenu.style.display === "flex"; }
+  fecharSkins() { if (this.skinMenu) this.skinMenu.style.display = "none"; }
+
   menu(titulo, botao) { const m = $("menu"); m.hidden = false; m.querySelector("h1").textContent = titulo; $("btn-jogar").textContent = botao; }
   esconderMenu() { $("menu").hidden = true; }
   saveInfo(S) { const e = $("save-info"); if (e) e.textContent = S.total > 0 ? `Progresso salvo: ${S.estagio.nome}, ${Math.floor(S.sangue)} de sangue.` : ""; }
@@ -353,11 +429,37 @@ function aplicarEvolucaoVisual() {
   espinhos.visible = idx >= 2; presas.visible = idx >= 3; coroa.visible = idx >= 7;
   luzCorpo.color.setHex(est.cor); luzCorpo.intensity = Math.min(n * 0.12, 1.6);
 
+  // SKIN (easter egg): sobrescreve cores e materiais, sem mudar tamanhos
+  matCorpo.transparent = matAbd.transparent = false; matCorpo.opacity = matAbd.opacity = 1;
+  matCorpo.metalness = 0; matCorpo.roughness = 0.5; matPerna.color.setHex(0x0b0b0e);
+  if (!S.skin) matCorpo.color.setHex(0x1c1c22);
+  const sk = S.skin && CFG.SKINS[S.skin];
+  if (sk) {
+    matCorpo.color.setHex(sk.corpo); matAbd.color.setHex(sk.abd); matPerna.color.setHex(sk.perna ?? sk.corpo);
+    matCorpo.emissive.setHex(sk.brilho); matCorpo.emissiveIntensity = sk.ei;
+    matAbd.emissive.setHex(sk.brilho); matAbd.emissiveIntensity = sk.ei;
+    matOlho.emissive.setHex(sk.brilho); matBordaAsa.color.setHex(sk.brilho);
+    luzCorpo.color.setHex(sk.brilho); luzCorpo.intensity = Math.max(luzCorpo.intensity, 0.6);
+    if (sk.asa) matAsa.color.setHex(sk.asa);
+    if (sk.metal) { matCorpo.metalness = 0.7; matCorpo.roughness = 0.25; }
+    if (sk.alfa) { matCorpo.transparent = matAbd.transparent = true; matCorpo.opacity = matAbd.opacity = sk.alfa; }
+  }
+  matCorpo.needsUpdate = matAbd.needsUpdate = true;
+
   zoom = medir(cs, comp, c, abz) / RAIO_BASE;
 }
 
+// Animação da skin arco-íris (chamada todo frame)
+function tickSkin(t) {
+  if (S.skin !== "arcoiris") return;
+  const h = (t * 0.15) % 1, h2 = (h + 0.33) % 1;
+  matCorpo.color.setHSL(h, 0.9, 0.5); matCorpo.emissive.setHSL(h, 1, 0.4);
+  matAbd.color.setHSL(h2, 0.9, 0.5); matAbd.emissive.setHSL(h2, 1, 0.4);
+  matBordaAsa.color.setHSL((h + 0.66) % 1, 1, 0.6); luzCorpo.color.setHSL(h, 1, 0.5);
+}
 
-return { mosquito, asas, abdomen, pernas, aplicar: aplicarEvolucaoVisual,
+
+return { mosquito, asas, abdomen, pernas, aplicar: aplicarEvolucaoVisual, tick: tickSkin,
   get escala() { return escalaBase; }, get zoom() { return zoom; }, get punch() { return punch; }, set punch(v) { punch = v; } };
 }
 
@@ -381,7 +483,7 @@ class WorldManager {
     this.raycaster = new THREE.Raycaster();
     this.dirs = [V(1, 0, 0), V(-1, 0, 0), V(0, 1, 0), V(0, -1, 0), V(0, 0, 1), V(0, 0, -1)];
     this.emPerigo = null; this.avisoGas = false;
-    this.construirCenario(); this.criarGotas(); this.criarParticulas(); this.criarPerigos();
+    this.construirCenario(); this.criarGotas(); this.criarParticulas(); this.criarPerigos(); this.criarHumanos();
   }
 
   // Registra malha estática: matriz congelada + AABB pré-calculada
@@ -540,6 +642,60 @@ class WorldManager {
     }
   }
 
+  // ---- Seres humanos: andam pela escola; pique a cabeça (E) e fuja do tapa ----
+  criarHumanos() {
+    const F = CFG.YMIN, M = (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.7 });
+    const peles = [0xf1c27d, 0xc68642, 0x8d5524, 0xe0ac69], roupas = [0x3a6ea5, 0xb5443a, 0x4a8a4a, 0x7a4fa0, 0xd9a400, 0x333344];
+    const calca = M(0x2a2a35), cabelo = M(0x2b1b10), olho = new THREE.MeshBasicMaterial({ color: 0x111111 });
+    this.humanoPerto = null;
+    this.humanos = CFG.HUMANOS.map(([nome, x1, z1, x2, z2], i) => {
+      const pele = M(peles[i % 4]), roupa = M(roupas[i % 6]), g = new THREE.Group();
+      const parte = (geo, m, x, y, z, pai = g) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); pai.add(o); return o; };
+      const membro = (x, y, w, h, m) => { const p = new THREE.Group(); p.position.set(x, y, 0); parte(new THREE.BoxGeometry(w, h, w * 1.1), m, 0, -h / 2, 0, p); g.add(p); return p; };
+      const pernas = [-0.32, 0.32].map((x) => membro(x, 2.6, 0.5, 2.6, calca));
+      parte(new THREE.BoxGeometry(1.4, 2.0, 0.8), roupa, 0, 3.6, 0);
+      const bracos = [-0.95, 0.95].map((x) => membro(x, 4.5, 0.4, 1.9, pele));
+      parte(new THREE.SphereGeometry(0.55, 16, 12), pele, 0, 5.25, 0);
+      parte(new THREE.SphereGeometry(0.58, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), cabelo, 0, 5.32, 0);
+      for (const x of [-0.2, 0.2]) parte(new THREE.SphereGeometry(0.07, 8, 6), olho, x, 5.32, 0.5);
+      const marca = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.07, 8, 24), new THREE.MeshBasicMaterial({ color: 0xff1744 }));
+      marca.rotation.x = Math.PI / 2; marca.position.y = 6.4; g.add(marca);
+      g.position.set(x1, F, z1); this.cena.add(g);
+      return { nome, g, pernas, bracos, marca, a: V(x1, F, z1), b: V(x2, F, z2), ida: true, passo: Math.random() * 6,
+        vel: 1.6 + Math.random() * 0.6, pronto: 0, raiva: 0, tapa: 0, alvo: V(x1, F + 5.25, z1) };
+    });
+  }
+
+  atualizarHumanos(dt, jogo) {
+    const p = jogo.jogador.pos, F = CFG.YMIN, rc = jogo.estado.raioColeta + 0.9;
+    const virar = (g, ang, k) => { g.rotation.y += Math.atan2(Math.sin(ang - g.rotation.y), Math.cos(ang - g.rotation.y)) * amort(k, dt); };
+    this.humanoPerto = null; let melhor = rc * rc;
+    for (const h of this.humanos) {
+      const g = h.g;
+      h.pronto = Math.max(0, h.pronto - dt); h.raiva = Math.max(0, h.raiva - dt); h.tapa = Math.max(0, h.tapa - dt);
+      if (h.raiva > 0) {
+        // Bravo: para, encara o mosquito e abana o braço
+        virar(g, Math.atan2(p.x - g.position.x, p.z - g.position.z), 10);
+        h.bracos[1].rotation.x = -2.4 + Math.sin(jogo.t * 16) * 0.7; h.bracos[0].rotation.x = 0;
+        h.pernas.forEach((l) => { l.rotation.x *= 0.8; });
+        const dx = p.x - g.position.x, dy = p.y - (F + 4.8), dz = p.z - g.position.z;
+        if (h.tapa <= 0 && dx * dx + dy * dy + dz * dz < 2.8 * 2.8) { h.tapa = 1.2; jogo.tapa(h); }
+      } else {
+        const dest = h.ida ? h.b : h.a, dx = dest.x - g.position.x, dz = dest.z - g.position.z, d = Math.hypot(dx, dz);
+        if (d < 0.2) h.ida = !h.ida;
+        else { const s = Math.min(d, h.vel * dt); g.position.x += (dx / d) * s; g.position.z += (dz / d) * s; virar(g, Math.atan2(dx, dz), 6); }
+        h.passo += dt * h.vel * 3.2;
+        const sw = Math.sin(h.passo);
+        h.pernas[0].rotation.x = sw * 0.5; h.pernas[1].rotation.x = -sw * 0.5;
+        h.bracos[0].rotation.x = -sw * 0.4; h.bracos[1].rotation.x = sw * 0.4;
+      }
+      h.marca.visible = h.pronto <= 0; h.marca.rotation.z += dt * 2; h.marca.position.y = 6.4 + Math.sin(jogo.t * 3 + h.passo) * 0.1;
+      h.alvo.set(g.position.x, F + 5.25, g.position.z);
+      const d2 = h.alvo.distanceToSquared(p);
+      if (h.pronto <= 0 && d2 < melhor) { melhor = d2; this.humanoPerto = h; }
+    }
+  }
+
   // ---- Gotas (pool) ----
   criarGotas() {
     const geo = new THREE.SphereGeometry(0.2, 16, 12), halo = new THREE.SphereGeometry(0.42, 12, 10);
@@ -607,6 +763,7 @@ class WorldManager {
     const p = jogo.jogador.pos, S = jogo.estado;
     this.emPerigo = null; this.avisoGas = false;
     this.luz.intensity = Math.sin(jogo.t * 3.1) * Math.sin(jogo.t * 17.3) > 0.93 ? 0.5 : 1.6;   // lâmpada falhando
+    this.atualizarHumanos(dt, jogo);
 
     // Gotas: anima só as próximas (<40u); coleta por distância ao quadrado
     const r2 = S.raioColeta * S.raioColeta;
@@ -774,6 +931,7 @@ class GameManager {
     this.jogador.pos.set(0, 2, 0);
     this.teclas = {}; this.jogando = false; this.travado = false; this.arrastando = false;
     this.combo = 0; this.comboT = 0; this.boost = 0; this.t = 0; this.salvarT = 0; this.relogio = new THREE.Clock();
+    this.egg = { tanque: 0, espelho: 0, yAnt: 0, dica: 0 }; this.tmpEgg = V(0, 0, 0); this.buf = ""; this.letras = "";
     this.ligar();
     this.jogador.modelo.aplicar(); this.jogador.zoomV = this.jogador.modelo.zoom; this.ui.hud(this.estado); this.ui.saveInfo(this.estado);
     this.laco();
@@ -787,6 +945,13 @@ class GameManager {
       if (e.repeat) return;
       const mapa = { 1: "asas", 2: "tromba", 3: "estomago", 4: "corpo" };
       if (mapa[k]) this.evoluir(mapa[k]);
+      // Easter eggs por teclado
+      this.buf = (this.buf + "|" + k).slice(-160); this.letras = (this.letras + (k.length === 1 ? k : "")).slice(-12);
+      if (this.buf.endsWith("|arrowup|arrowup|arrowdown|arrowdown|arrowleft|arrowright|arrowleft|arrowright|b|a")) this.desbloquear("arcoiris");
+      if (this.letras.endsWith("dengue")) this.desbloquear("dengue");
+      if (k === "e") this.picar();
+      if (k === "k") this.trocarSkin();
+      if (k === "h") this.dica();
       if (k === "m") this.ui.toast(this.audio.alternarMudo() ? "Som desligado" : "Som ligado");
     });
     addEventListener("keyup", (e) => { T[e.key.toLowerCase()] = false; });
@@ -797,7 +962,7 @@ class GameManager {
     this.ui.ligar((k) => { this.audio.clique(); this.evoluir(k); }, () => this.iniciar());
     document.addEventListener("pointerlockchange", () => {
       this.travado = document.pointerLockElement === cv;
-      if (!this.travado && this.jogando) { this.jogando = false; this.audio.silenciar(); this.ui.menu("Pausado", "Continuar"); }
+      if (!this.travado && this.jogando && !this.menuAberto) { this.jogando = false; this.audio.silenciar(); this.ui.menu("Pausado", "Continuar"); }
     });
     document.addEventListener("pointerlockerror", () => { this.jogando = true; this.ui.esconderMenu(); });
     addEventListener("resize", () => {
@@ -808,6 +973,7 @@ class GameManager {
   iniciar() {
     this.jogando = true; this.ui.esconderMenu(); this.audio.iniciar(); this.audio.clique();
     this.render.domElement.requestPointerLock?.();
+    if (!this.dicaInicial) { this.dicaInicial = true; this.ui.toast("Novo: pique humanos com E · K troca skin · H dica de easter egg"); }
   }
 
   coletar(g) {
@@ -827,6 +993,68 @@ class GameManager {
       this.audio.slurp(dour); this.ui.toast(dour ? `✨ +${ganho} · XP×2 por 10s` : `+${ganho} sangue`);
     }
     this.ui.hud(S); this.salvarT = 3;
+  }
+
+  // ---- Picar humanos: muito sangue (pontos de evolução), mas eles revidam ----
+  picar() {
+    const h = this.mundo.humanoPerto; if (!this.jogando || !h) return;
+    const S = this.estado;
+    this.combo = this.comboT > 0 ? Math.min(this.combo + 1, 5) : 1; this.comboT = CFG.COMBO_T;
+    const ganho = Math.round((25 + S.valorGota * 6) * this.combo * (this.boost > 0 ? 2 : 1));
+    S.sangue += ganho; S.picadas++;
+    h.pronto = 18; h.raiva = 4; h.tapa = 0.6;   // 0,6 s de vantagem pra fugir
+    this.mundo.emitir(h.alvo, 0xff1744, 26, 4); this.audio.picada(); this.ui.flash("rgba(255,23,68,.35)");
+    this.ui.toast(`🩸 Picou ${h.nome}! +${ganho} sangue — fuja do tapa!`); this.ui.hud(S); this.salvarT = 3;
+    if (S.picadas >= 10) this.desbloquear("vampiro");
+  }
+  tapa(h) {
+    const j = this.jogador;
+    j.vel.add(this.tmpEgg.copy(j.pos).sub(h.alvo).setY(0.3).normalize().multiplyScalar(14)); j.shake = 1;
+    this.combo = 0; this.comboT = 0; this.audio.tapa(); this.ui.toast(`👋 ${h.nome} te deu um tapa!`);
+    this.dano(30);
+  }
+
+  // ---- Easter eggs e skins ----
+  desbloquear(id) {
+    const S = this.estado, sk = CFG.SKINS[id]; if (!sk || S.skins.includes(id)) return;
+    S.skins.push(id); S.skin = id; this.jogador.modelo.aplicar(); this.jogador.modelo.punch = 1;
+    this.audio.egg(); this.mundo.emitir(this.jogador.pos, sk.brilho, 40, 6);
+    this.ui.evolucao(`🥚 Easter egg! Skin: ${sk.nome}`);
+    this.ui.toast(`Skins ${S.skins.length}/${Object.keys(CFG.SKINS).length} — aperte K para escolher no menu`); S.salvar();
+  }
+  trocarSkin() {                      // K abre/fecha o menu de skins
+    if (this.ui.menuSkinsAberto()) { this.fecharSkins(); return; }
+    this.audio.clique(); this.menuAberto = true;
+    this.ui.abrirSkins(this.estado, (id) => this.escolherSkin(id));
+  }
+  escolherSkin(id) {
+    const S = this.estado;
+    if (id && !S.skins.includes(id)) return;
+    S.skin = id; this.jogador.modelo.aplicar(); this.jogador.modelo.punch = 0.6; this.audio.clique();
+    this.ui.toast(id ? `Skin: ${CFG.SKINS[id].nome}` : "Skin: padrão"); S.salvar();
+  }
+  fecharSkins() {
+    this.ui.fecharSkins(); this.menuAberto = false;
+    if (this.jogando) this.render.domElement.requestPointerLock?.();
+  }
+  dica() {
+    const falta = Object.keys(CFG.SKINS).filter((k) => !this.estado.skins.includes(k));
+    if (!falta.length) { this.ui.toast("🏆 Você achou todos os easter eggs!"); return; }
+    this.ui.toast(`🔍 ${CFG.SKINS[falta[this.egg.dica++ % falta.length]].dica}`);
+  }
+  checarEggs(dt) {
+    const p = this.jogador.pos, F = CFG.YMIN, e = this.egg;
+    // Relógio da parede da sala de Biologia
+    if (p.distanceToSquared(this.tmpEgg.set(9, F + 11, -CFG.MZ + 0.6)) < 2.2 * 2.2) this.desbloquear("relojoeiro");
+    // Pousar em cima do tanque de larvas por 1 s
+    e.tanque = Math.hypot(p.x - 66, p.z + 45) < 2.4 && p.y > F + 6 && p.y < F + 8 ? e.tanque + dt : 0;
+    if (e.tanque > 1) this.desbloquear("radioativo");
+    // Cesta: cruzar o aro de cima para baixo
+    for (const x of [-2.1, 37.1]) if (Math.hypot(p.x - x, p.z - 29) < 0.95 && e.yAnt > F + 7.6 && p.y <= F + 7.6) this.desbloquear("jogador");
+    e.yAnt = p.y;
+    // Ficar 2 s diante do espelho do banheiro
+    e.espelho = p.x > 45.6 && p.x < 50 && Math.abs(p.z - 36) < 8 && Math.abs(p.y - (F + 7.5)) < 2.5 ? e.espelho + dt : 0;
+    if (e.espelho > 2) this.desbloquear("fantasma");
   }
 
   dano(v, continuo = false) {
@@ -856,12 +1084,13 @@ class GameManager {
     j.fator = w.emPerigo === "gas" ? 0.65 : 1;
     j.update(dt, this.teclas);
     w.update(dt, this);
+    this.checarEggs(dt);
     if (this.comboT > 0 && (this.comboT -= dt) <= 0) this.combo = 0;
     if (this.boost > 0) this.boost -= dt;
     this.ui.combo(this.combo, this.comboT, this.boost);
     this.ui.barras(j.stamina, S.staminaMax, j.vida, S.vidaMax);
-    this.ui.alerta(w.emPerigo === "gas" ? "☣ GÁS TÓXICO — saia!" : w.emPerigo === "poca" ? "☣ Poça tóxica — suba!" : w.avisoGas ? "⚠ INSETICIDA a caminho!" : "",
-      w.emPerigo ? "#8dff6a" : "#ffd84d");
+    this.ui.alerta(w.emPerigo === "gas" ? "☣ GÁS TÓXICO — saia!" : w.emPerigo === "poca" ? "☣ Poça tóxica — suba!" : w.avisoGas ? "⚠ INSETICIDA a caminho!" : w.humanoPerto ? `🩸 Aperte E para picar ${w.humanoPerto.nome}` : "",
+      w.emPerigo ? "#8dff6a" : w.avisoGas ? "#ffd84d" : "#ff6b8a");
     this.ui.perigo("rgba(120,255,80,.7)", w.emPerigo ? 0.35 : 0);
     this.audio.zumbir(clamp(j.vel.length() / (S.velMax * 2), 0, 1), j.corre);
     if (this.salvarT > 0 && (this.salvarT -= dt) <= 0) S.salvar();
@@ -872,7 +1101,7 @@ class GameManager {
     const dt = Math.min(this.relogio.getDelta(), 0.05); this.t += dt;
     if (this.jogando) this.atualizar(dt);
     this.jogador.animar(dt, this.t, this.jogando);
-    this.jogador.camera3p(dt); this.ui.atualizar(dt);
+    this.jogador.modelo.tick(this.t); this.jogador.camera3p(dt); this.ui.atualizar(dt);
     this.render.render(this.cena, this.camera);
   }
 }
