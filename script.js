@@ -19,9 +19,9 @@ const CFG = {
     { min: 48, nome: "Rei do enxame",           cor: 0xffd84d },
     { min: 65, nome: "Sugador ancestral",       cor: 0x9900ff },
     { min: 85, nome: "Deus carmesim",           cor: 0xffffff },
-    { min: 105, nome: "Pesadelo crepuscular",       cor: 0x111122 },
-    { min: 125, nome: "Lorde da praga estelar", cor: 0x00ffcc },
-    { min: 150, nome: "Soberano do sangue eterno", cor: 0xff0000 }
+    { min: 100, nome: "Pesadelo crepuscular",      cor: 0x111122 },
+    { min: 110, nome: "Lorde da praga estelar",    cor: 0x00ffcc },
+    { min: 120, nome: "Soberano do sangue eterno", cor: 0xff0000 }
   ],
   // EASTER EGGS: cada um desbloqueia uma skin (K troca, H mostra dicas)
   SKINS: {
@@ -41,7 +41,18 @@ const CFG = {
     { id: "sangue500", nome: "Meio litro", ico: "🩸", desc: "Acumule 500 de sangue" },
     { id: "sangue5000", nome: "Banco de sangue", ico: "🧛", desc: "Acumule 5.000 de sangue" },
     { id: "nivel40", nome: "Evoluído", ico: "🧬", desc: "Chegue ao nível 40" },
-    { id: "deus", nome: "Deus carmesim", ico: "👑", desc: "Alcance o estágio final" },
+    { id: "pernilongo", nome: "Pernilongo", ico: "🦟", desc: "Alcance o nível 3 (Pernilongo)" },
+    { id: "cacadorNoturno", nome: "Caçador noturno", ico: "🌙", desc: "Alcance o nível 7 (Caçador noturno)" },
+    { id: "vampiroAlado", nome: "Vampiro alado", ico: "🦇", desc: "Alcance o nível 12 (Vampiro alado)" },
+    { id: "mosquitoLaboratorio", nome: "Mosquito de laboratório", ico: "🧪", desc: "Alcance o nível 18 (Mosquito de laboratório)" },
+    { id: "pragaPantano", nome: "Praga dos pântanos", ico: "🌿", desc: "Alcance o nível 25 (Praga dos pântanos)" },
+    { id: "terrorMadrugada", nome: "Terror da madrugada", ico: "🌃", desc: "Alcance o nível 35 (Terror da madrugada)" },
+    { id: "reiEnxame", nome: "Rei do enxame", ico: "👑", desc: "Alcance o nível 48 (Rei do enxame)" },
+    { id: "sugadorAncestral", nome: "Sugador ancestral", ico: "👁️", desc: "Alcance o nível 65 (Sugador ancestral)" },
+    { id: "deusCarmesim", nome: "Deus carmesim", ico: "✨", desc: "Alcance o nível 85 (Deus carmesim)" },
+    { id: "pesadeloCrepuscular", nome: "Pesadelo crepuscular", ico: "🌑", desc: "Alcance o nível 100 (Pesadelo crepuscular)" },
+    { id: "lorde", nome: "Lorde da praga estelar", ico: "🌌", desc: "Alcance o nível 110 (Lorde da praga estelar)" },
+    { id: "soberano", nome: "Soberano do sangue eterno", ico: "👑", desc: "Alcance o nível 120 (Soberano do sangue eterno)" },
     { id: "picada1", nome: "Primeira picada", ico: "🩸", desc: "Pique um humano" },
     { id: "picada25", nome: "Pesadelo da escola", ico: "😱", desc: "Pique 25 humanos" },
     { id: "tapas", nome: "Sobrevivente de tapas", ico: "👋", desc: "Leve 5 tapas e continue voando" },
@@ -112,8 +123,26 @@ class GameState {
 // ------------------------------------------------------------
 // ÁUDIO PROCEDURAL (Web Audio API, sem arquivos)
 // ------------------------------------------------------------
+// ------------------------------------------------------------
+// ÁUDIO PROCEDURAL (Web Audio API + Música Externa)
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+// ÁUDIO PROCEDURAL (Web Audio API + Música Externa)
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+// ÁUDIO PROCEDURAL (Web Audio API Avançada) + Música do Caminhão
+// ------------------------------------------------------------
 class AudioSystem {
-  constructor() { this.ctx = null; this.mudo = false; }
+  constructor() {
+    this.ctx = null;
+    this.mudo = false;
+    
+    // Áudio externo exclusivo para a skin "Caminhão de som"
+    this.musicaCarreta = new Audio("sound/e_sexta.mp3");
+    this.musicaCarreta.loop = true;
+    this.musicaCarreta.volume = 0.5;
+  }
+  
   iniciar() {
     if (!this.ctx) {
       const AC = window.AudioContext || window.webkitAudioContext;
@@ -122,6 +151,7 @@ class AudioSystem {
       this.mestre = c.createGain(); this.mestre.gain.value = 0.4; this.mestre.connect(c.destination);
       const n = c.sampleRate; this.ruido = c.createBuffer(1, n, n);
       const d = this.ruido.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+      
       // Zumbido contínuo: dois osciladores + vibrato, filtrados
       this.zum = c.createGain(); this.zum.gain.value = 0;
       const f = c.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 1400;
@@ -134,14 +164,39 @@ class AudioSystem {
     }
     if (this.ctx.state === "suspended") this.ctx.resume();
   }
-  alternarMudo() { this.mudo = !this.mudo; if (this.mudo && this.ctx) this.zum.gain.value = 0; return this.mudo; }
+
+  // Toca ou pausa a música externa consoante a skin selecionada e o estado do mudo
+  tocarMúsicaCarreta(t, ativa) {
+    if (this.mudo || !ativa) {
+      if (!this.musicaCarreta.paused) this.musicaCarreta.pause();
+      return;
+    }
+    if (this.musicaCarreta.paused) {
+      this.musicaCarreta.play().catch(() => {});
+    }
+  }
+
+  alternarMudo() { 
+    this.mudo = !this.mudo; 
+    if (this.mudo) {
+      if (this.ctx) this.zum.gain.value = 0;
+      if (!this.musicaCarreta.paused) this.musicaCarreta.pause();
+    }
+    return this.mudo; 
+  }
+
   zumbir(v, sprint) {
     if (!this.ctx) return;
     const t = this.ctx.currentTime, f = 190 + v * 70 + (sprint ? 90 : 0);
     this.o1.frequency.setTargetAtTime(f, t, 0.08); this.o2.frequency.setTargetAtTime(f * 2.01, t, 0.08);
     this.zum.gain.setTargetAtTime(this.mudo ? 0 : 0.03 + v * 0.035, t, 0.1);
   }
-  silenciar() { if (this.ctx) this.zum.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05); }
+
+  silenciar() { 
+    if (this.ctx) this.zum.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05); 
+    if (!this.musicaCarreta.paused) this.musicaCarreta.pause();
+  }
+
   tom(f0, f1, dur, tipo = "sine", vol = 0.2, at = 0) {
     if (!this.ctx || this.mudo) return;
     const c = this.ctx, t = c.currentTime + at, o = c.createOscillator(), g = c.createGain();
@@ -149,6 +204,7 @@ class AudioSystem {
     g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
     o.connect(g); g.connect(this.mestre); o.start(t); o.stop(t + dur + 0.02);
   }
+
   sopro(dur, freq, vol) {
     if (!this.ctx || this.mudo) return;
     const c = this.ctx, t = c.currentTime, s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
@@ -156,6 +212,7 @@ class AudioSystem {
     g.gain.setValueAtTime(0.001, t); g.gain.linearRampToValueAtTime(vol, t + 0.08); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
     s.connect(f); f.connect(g); g.connect(this.mestre); s.start(t); s.stop(t + dur);
   }
+
   clique() { this.tom(660, 880, 0.06, "square", 0.07); }
   slurp(dourada) { this.tom(260, 720, 0.16, "sine", 0.3); this.tom(900, 400, 0.1, "triangle", 0.12, 0.1); if (dourada) this.tom(1200, 1800, 0.25, "sine", 0.12, 0.15); }
   veneno() { this.tom(220, 60, 0.5, "sawtooth", 0.25); }
@@ -569,8 +626,15 @@ function texLira() {
 
 // Animação das skins (chamada todo frame)
 function tickSkin(t) {
-  if (S.skin === "pixel") { const k = Math.floor(t * 4) % 2; matOlho.emissiveIntensity = k ? 1.8 : 0.9; return; }
-  if (S.skin === "carreta") luzCorpo.intensity = 0.8 + (Math.sin(t * 8) + 1) * 0.6;   // batida do som
+  if (S.skin === "pixel") { 
+    const k = Math.floor(t * 4) % 2; 
+    matOlho.emissiveIntensity = k ? 1.8 : 0.9; 
+    return; 
+  }
+  if (S.skin === "carreta") {
+    // Efeito visual de luzes a piscar com o grave
+    luzCorpo.intensity = 0.8 + (Math.sin(t * 12) + 1) * 0.8;
+  }
 }
 
 
@@ -1437,14 +1501,28 @@ class GameManager {
     if (S.sangue >= 500) this.ganhar("sangue500");
     if (S.sangue >= 5000) this.ganhar("sangue5000");
     if (S.total >= 40) this.ganhar("nivel40");
-    if (S.estagio.nome === "Deus carmesim") this.ganhar("deus");
+    
+    // Conquistas baseadas nos estágios e níveis
+    if (S.total >= 120) this.ganhar("soberano");
+    if (S.total >= 110) this.ganhar("lorde");
+    if (S.total >= 100) this.ganhar("pesadeloCrepuscular");
+    if (S.total >= 85) this.ganhar("deusCarmesim");
+    if (S.total >= 65) this.ganhar("sugadorAncestral");
+    if (S.total >= 48) this.ganhar("reiEnxame");
+    if (S.total >= 35) this.ganhar("terrorMadrugada");
+    if (S.total >= 25) this.ganhar("pragaPantano");
+    if (S.total >= 18) this.ganhar("mosquitoLaboratorio");
+    if (S.total >= 12) this.ganhar("vampiroAlado");
+    if (S.total >= 7) this.ganhar("cacadorNoturno");
+    if (S.total >= 3) this.ganhar("pernilongo");
+
     if (S.picadas >= 1) this.ganhar("picada1");
     if (S.picadas >= 25) this.ganhar("picada25");
     if (k.tapasRecebidos >= 5) this.ganhar("tapas");
     if (k.gas >= 3) this.ganhar("gas3");
     if (e.tour) this.ganhar("turista");
     if (e.fala) this.ganhar("fala");
-    e.vida += dt; if (e.vida > 180) this.ganhar("sobreviver");   // morrer zera o relógio (veja morrer())
+    e.vida += dt; if (e.vida > 180) this.ganhar("sobreviver");   
     if (S.skins.length >= 5) this.ganhar("colecionador");
     if (S.skins.length >= Object.keys(CFG.SKINS).length) this.ganhar("todas");
     if (S.conq.length >= 10) this.ganhar("dez");
@@ -1505,6 +1583,9 @@ class GameManager {
       w.emPerigo ? "#8dff6a" : w.avisoGas ? "#ffd84d" : "#ff6b8a");
     this.ui.perigo("rgba(120,255,80,.7)", w.emPerigo ? 0.35 : 0);
     this.audio.zumbir(clamp(j.vel.length() / (S.velMax * 2), 0, 1), j.corre);
+
+    this.audio.tocarMúsicaCarreta(this.t, S.skin === "carreta");
+
     this.checarConquistas(dt);
     // Mosquitão da rua: falas conforme a distância
     const mo = w.mosquito;
