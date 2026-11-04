@@ -30,16 +30,25 @@ const CFG = {
     relojoeiro: { nome: "Relojoeiro dourado", corpo: 0xffd84d, abd: 0xc9a227, brilho: 0xffaa00, ei: 0.35, metal: true, dica: "O tempo voa... encoste no relógio da aula de Biologia" },
     radioativo: { nome: "Radioativo",         corpo: 0x1a3a1a, abd: 0x39ff14, brilho: 0x39ff14, ei: 0.9, asa: 0xb6ffb0, dica: "Pouse 1 s em cima do galão radioativo do laboratório" },
     jogador:    { nome: "Craque da quadra",   corpo: 0xff7a1a, abd: 0x1a1a1a, brilho: 0xff7a1a, ei: 0.3,  dica: "Faça uma cesta: atravesse um aro do ginásio de cima para baixo" },
-    fantasma:   { nome: "Fantasma",           corpo: 0xdff4ff, abd: 0xbfe6ff, brilho: 0x88ccff, ei: 0.6, alfa: 0.35, asa: 0xffffff, dica: "Encare seu reflexo no espelho do banheiro" },
+    fantasma:   { nome: "Fantasma", neblina: true,           corpo: 0xdff4ff, abd: 0xbfe6ff, brilho: 0x88ccff, ei: 0.6, alfa: 0.35, asa: 0xffffff, dica: "Encare seu reflexo no espelho do banheiro" },
     vampiro:    { nome: "Conde Drácula",      corpo: 0x14000a, abd: 0x8b0000, brilho: 0xff0033, ei: 0.7,  dica: "Pique 10 humanos" },
     mosquito:   { nome: "Mosquitão da rua",   corpo: 0x8a8f2a, abd: 0x6b7220, brilho: 0xc9d13a, ei: 0.2,  dica: "Encare o Mosquitão da rua: a estátua sobre o palco do auditório" },
     carreta:    { nome: "Caminhão de som",    corpo: 0x15151f, abd: 0x1b1b2b, perna: 0x0a0a12, brilho: 0xff44cc, ei: 1.0, asa: 0xffd9f5, rig: true, dica: "Fique parado 3 s diante do telão do auditório (a moldura muda de cor)" },
     eletrizado: { nome: "Eletrizado",         corpo: 0x1a2030, abd: 0x24304a, perna: 0x0e1220, brilho: 0x4fd0ff, ei: 0.8, asa: 0xcfefff, metal: true, raios: true, fumaca: true, dica: "No laboratório há uma tomada ligada ao projeto de eletricidade. Encoste nela" },
     pintado:    { nome: "Meio pintado",       corpo: 0x1c1c22, abd: 0x2a1a20, perna: 0x0b0b0e, brilho: 0xd01020, ei: 0.15, meia: 0xd01020, goticulas: true, dica: "Na sala de artes alguém derrubou tinta vermelha. Encoste na poça" },
     extintor:   { nome: "Bombeiro",           corpo: 0x111111, abd: 0xc0182a, perna: 0x0b0b0b, brilho: 0xff2a2a, ei: 0.3, asa: 0xffd0d0, faixas: true, espuma: true, dica: "Encoste em um extintor de incêndio (há um escondido na cozinha da cantina)" },
+    cadeado:    { nome: "Mosquito Cadeado", corpo: 0x3c424e, abd: 0x2c313b, perna: 0x181b21, brilho: 0xffc933, ei: 0.2, metal: true, asa: 0xcfd6e2, cadeado: true, dica: "Há um armário trancado e amassado no corredor, entre as salas 1 e 2. Segure F perto dele para arrombar" },
+    tusk:       { nome: "Tusk", corpo: 0xf0e6d2, abd: 0xe2d4b4, perna: 0xc9b98c, brilho: 0xffd24a, ei: 0.3, tusk: true, dica: "Há 4 partes de um louva-a-deus espalhadas pela escola (brilho verde). Cada uma evolui o Tusk de Ato, como o stand do JoJo" },
+    mosquito8000: { nome: "Mosquito 8000", corpo: 0x8f9bb0, abd: 0x6c7890, perna: 0x3b4252, brilho: 0x00e5ff, ei: 0.9, metal: true, asa: 0x9be9ff, robo: true, dica: "O quadro de matemática da Sala 1 aceita respostas (tecla Q). A certa dá conquista... mas e se você pensar bem maior?" },
   },
   // CONQUISTAS: cat = categoria · r = raridade (b/p/o) · premio = sangue · secreto = escondida até ser obtida
   RAR: { b: { nome: "Bronze", cor: "#cd7f32", pts: 10 }, p: { nome: "Prata", cor: "#c4ccdc", pts: 25 }, o: { nome: "Ouro", cor: "#ffd84d", pts: 50 } },
+  TUSK: [   // o Tusk evolui a cada parte do louva-a-deus encontrada (Ato 1 a 4): visual e atributos
+    { nome: "Ato 1", visual: { corpo: 0xf0e6d2, abd: 0xe2d4b4, perna: 0xc9b98c, brilho: 0xffd24a, ei: 0.3 }, attr: { colhe: 1.1 } },
+    { nome: "Ato 2", visual: { corpo: 0xf3dcd2, abd: 0xe8c4b8, perna: 0xcaa090, brilho: 0xffb05a, ei: 0.45 }, attr: { colhe: 1.25, sangue: 1.1 } },
+    { nome: "Ato 3", visual: { corpo: 0xe9c8d2, abd: 0xd9a0b4, perna: 0x9a6a7c, brilho: 0xff6aa0, ei: 0.6 }, attr: { colhe: 1.4, sangue: 1.2, vel: 1.1 } },
+    { nome: "Ato 4", visual: { corpo: 0xffd24a, abd: 0xe0a800, perna: 0x9a7000, brilho: 0xffe066, ei: 1.0, metal: true }, attr: { colhe: 1.6, sangue: 1.4, vel: 1.2, def: 0.1, cura: 8 } },
+  ],
   CONQ: [
     { id: "primeiro", nome: "Primeiro voo", ico: "🦟", desc: "Comece uma partida", cat: "Progresso", r: "b", premio: 20 },
     { id: "sangue500", nome: "Meio litro", ico: "🩸", desc: "Acumule 500 de sangue", cat: "Progresso", r: "b", premio: 50 },
@@ -67,6 +76,8 @@ const CFG = {
     { id: "turista", nome: "Turista", ico: "🗺️", desc: "Faça o tour da escola (tecla =)", cat: "Exploração", r: "b", premio: 30 },
     { id: "carteira", nome: "Bom cidadão", ico: "🎒", desc: "Devolva uma carteira perdida (tecla B)", cat: "Exploração", r: "b", premio: 60 },
     { id: "fala", nome: "Bom ouvinte", ico: "💬", desc: "Escute o Mosquitão da rua", cat: "Exploração", r: "b", premio: 40 },
+    { id: "matematica", nome: "Nota dez", ico: "📝", desc: "Responda a pergunta do quadro de matemática (tecla Q)", cat: "Exploração", r: "b", premio: 50 },
+    { id: "mantis", nome: "Entomólogo", ico: "🦗", desc: "Reúna as 4 partes do louva-a-deus (Tusk no Ato 4)", cat: "Segredos", r: "o", premio: 600 },
     { id: "colecionador", nome: "Colecionador", ico: "🎨", desc: "Desbloqueie 5 skins", cat: "Segredos", r: "p", premio: 250 },
     { id: "todas", nome: "Guarda-roupa completo", ico: "👗", desc: "Desbloqueie todas as skins", cat: "Segredos", r: "o", premio: 1200 },
     { id: "dez", nome: "Caçador de conquistas", ico: "🥇", desc: "Conquiste 10 medalhas", cat: "Segredos", r: "p", premio: 200 },
@@ -92,6 +103,28 @@ const CFG = {
     ["Enfermaria", 71, 118, -100, -8], ["Cantina", -118, -10, 8, 100], ["Ginásio", -10, 45, 8, 100], ["Banheiro", 45, 71, 8, 100], ["Auditório", 71, 118, 8, 100]],
   UPS: { asas: { base: 12, nome: "Asas" }, tromba: { base: 15, nome: "Tromba" }, estomago: { base: 20, nome: "Estômago" }, corpo: { base: 18, nome: "Corpo" } },
 };
+// Atributos de cada skin (multiplicadores; def = redução de dano; gas = dano de gás/poças; cura = vida por picada)
+const ATRIB = {
+  pixel: { vel: 1.08 }, dengue: { sangue: 1.15, stam: 1.1 }, relojoeiro: { combo: 1.5 }, radioativo: { gas: 0.2, def: 0.1 }, jogador: { vel: 1.1, stam: 1.3 },
+  fantasma: { intang: true, gas: 0, vida: -30 }, vampiro: { sangue: 1.25, cura: 15, vida: -20 }, mosquito: { vida: 40, def: 0.15 }, carreta: { combo: 1.4, stam: 1.25 },
+  eletrizado: { vel: 1.12, def: 0.2 }, pintado: { sangue: 1.2, vel: 0.95 }, extintor: { gas: 0.4, def: 0.2 }, cadeado: { def: 0.35, vida: 30, vel: 0.92 },
+  tusk: CFG.TUSK[0].attr, mosquito8000: { vel: 1.3, stam: 1.5, colhe: 1.2 },
+};
+for (const id in ATRIB) CFG.SKINS[id].attr = ATRIB[id];
+const descAttr = (a = {}) => {   // texto dos atributos para o menu de skins
+  const p = (v) => (v >= 1 ? "+" : "") + Math.round((v - 1) * 100) + "%", o = [];
+  if (a.vel && a.vel !== 1) o.push(`⚡ ${p(a.vel)} velocidade`);
+  if (a.colhe && a.colhe !== 1) o.push(`🧲 ${p(a.colhe)} alcance de coleta`);
+  if (a.sangue && a.sangue !== 1) o.push(`🩸 ${p(a.sangue)} sangue`);
+  if (a.stam && a.stam !== 1) o.push(`🔋 ${p(a.stam)} stamina`);
+  if (a.combo && a.combo !== 1) o.push(`🔥 ${p(a.combo)} duração do combo`);
+  if (a.def) o.push(`🛡️ −${Math.round(a.def * 100)}% de dano recebido`);
+  if (a.vida) o.push(`❤️ ${a.vida > 0 ? "+" : ""}${a.vida} de vida`);
+  if (a.gas !== undefined && a.gas !== 1) o.push(a.gas === 0 ? "☣️ imune a gás e poças" : `☣️ −${Math.round((1 - a.gas) * 100)}% dano de gás e poças`);
+  if (a.cura) o.push(`💉 +${a.cura} de vida a cada picada`);
+  if (a.intang) o.push("👻 intangível: atravessa paredes e móveis, imune a tapas");
+  return o;
+};
 for (const id of Object.keys(CFG.SKINS)) CFG.CONQ.push({ id: "skin_" + id, nome: CFG.SKINS[id].nome, ico: "🥚", desc: "Desbloqueie a skin " + CFG.SKINS[id].nome, cat: "Segredos", r: "p", premio: 120, secreto: true });
 {   // uma conquista para cada estágio de evolução (raridade e prêmio crescem com o estágio)
   const ICO = ["🦟", "🦟", "🌙", "🦇", "🧪", "🌿", "🌃", "👑", "👁️", "✨", "🌑", "🌌", "👑"];
@@ -112,23 +145,28 @@ class GameState {
     this.sangue = 0;
     this.nv = { asas: 0, tromba: 0, estomago: 0, corpo: 0 };
     this.skins = []; this.skin = null; this.picadas = 0;
-    this.conq = []; this.salas = []; this.carteiras = 0;
+    this.conq = []; this.salas = []; this.carteiras = 0; this.mantis = [];
     try {
       const s = JSON.parse(localStorage.getItem(CFG.SAVE));
       if (s && s.nv) { this.sangue = +s.sangue || 0; for (const k in this.nv) this.nv[k] = +s.nv[k] || 0; }
-      if (s) { const mig = (k) => (k === "arcoiris" ? "pixel" : k); this.skins = Array.isArray(s.skins) ? s.skins.map(mig).filter((k) => CFG.SKINS[k]) : []; this.skin = CFG.SKINS[mig(s.skin)] ? mig(s.skin) : null; this.picadas = +s.picadas || 0; this.conq = Array.isArray(s.conq) ? s.conq.filter((id) => CFG.CONQ.some((c) => c.id === id)) : []; this.salas = Array.isArray(s.salas) ? s.salas : []; this.carteiras = +s.carteiras || 0; }
+      if (s) { const mig = (k) => (k === "arcoiris" ? "pixel" : k); this.skins = Array.isArray(s.skins) ? s.skins.map(mig).filter((k) => CFG.SKINS[k]) : []; this.skin = CFG.SKINS[mig(s.skin)] ? mig(s.skin) : null; this.picadas = +s.picadas || 0; this.conq = Array.isArray(s.conq) ? s.conq.filter((id) => CFG.CONQ.some((c) => c.id === id)) : []; this.salas = Array.isArray(s.salas) ? s.salas : []; this.carteiras = +s.carteiras || 0; this.mantis = Array.isArray(s.mantis) ? s.mantis.filter((i) => ["cabeca", "foices", "torax", "abdomen"].includes(i)) : []; }
     } catch (e) { /* sem save */ }
   }
-  salvar() { try { localStorage.setItem(CFG.SAVE, JSON.stringify({ sangue: this.sangue, nv: this.nv, skins: this.skins, skin: this.skin, picadas: this.picadas, conq: this.conq, salas: this.salas, carteiras: this.carteiras })); } catch (e) {} }
+  salvar() { try { localStorage.setItem(CFG.SAVE, JSON.stringify({ sangue: this.sangue, nv: this.nv, skins: this.skins, skin: this.skin, picadas: this.picadas, conq: this.conq, salas: this.salas, carteiras: this.carteiras, mantis: this.mantis })); } catch (e) {} }
   get total() { return this.nv.asas + this.nv.tromba + this.nv.estomago + this.nv.corpo; }
   get estagio() { let e = CFG.ESTAGIOS[0]; for (const x of CFG.ESTAGIOS) if (this.total >= x.min) e = x; return e; }
   custo(k) { return Math.floor(CFG.UPS[k].base * Math.pow(CFG.CRESCE, this.nv[k])); }
-  get velMax() { return 4 + this.nv.asas * 0.5; }
-  get raioColeta() { return 0.9 + this.nv.tromba * 0.15; }
-  get valorGota() { return 1 + this.nv.estomago * 2; }
-  get staminaMax() { return 100 + this.nv.corpo * 15; }
+  get attr() {   // atributos da skin equipada (o Tusk muda a cada Ato); guardado em cache
+    const k = this.skin + "|" + this.mantis.length; if (this._ak === k) return this._a;
+    const sk = this.skin && CFG.SKINS[this.skin], extra = sk && (sk.tusk ? CFG.TUSK[Math.max(0, this.mantis.length - 1)].attr : sk.attr);
+    this._ak = k; return (this._a = { vel: 1, colhe: 1, sangue: 1, stam: 1, combo: 1, def: 0, vida: 0, gas: 1, cura: 0, intang: false, ...(extra || {}) });
+  }
+  get velMax() { return (4 + this.nv.asas * 0.5) * this.attr.vel; }
+  get raioColeta() { return (0.9 + this.nv.tromba * 0.15) * this.attr.colhe; }
+  get valorGota() { return (1 + this.nv.estomago * 2) * this.attr.sangue; }
+  get staminaMax() { return (100 + this.nv.corpo * 15) * this.attr.stam; }
   get regenStamina() { return 25 + this.nv.corpo * 4; }
-  get vidaMax() { return 100 + this.nv.corpo * 12; }
+  get vidaMax() { return Math.max(40, 100 + this.nv.corpo * 12 + this.attr.vida); }
 }
 
 // ------------------------------------------------------------
@@ -261,7 +299,7 @@ class UIManager {
     const n = $("combo-n"), m = $("combo-multiplicador"), f = $("combo-barra-fill");
     if (n) n.textContent = combo;
     if (m) m.textContent = "x" + combo + (boost > 0 ? " · XP×2" : "");
-    if (f) f.style.width = Math.max(0, (t / CFG.COMBO_T) * 100) + "%";
+    if (f) f.style.width = Math.min(100, Math.max(0, (t / CFG.COMBO_T) * 100)) + "%";
   }
   alerta(txt, cor = "#ffd84d") { const ch = txt + cor; if (this._al === ch) return; this._al = ch; this.alertaEl.textContent = txt || ""; this.alertaEl.style.color = cor; this.alertaEl.style.opacity = txt ? 1 : 0; }
   flash(cor) { this.vinheta.style.boxShadow = `inset 0 0 160px 50px ${cor}`; this.flashV = 1; this._pc = null; }
@@ -297,15 +335,16 @@ class UIManager {
     });
     const chip = (txt, ativo, attr) => `<button ${attr} style="cursor:pointer;font:700 .76rem Figtree,sans-serif;border-radius:999px;padding:6px 13px;color:${ativo ? "#0e0c18" : "#c9d0de"};background:${ativo ? "#ffd84d" : "rgba(255,255,255,.07)"};border:1px solid rgba(255,255,255,.14)">${txt}</button>`;
     if (aba === "skins") {
-      const extras = (sk) => [sk.raios && "⚡ raios", sk.fumaca && "💨 fumaça", sk.espuma && "🫧 espuma", sk.rig && "🔊 som", sk.meia && "🎨 tinta", sk.goticulas && "💧 pingos"].filter(Boolean).join(" · ");
+      const extras = (sk) => [sk.raios && "⚡ raios", sk.fumaca && "💨 fumaça", sk.espuma && "🫧 espuma", sk.rig && "🔊 som", sk.meia && "🎨 tinta", sk.goticulas && "💧 pingos", sk.cadeado && "⛓️ correntes", sk.tusk && "🦗 stand evolutivo", sk.robo && "🤖 robô", sk.neblina && "🌫️ névoa"].filter(Boolean).join(" · ");
       const card = (id, sk, tem) => {
         const dono = (S.skin || null) === id, pode = !sk || tem, cor = sk ? hex(sk.brilho || sk.abd) : "#8a93a6";
         const amostra = sk ? `linear-gradient(135deg,${hex(sk.corpo)},${hex(sk.abd)})` : "linear-gradient(135deg,#1c1c22,#3b2025)";
-        const nota = !sk ? "visual original" : tem ? (extras(sk) || "visual alternativo") : "🔒 " + sk.dica;
+        const at = !sk ? [] : descAttr(id === "tusk" ? CFG.TUSK[Math.max(0, S.mantis.length - 1)].attr : sk.attr);
+        const nota = !sk ? "visual original, sem bônus" : tem ? (id === "tusk" ? `🦗 Ato ${Math.max(1, S.mantis.length)}/4 · ` : "") + (extras(sk) || "visual alternativo") : "🔒 " + sk.dica;
         return `<button data-skin="${id || ""}" ${pode ? "" : "disabled"} style="text-align:left;cursor:${pode ? "pointer" : "not-allowed"};background:rgba(255,255,255,${pode ? ".06" : ".02"});border:2px solid ${dono ? cor : "rgba(255,255,255,.1)"};border-radius:12px;padding:14px 16px;color:#eef2f8">`
           + `<span style="display:flex;align-items:center;gap:10px"><i style="width:26px;height:26px;border-radius:50%;background:${amostra};box-shadow:0 0 ${pode && sk ? 12 : 0}px ${cor};display:inline-block;filter:${pode ? "none" : "grayscale(1) brightness(.45)"}"></i>`
           + `<b style="font:800 .95rem Syne,sans-serif">${sk ? (tem ? sk.nome : "???") : "Padrão"}</b>${dono ? '<em style="margin-left:auto;font-style:normal;font-size:.7rem;color:#7dff9a">EM USO</em>' : ""}</span>`
-          + `<small style="display:block;margin-top:8px;font:600 .74rem/1.45 Figtree,sans-serif;color:#98a0af">${nota}</small></button>`;
+          + `<small style="display:block;margin-top:8px;font:600 .74rem/1.45 Figtree,sans-serif;color:#98a0af">${nota}</small>${tem && at.length ? `<small style="display:block;margin-top:6px;font:700 .7rem/1.55 Figtree,sans-serif;color:#9fe6b5">${at.join("<br>")}</small>` : ""}</button>`;
       };
       this.colConteudo.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px">' + card(null, null, true) + Object.keys(CFG.SKINS).map((id) => card(id, CFG.SKINS[id], S.skins.includes(id))).join("") + "</div>"
         + '<p style="margin:16px 0 0;font:600 .78rem Figtree,sans-serif;color:#7f8798">Encontre os easter eggs pela escola para liberar as skins escondidas. A tecla H dá uma dica do próximo.</p>';
@@ -337,6 +376,26 @@ class UIManager {
   }
   colecaoAberta() { return !!this.colBox && this.colBox.style.display === "flex"; }
   fecharColecao() { if (this.colBox) this.colBox.style.display = "none"; }
+
+  // ---- Pergunta do quadro de matemática: caixa com campo de texto ----
+  pergunta(titulo, enunciado, aoResponder, aoFechar) {
+    if (!this.perg) {
+      const e = document.createElement("div"); e.id = "hud-pergunta";
+      e.style.cssText = "position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(6,4,14,.85);z-index:21;font-family:Syne,Figtree,system-ui,sans-serif";
+      e.innerHTML = '<div style="width:min(460px,92vw);background:#123524;border:6px solid #8a5a2e;border-radius:12px;padding:24px;color:#f4f1e6;text-align:center"><b style="font:800 1rem Syne,sans-serif;color:#ffd84d"></b><div style="font:800 2.6rem Syne,sans-serif;margin:14px 0"></div><input autocomplete="off" style="width:60%;font:800 1.6rem Syne,sans-serif;text-align:center;border-radius:8px;border:2px solid #e8e0c8;background:#0c2418;color:#fff;padding:6px"><p style="min-height:1.4em;margin:12px 0 4px;font:700 .85rem Figtree,sans-serif"></p><small style="color:#a9c9b6">Enter responde · Esc fecha</small></div>';
+      document.body.appendChild(e); this.perg = e;
+    }
+    const c = this.perg.children[0].children, inp = c[2], fb = c[3];
+    c[0].textContent = titulo; c[1].textContent = enunciado; inp.value = ""; fb.textContent = ""; this.perg.style.display = "flex";
+    inp.onkeydown = (ev) => {
+      if (ev.key === "Escape") { aoFechar(); return; }
+      if (ev.key !== "Enter") return;
+      const r = aoResponder(inp.value); fb.textContent = r.msg; fb.style.color = r.fechar ? "#7dff9a" : "#ff9a9a";
+      if (r.fechar) setTimeout(aoFechar, 1400); else inp.select();
+    };
+    document.exitPointerLock?.(); setTimeout(() => inp.focus(), 30);
+  }
+  fecharPergunta() { if (this.perg) this.perg.style.display = "none"; }
 
   // ---- Caixa de diálogo grande (tour da escola) ----
   dialogo(titulo, texto, rodape, ms) {
@@ -565,6 +624,36 @@ mosquito.position.set(0, 2, 0);
 
 let escalaBase = 1.2, punch = 0;   // tamanho original do corpo
 
+// ---- Skins novas: Cadeado (corrente + cadeado), Tusk (chifre, lançadores, espinhos e órbita de unhas por Ato) e Mosquito 8000 (visor, antena, propulsores) ----
+const matOuroC = mat(0xd9a521, { metalness: 0.9, roughness: 0.3 }), matAcoC = mat(0x8a929e, { metalness: 0.9, roughness: 0.35 });
+const cadG = new THREE.Group(), cadC = new THREE.Group(); cadG.visible = cadC.visible = false; abdomen.add(cadG); corpoG.add(cadC);
+for (let i = 0; i < 3; i++) { const e = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.022, 6, 12), matAcoC); e.position.set(0, -0.1 - i * 0.1, 1.5); e.rotation.y = i % 2 ? 0 : Math.PI / 2; cadG.add(e); }
+{ const cc = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.26, 0.12), matOuroC); cc.position.set(0, -0.5, 1.5); cadG.add(cc);
+  const ar = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.03, 8, 14, Math.PI), matAcoC); ar.position.set(0, -0.37, 1.5); cadG.add(ar); }
+for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2, e = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.02, 6, 10), matAcoC); e.position.set(Math.cos(a) * 0.23, Math.sin(a) * 0.21, -0.02); e.rotation.set(i % 2 ? Math.PI / 2 : 0, 0, a); cadC.add(e); }   // corrente enrolada no tórax
+const tuskG = new THREE.Group(); tuskG.visible = false; corpoG.add(tuskG);
+const matMarfim = mat(0xf7f0dc, { roughness: 0.35 }), matUnha = mat(0xffe29a, { roughness: 0.2, emissive: 0xffc233, emissiveIntensity: 0.8 });
+const chifre = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.4, 10), matMarfim); chifre.rotation.x = -Math.PI / 2; chifre.position.set(0, 0.08, -0.57); tuskG.add(chifre);
+const tuskLanc = new THREE.Group(), tuskEsp = new THREE.Group(), orbG = new THREE.Group(); tuskLanc.visible = tuskEsp.visible = orbG.visible = false; tuskG.add(tuskLanc, tuskEsp); mosquito.add(orbG);
+for (const l of [1, -1]) { const lc = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.055, 0.3, 8), matUnha); lc.rotation.x = Math.PI / 2; lc.position.set(l * 0.2, -0.02, -0.12); tuskLanc.add(lc); }
+for (let i = 0; i < 3; i++) tuskEsp.add(cone(0.045, 0.22, matMarfim, 0, 0.27, -0.12 + i * 0.14));
+for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2, n = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.24, 8), matUnha); n.position.set(Math.cos(a) * 0.95, 0.1 * Math.sin(i * 2), Math.sin(a) * 0.95); n.rotation.set(Math.PI / 2, 0, -a); orbG.add(n); }
+const aneis = []; for (const rx of [0.4, -0.4]) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.012, 6, 48), mat(0xffd24a, { emissive: 0xffc233, emissiveIntensity: 1 })); r.rotation.x = Math.PI / 2 + rx; orbG.add(r); aneis.push(r); }   // "rotação infinita"
+const roboG = new THREE.Group(); roboG.visible = false; corpoG.add(roboG);
+const matVisor = new THREE.MeshBasicMaterial({ color: 0x00e5ff }), matAco2 = mat(0x6c7890, { metalness: 0.85, roughness: 0.3 });
+{ const v = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.12), matVisor); v.position.set(0, 0.04, -0.34); roboG.add(v);
+  const an = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.22, 6), matAco2); an.position.set(0.07, 0.2, -0.24); roboG.add(an);
+  for (const l of [1, -1]) { const pl = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.2, 0.38), matAco2); pl.position.set(l * 0.18, 0.06, 0.05); roboG.add(pl); } }
+const antenaLed = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff3366 })); antenaLed.position.set(0.07, 0.32, -0.24); roboG.add(antenaLed);
+const jatos = []; for (const l of [1, -1]) { const j = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.3, 8), new THREE.MeshBasicMaterial({ color: 0xff8a2a })); j.rotation.x = Math.PI / 2; j.position.set(l * 0.13, -0.1, 0.62); roboG.add(j); jatos.push(j); }
+const texRobo = (base, texto) => {   // placas metálicas com circuito ciano (e "8000" no abdômen)
+  const c = document.createElement("canvas"); c.width = 128; c.height = 64; const g = c.getContext("2d");
+  g.fillStyle = hexCss(base); g.fillRect(0, 0, 128, 64); g.strokeStyle = "rgba(20,30,50,.55)"; g.lineWidth = 1;
+  for (let x = 0; x <= 128; x += 16) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 64); g.stroke(); } for (let y = 0; y <= 64; y += 16) { g.beginPath(); g.moveTo(0, y); g.lineTo(128, y); g.stroke(); }
+  g.strokeStyle = "#00e5ff"; g.lineWidth = 2; g.beginPath(); g.moveTo(0, 46); g.lineTo(30, 46); g.lineTo(40, 36); g.lineTo(88, 36); g.lineTo(98, 46); g.lineTo(128, 46); g.stroke();
+  if (texto) { g.fillStyle = "#00e5ff"; g.font = "bold 20px monospace"; g.textAlign = "center"; g.fillText(texto, 64, 24); }
+  return new THREE.CanvasTexture(c);
+};
 const medir = (cs, comp, c, ab) => Math.max(0.1 * cs + 1.1 * comp, 0.33 * cs + 0.75 * c, 0.3 * cs + 1.1 * ab, 0.85 * cs);
 const RAIO_BASE = medir(1, 1, 1, 1);
 let zoom = 1;   // tamanho atual relativo ao inicial (a câmera usa isto)
@@ -608,10 +697,10 @@ function aplicarEvolucaoVisual() {
   luzCorpo.color.setHex(est.cor); luzCorpo.intensity = Math.min(n * 0.12, 1.6) + Math.max(0, idx - 9) * 0.4;
 
   // SKIN (easter egg): sobrescreve cores e materiais, sem mudar tamanhos
-  matCorpo.transparent = matAbd.transparent = false; matCorpo.opacity = matAbd.opacity = 1;
+  matCorpo.transparent = matAbd.transparent = matPerna.transparent = false; matCorpo.opacity = matAbd.opacity = matPerna.opacity = 1;
   matCorpo.metalness = 0; matCorpo.roughness = 0.5; matPerna.color.setHex(0x0b0b0e);
   if (!S.skin) matCorpo.color.setHex(0x1c1c22);
-  const sk = S.skin && CFG.SKINS[S.skin];
+  const sk0 = S.skin && CFG.SKINS[S.skin], sk = sk0 && sk0.tusk ? { ...sk0, ...CFG.TUSK[Math.max(0, S.mantis.length - 1)].visual } : sk0;   // Tusk: visual muda a cada Ato
   if (sk) {
     matCorpo.color.setHex(sk.corpo); matAbd.color.setHex(sk.abd); matPerna.color.setHex(sk.perna ?? sk.corpo);
     matCorpo.emissive.setHex(sk.brilho); matCorpo.emissiveIntensity = sk.ei;
@@ -620,7 +709,7 @@ function aplicarEvolucaoVisual() {
     luzCorpo.color.setHex(sk.brilho); luzCorpo.intensity = Math.max(luzCorpo.intensity, 0.6);
     if (sk.asa) matAsa.color.setHex(sk.asa);
     if (sk.metal) { matCorpo.metalness = 0.7; matCorpo.roughness = 0.25; }
-    if (sk.alfa) { matCorpo.transparent = matAbd.transparent = true; matCorpo.opacity = matAbd.opacity = sk.alfa; }
+    if (sk.alfa) { matCorpo.transparent = matAbd.transparent = matPerna.transparent = true; matCorpo.opacity = matAbd.opacity = matPerna.opacity = sk.alfa; }
   }
   // PIXELADA: textura 8x8 sem filtro + sombreamento facetado (visual de jogo 8-bit)
   const px = !!(sk && sk.pixel);
@@ -638,6 +727,11 @@ function aplicarEvolucaoVisual() {
   if (sk && sk.meia) { const kc = sk.corpo + "-" + sk.meia; matCorpo.map = cacheTex[kc] = cacheTex[kc] || texMeia(sk.corpo, sk.meia); matAbd.map = cacheTex[kc + "a"] = cacheTex[kc + "a"] || texMeia(sk.abd, sk.meia); matCorpo.color.setHex(0xffffff); matAbd.color.setHex(0xffffff); }
   if (sk && sk.faixas) { matAbd.map = cacheTex.faixas = cacheTex.faixas || texFaixas(); matAbd.color.setHex(0xffffff); }
   rigG.visible = !!(sk && sk.rig); raiosG.visible = !!(sk && sk.raios);
+  cadG.visible = cadC.visible = !!(sk && sk.cadeado);
+  { const ato = sk && sk.tusk ? Math.max(1, S.mantis.length) : 0;   // Tusk: Ato 1 chifre · 2 lançadores · 3 espinhos · 4 órbita dourada de unhas
+    tuskG.visible = ato >= 1; chifre.scale.set(1, [1, 1.35, 1.6, 1.9][Math.max(0, ato - 1)], 1); tuskLanc.visible = ato >= 2; tuskEsp.visible = ato >= 3; orbG.visible = ato >= 4; }
+  roboG.visible = !!(sk && sk.robo);
+  if (sk && sk.robo) { matCorpo.map = cacheTex.roboC = cacheTex.roboC || texRobo(sk.corpo, ""); matAbd.map = cacheTex.roboA = cacheTex.roboA || texRobo(sk.abd, "8000"); matCorpo.color.setHex(0xffffff); matAbd.color.setHex(0xffffff); matCorpo.roughness = 0.3; }
   matCorpo.needsUpdate = matAbd.needsUpdate = true;
 
   zoom = medir(cs, comp, c, abz) / RAIO_BASE;
@@ -669,6 +763,9 @@ let rayT = 0, beatV = 0, tPrev = 0;
 function tickSkin(t) {
   const dt = Math.min(0.05, Math.max(0, t - tPrev)); tPrev = t;
   const sk = S.skin && CFG.SKINS[S.skin];
+  if (sk && sk.alfa) { const o = sk.alfa + 0.1 * Math.sin(t * 3); matCorpo.opacity = matAbd.opacity = matPerna.opacity = o; }   // fantasma oscila
+  if (sk && sk.tusk && orbG.visible) { orbG.rotation.y += dt * 3.2; aneis[0].rotation.z += dt * 2; aneis[1].rotation.z -= dt * 2.6; }
+  if (sk && sk.robo) { const f = 0.8 + Math.random() * 0.6; for (const j of jatos) j.scale.set(1, f, 1); antenaLed.visible = Math.sin(t * 7) > 0; }
   if (S.skin === "pixel") { const k = Math.floor(t * 4) % 2; matOlho.emissiveIntensity = k ? 1.8 : 0.9; return; }
   if (sk && sk.raios) { rayT -= dt; if (rayT <= 0) { rayT = 0.07; refazRaios(); } luzCorpo.intensity = 0.6 + Math.random() * 1.8; }
   if (sk && sk.rig) {   // batida do som: alto-falantes pulsam, LED muda de cor, sirenes alternam
@@ -705,7 +802,7 @@ class WorldManager {
     this.raycaster = new THREE.Raycaster();
     this.dirs = [V(1, 0, 0), V(-1, 0, 0), V(0, 1, 0), V(0, -1, 0), V(0, 0, 1), V(0, 0, -1)];
     this.emPerigo = null; this.avisoGas = false;
-    this.construirCenario(); this.criarGotas(); this.criarParticulas(); this.criarPerigos(); this.criarHumanos(); this.criarCarteira();
+    this.construirCenario(); this.criarGotas(); this.criarParticulas(); this.criarPerigos(); this.criarHumanos(); this.criarCarteira(); this.criarPingos();
   }
 
   // Registra malha estática: matriz congelada + AABB pré-calculada
@@ -815,11 +912,26 @@ class WorldManager {
     // Corredor: armários (pulando as portas), janelas nas pontas e lâmpadas
     for (let x = -MX + 5; x <= MX - 5; x += 5) {
       const livre = (portas) => portas.every((p) => Math.abs(x - p) >= 8.5);
-      if (livre(PN)) caixa(3.4, 7, 1.1, m.l1, x, F + 3.5, -6.85);
+      if (livre(PN) && x !== -23) caixa(3.4, 7, 1.1, m.l1, x, F + 3.5, -6.85);   // x = -23: armário trancado (easter egg)
       if (livre(PS)) caixa(3.4, 7, 1.1, m.l2, x, F + 3.5, 6.85);
     }
     janela(-MX + 0.05, 0, Math.PI / 2); janela(MX - 0.05, 0, -Math.PI / 2);
     for (let x = -110; x <= 110; x += 20) dbox(14, 0.3, 1.6, B(0xeaf6ff), x, YMAX - 0.15, 0);
+
+    // ARMÁRIO TRANCADO (easter egg Mosquito Cadeado): arrombe segurando F; a posição fica em this.armario
+    { const X = -23, Z = -6.85, ouro = M(0xd9a521, 0.3, { metalness: 0.9 }), aco = M(0x8a929e, 0.35, { metalness: 0.9 });
+      caixa(3.4, 7, 1.1, M(0x4a2222, 0.55), X, F + 3.5, Z);
+      const pivo = new THREE.Group(); pivo.position.set(X - 1.65, F + 3.5, Z + 0.6); this.cena.add(pivo);   // dobradiça na borda esquerda
+      const porta = new THREE.Mesh(new THREE.BoxGeometry(3.3, 6.8, 0.14), M(0x7a3030, 0.45, { emissive: 0x3a0808, emissiveIntensity: 0.6 })); porta.position.x = 1.65; pivo.add(porta);
+      for (const dy of [-1.6, -0.8, 0, 0.8, 1.6]) { const v = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.12, 0.05), M(0x2a1010, 0.7)); v.position.set(1.65, dy + 1.2, 0.08); pivo.add(v); }
+      this.deco(new THREE.Mesh(new THREE.PlaneGeometry(3.1, 6.6), B(0x6b5a1a)), X, F + 3.5, Z + 0.58);   // interior dourado, visto quando a porta abre
+      const cad = new THREE.Group(); cad.position.set(X + 0.2, F + 3.4, Z + 0.78); this.cena.add(cad);
+      cad.add(new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.55, 0.28), ouro));
+      const arco = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.06, 8, 16, Math.PI), aco); arco.position.y = 0.27; cad.add(arco);
+      const led = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff2222 })); led.position.set(0, 0, 0.15); cad.add(led);
+      for (let i = 0; i < 4; i++) { const e = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.05, 6, 12), aco); e.position.set(i < 2 ? -0.5 - i * 0.4 : 0.5 + (i - 2) * 0.4, 0, 0.02); e.rotation.y = i % 2 ? 0 : Math.PI / 2; cad.add(e); }   // corrente
+      this.armario = { pivo, cad, led, pos: V(X, F + 3.4, Z + 1.3), prog: 0, aberto: false, vy: 0 };
+    }
 
 
     // ARTES (x -118..-70): mesas de pintura, cavaletes com telas e a POÇA DE TINTA VERMELHA (easter egg)
@@ -857,6 +969,7 @@ class WorldManager {
       caixa(11, 0.55, 4.2, m.mad, cx, F + 3.2, -90); for (const l of [-1, 1]) caixa(0.4, 2.9, 3.7, m.mad, cx + l * 4.7, F + 1.45, -90);
       for (const dx of [-10, 0, 10]) for (const z of [-78, -66, -54, -42, -30]) carteira(cx + dx, z);
     };
+    this.pontos.quadroMat = V(-49, F + 8, -MZ + 1);   // quadro interativo: aperte Q perto dele
     sala(-49, quadro("Matemática", "2 + 2 = ?")); sala(-7, quadro("Aula de Biologia", "Hoje: o ciclo do mosquito 🦟"));
     caixa(2.2, 7.5, 12, m.mad, -67.2, F + 3.75, -60);   // armário de materiais da Sala 1
     { const vidro = M(0x9ce5e8, 0.15, { transparent: true, opacity: 0.32, side: THREE.DoubleSide });   // Biologia: terrários (leste), aquários e microscópios (oeste)
@@ -1070,7 +1183,7 @@ class WorldManager {
 
     // MOSQUITÃO DA RUA: estátua-gigante de enfeite no fundo do auditório (easter egg)
     { const M2 = M(0x4a5a3a, 0.85), mm = new THREE.Group(); mm.position.set(111, F + 2.8, 93);
-      this.cena.add(mm); caixa(5, 0.8, 5, m.mad, 111, F + 2.4, 93);
+      this.cena.add(mm); caixa(3, 0.8, 3, m.mad, 111, F + 2.4, 93);
       // "Cápsula" feita à mão: o Three.js r128 não tem CapsuleGeometry
       const pernaEst = (raiz, mt, x, y, z, rx, ry, rz, raio, comp) => {
         const g2 = new THREE.Group(); g2.position.set(x, y, z); g2.rotation.set(rx, ry, rz); raiz.add(g2);
@@ -1088,8 +1201,8 @@ class WorldManager {
         parte(new THREE.CylinderGeometry(0.05, 0.02, 8, 6), M2, l * 0.5, 9, -4.2, 1.4, 0, l * 0.25); }
       const trompa = parte(new THREE.CylinderGeometry(0.22, 0.05, 7, 8), M2, 0, 4.2, -8.4, Math.PI / 2.1);
       // Estátua de enfeite no canto do auditório (~3 unidades de altura).
-      mm.scale.setScalar(0.3);
-      this.mosquito = { g: mm, olhos: [1, -1].map((l) => mm.children.find((c) => c.geometry && c.geometry.type === "SphereGeometry" && c.position.z < -4)), trompa, centro: V(111, F + 2.8 + 1.8, 92.2) };
+      mm.scale.setScalar(0.14);
+      this.mosquito = { g: mm, olhos: [1, -1].map((l) => mm.children.find((c) => c.geometry && c.geometry.type === "SphereGeometry" && c.position.z < -4)), trompa, centro: V(111, F + 2.8 + 1.0, 93) };
     }
     // Lâmpadas do teto nas salas
     for (const [x, z] of [[-94, -54], [-49, -54], [-7, -54], [28, -54], [56, -54], [94, -54], [17, 54], [58, 54], [94, 50], [94, 15]]) dbox(14, 0.3, 1.6, B(0xeaf6ff), x, YMAX - 0.15, z);
@@ -1124,6 +1237,22 @@ class WorldManager {
     };
     bebedouro(-100.5, -6.7, 1); bebedouro(-13, -6.7, 1); bebedouro(11, 6.7, -1); bebedouro(100.5, -6.7, 1);
     for (const [x, z] of [[-87.6, -6.9], [-42.6, -6.9], [34.4, -6.9], [62.4, -6.9], [-33.6, 6.9], [23.4, 6.9], [63.4, 6.9], [100.4, 6.9]]) extintor(x, z);
+
+    // PARTES DO LOUVA-A-DEUS (easter egg Tusk): 4 peças verdes brilhantes escondidas; cada uma evolui o Tusk em um Ato
+    this.pontos.mantis = [];
+    { const verde = M(0x6bd93a, 0.35, { emissive: 0x2a8a10, emissiveIntensity: 0.9 }), verde2 = M(0x3a9a1a, 0.4, { emissive: 0x18600a, emissiveIntensity: 0.7 }), asaV = M(0xcff5a8, 0.2, { transparent: true, opacity: 0.55, side: THREE.DoubleSide });
+      const esf = (r, sx, sy, sz, mt, x, y, z) => { const o = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 10), mt); o.scale.set(sx, sy, sz); o.position.set(x, y, z); return o; };
+      const hast = (r, h, mt, x, y, z, rx = 0, rz = 0) => { const o = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 6), mt); o.position.set(x, y, z); o.rotation.set(rx, 0, rz); return o; };
+      const cria = (id, x, y, z, monta) => {
+        const g = new THREE.Group(), forma = new THREE.Group(); monta(forma);
+        g.add(forma, new THREE.Mesh(new THREE.SphereGeometry(1.5, 12, 10), new THREE.MeshBasicMaterial({ color: 0x66ff33, transparent: true, opacity: 0.13, depthWrite: false })));
+        g.position.set(x, y, z); this.cena.add(g); this.pontos.mantis.push({ id, g, forma, base: y, pos: g.position });
+      };
+      cria("cabeca", 38, F + 10.7, -70, (f) => { f.add(esf(0.45, 1.3, 0.9, 0.8, verde, 0, 0, 0)); for (const l of [1, -1]) { f.add(esf(0.2, 1, 1.2, 1, verde2, l * 0.5, 0.12, 0.15)); f.add(hast(0.02, 0.8, verde2, l * 0.2, 0.55, 0, 0, -l * 0.3)); } });
+      cria("foices", 65, F + 5.2, -92, (f) => { for (const l of [1, -1]) { const t = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.07, 6, 14, Math.PI * 0.9), verde); t.position.x = l * 0.5; t.rotation.z = l > 0 ? 0.3 : Math.PI - 0.3; f.add(t); for (let i = 0; i < 4; i++) f.add(esf(0.06, 1, 1.6, 1, verde2, l * (0.5 + 0.3 * i * 0.3), 0.2 + i * 0.12, 0)); } });
+      cria("torax", 17, F + 12.5, 78, (f) => { f.add(hast(0.22, 1.7, verde, 0, 0, 0, Math.PI / 2, 0)); for (const l of [1, -1]) { const a = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.55), asaV); a.position.set(l * 0.7, 0.2, 0.3); a.rotation.set(-Math.PI / 2 + 0.3, 0, l * 0.3); f.add(a); } });
+      cria("abdomen", 65, F + 2.5, 86, (f) => { f.add(esf(0.4, 1, 0.9, 2.1, verde, 0, 0, 0)); for (const l of [1, -1]) for (const z of [-0.4, 0.4]) f.add(hast(0.03, 0.9, verde2, l * 0.4, -0.25, z, 0, l * 0.9)); });
+    }
   }
 
   livre(p, margem) { for (const c of this.col) if (c.box.distanceToPoint(p) < margem) return false; return true; }
@@ -1210,6 +1339,36 @@ class WorldManager {
         vel: 1.6 + Math.random() * 0.6, pronto: 0, raiva: 0, tapa: 0, alvo: V(x1, F + 5.65 + yo, z1), yo };
     });
   }
+
+  // ---- Pingos de tinta (skin Meio pintado): caem do mosquito e deixam manchas permanentes no chão ----
+  criarPingos() {
+    const geo = new THREE.SphereGeometry(0.07, 8, 6), mt = new THREE.MeshStandardMaterial({ color: 0xc00818, roughness: 0.2, emissive: 0x300004, emissiveIntensity: 0.5 });
+    this.pingos = Array.from({ length: 40 }, () => { const m = new THREE.Mesh(geo, mt); m.scale.set(1, 1.6, 1); m.visible = false; this.cena.add(m); return { m, vx: 0, vy: 0, vz: 0, on: false }; });
+    const gm = new THREE.CircleGeometry(1, 14), mm = new THREE.MeshBasicMaterial({ color: 0xa00614, transparent: true, opacity: 0.92, depthWrite: false });
+    this.manchas = Array.from({ length: 220 }, () => { const m = new THREE.Mesh(gm, mm); m.rotation.x = -Math.PI / 2; m.visible = false; this.cena.add(m); return m; }); this.manchaI = 0;
+  }
+  pingar(pos, vel) {
+    const p = this.pingos.find((q) => !q.on); if (!p) return;
+    p.on = true; p.m.visible = true; p.m.position.set(pos.x + (Math.random() - 0.5) * 0.5, pos.y - 0.1, pos.z + (Math.random() - 0.5) * 0.5);
+    p.vx = vel.x * 0.3 + (Math.random() - 0.5) * 0.6; p.vy = -0.3; p.vz = vel.z * 0.3 + (Math.random() - 0.5) * 0.6;
+  }
+  atualizarPingos(dt) {
+    const chao = CFG.YMIN + 0.1;
+    for (const p of this.pingos) {
+      if (!p.on) continue;
+      p.vy -= 20 * dt; p.m.position.x += p.vx * dt; p.m.position.y += p.vy * dt; p.m.position.z += p.vz * dt;
+      if (p.m.position.y <= chao) {   // bateu no chão: vira uma mancha que fica
+        p.on = false; p.m.visible = false;
+        const s = this.manchas[this.manchaI++ % this.manchas.length], r = 0.18 + Math.random() * 0.4;
+        s.position.set(p.m.position.x, chao + (this.manchaI % 7) * 0.001, p.m.position.z); s.scale.set(r, r * (0.6 + Math.random() * 0.8), 1); s.rotation.z = Math.random() * 6.28; s.visible = true;
+        if (Math.random() < 0.5) this.emitir(p.m.position, 0xc00818, 2, 1.2);
+      }
+    }
+  }
+  iniciarPontos(S) {   // estado salvo: armário já arrombado fica aberto
+    const A = this.armario; if (A && S.skins.includes("cadeado")) { A.aberto = true; A.cad.visible = false; A.pivo.rotation.y = -1.75; A.led.visible = false; }
+  }
+  limitar(p) { p.x = clamp(p.x, -CFG.MX + 1, CFG.MX - 1); p.z = clamp(p.z, -CFG.MZ + 1, CFG.MZ - 1); p.y = clamp(p.y, CFG.YMIN + 0.3, CFG.YMAX - 0.3); }   // fantasma: só os limites do prédio
 
   // ---- Carteira perdida no corredor (B perto dela devolve e rende sangue; até 3 vezes) ----
   criarCarteira() {
@@ -1345,6 +1504,15 @@ class WorldManager {
     if (this.pontos.tomada) { if (Math.random() < dt * 4) this.emitir(this.pontos.tomada, 0x9fe0ff, 5, 3); if (this.luzTomada) this.luzTomada.intensity = Math.random() < 0.3 ? 2.2 : 0.4; }   // faíscas na tomada
     if (this.moldTelao) { this.moldTelao.opacity = 0.55 + 0.4 * Math.sin(jogo.t * (3 + this.telaoProg * 12)); this.moldTelao.color.setHex(this.telaoProg > 0 ? 0x66ff99 : 0xff44cc); }
     if (this.carteira && this.carteira.visivel) this.carteira.halo.scale.setScalar(1 + Math.sin(jogo.t * 4) * 0.15);
+    this.atualizarPingos(dt);
+    for (const m of this.pontos.mantis) { const tem = jogo.estado.mantis.includes(m.id); m.g.visible = !tem; if (!tem) { m.forma.rotation.y += dt * 1.5; m.g.position.y = m.base + Math.sin(jogo.t * 2 + m.pos.x) * 0.15; } }
+    const A = this.armario;   // armário trancado: treme enquanto é arrombado, abre e o cadeado cai
+    if (A) {
+      const alvo = A.aberto ? -1.75 : A.prog > 0 ? (Math.random() - 0.5) * 0.05 * A.prog : 0;
+      A.pivo.rotation.y += (alvo - A.pivo.rotation.y) * (A.aberto ? amort(6, dt) : 0.6);
+      if (A.aberto) { if (A.cad.visible) { A.vy += 14 * dt; A.cad.position.y -= A.vy * dt; A.cad.rotation.z += dt * 3; if (A.cad.position.y < CFG.YMIN + 0.4) A.cad.visible = false; } }
+      else { A.cad.rotation.z = Math.sin(jogo.t * 40) * 0.25 * A.prog; A.led.visible = Math.sin(jogo.t * 6) > 0; }
+    }
 
     // Gotas: anima só as próximas (<40u); coleta por distância ao quadrado
     const r2 = S.raioColeta * S.raioColeta;
@@ -1382,7 +1550,7 @@ class WorldManager {
         const fade = Math.min(1, u.t / 0.8);
         n.scale.setScalar(u.raio * (0.9 + 0.1 * fade)); u.miolo.material.opacity = 0.22 * fade + 0.04 * Math.sin(jogo.t * 5);
         if (p.distanceToSquared(n.position) < (u.raio * 0.95) ** 2) {
-          this.emPerigo = "gas"; if (!u.tocou) { u.tocou = true; jogo.kills.gas++; } jogo.dano(16 * dt, true); jogo.jogador.stamina = Math.max(0, jogo.jogador.stamina - 30 * dt);
+          this.emPerigo = "gas"; if (!u.tocou) { u.tocou = true; jogo.kills.gas++; } jogo.dano(16 * dt * jogo.estado.attr.gas, true); jogo.jogador.stamina = Math.max(0, jogo.jogador.stamina - 30 * dt);
         }
         if (u.t <= 0) { u.fase = "off"; n.visible = false; this.gasAtivos[i] = this.gasAtivos[this.gasAtivos.length - 1]; this.gasAtivos.pop(); this.nuvens.soltar(n); }
       }
@@ -1394,7 +1562,7 @@ class WorldManager {
       const dx = p.x - z.x, dz = p.z - z.z;
       if (dx * dx + dz * dz < z.r * z.r && p.y < CFG.YMIN + 2.4) {
         if (!this.emPerigo) this.emPerigo = "poca";
-        jogo.jogador.stamina = Math.max(0, jogo.jogador.stamina - 28 * dt); jogo.dano(5 * dt, true);
+        jogo.jogador.stamina = Math.max(0, jogo.jogador.stamina - 28 * dt); jogo.dano(5 * dt * jogo.estado.attr.gas, true);
       }
     }
   }
@@ -1440,7 +1608,8 @@ class PlayerController {
 
     // Integração em sub-passos: não atravessa paredes em alta velocidade
     const passos = Math.max(1, Math.ceil(this.vel.length() * dt / 0.12)), h = dt / passos;
-    for (let i = 0; i < passos; i++) { this.pos.addScaledVector(this.vel, h); this.mundo.resolver(this.pos, 0.18 * clamp(this.modelo.zoom, 1, 2.5)); }
+    const fantasma = S.attr.intang;   // intangível: sem colisão, só os limites do prédio
+    for (let i = 0; i < passos; i++) { this.pos.addScaledVector(this.vel, h); if (fantasma) this.mundo.limitar(this.pos); else this.mundo.resolver(this.pos, 0.18 * clamp(this.modelo.zoom, 1, 2.5)); }
 
     // Vida / invulnerabilidade
     this.invul = Math.max(0, this.invul - dt); this.shake = Math.max(0, this.shake - dt * 3);
@@ -1481,7 +1650,7 @@ class PlayerController {
     const len = desejo.length(), dn = this.tmp2.copy(desejo).normalize();
     desejo.add(this.foco);
     const ms = this.mundo.malhasPerto(this.foco, len + 1);
-    if (ms.length) {
+    if (ms.length && !this.estado.attr.intang) {
       this.rc.set(this.foco, dn); this.rc.far = len;
       const h = this.rc.intersectObjects(ms, false);
       if (h.length) desejo.copy(this.foco).addScaledVector(dn, Math.max(0.8 * z, h[0].distance - 0.3 * z));
@@ -1515,7 +1684,7 @@ class GameManager {
     this.egg = { tanque: 0, espelho: 0, tela: 0, yAnt: 0, dica: 0, tour: false, fala: false, morte: 0, vida: 0 };
     this.menuAberto = false; this.aba = "skins"; this.eggMsg = ""; this.kills = { tapasRecebidos: 0, gas: 0 }; this.tmpEgg = V(0, 0, 0); this.buf = ""; this.letras = "";
     this.ligar();
-    this.ui.atalhos(() => this.abrirColecao("skins"), () => this.abrirColecao("conq")); this.mundo.posicionarCarteira(this.estado);
+    this.ui.atalhos(() => this.abrirColecao("skins"), () => this.abrirColecao("conq")); this.mundo.posicionarCarteira(this.estado); this.mundo.iniciarPontos(this.estado);
     this.jogador.modelo.aplicar(); this.jogador.zoomV = this.jogador.modelo.zoom; this.ui.hud(this.estado); this.ui.saveInfo(this.estado);
     this.laco();
   }
@@ -1523,6 +1692,7 @@ class GameManager {
   ligar() {
     const cv = this.render.domElement, T = this.teclas;
     addEventListener("keydown", (e) => {
+      if (e.target && e.target.tagName === "INPUT") return;   // digitando no quadro de matemática
       const k = e.key.toLowerCase(); T[k] = true;
       if ([" ", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k) && !this.menuAberto) e.preventDefault();
       if (e.repeat) return;
@@ -1538,6 +1708,7 @@ class GameManager {
       if (this.letras.endsWith("dengue")) this.desbloquear("dengue");
       if (k === "e") this.picar();
       if (k === "h") this.dica();
+      if (k === "q") this.abrirPergunta();
       if (k === "=" && this.jogando) this.tour();
       if (k === "b" && this.jogando && !this.buf.endsWith("|arrowright|b")) this.pegarCarteira();
       if (k === "m") this.ui.toast(this.audio.alternarMudo() ? "Som desligado" : "Som ligado");
@@ -1575,11 +1746,11 @@ class GameManager {
       this.audio.veneno(); this.ui.flash("rgba(120,255,80,.8)"); this.ui.toast(`☠ Gota venenosa! −${perda} sangue`); j.shake = 1;
       if (j.tomarDano(18)) this.morrer();
     } else {
-      this.combo = this.comboT > 0 ? Math.min(this.combo + 1, 5) : 1; this.comboT = CFG.COMBO_T;
+      this.combo = this.comboT > 0 ? Math.min(this.combo + 1, 5) : 1; this.comboT = CFG.COMBO_T * this.estado.attr.combo;
       const dour = u.tipo === "dourada";
       if (dour) { this.boost = 10; this.ganhar("dourada"); }
       if (this.combo >= 5) this.ganhar("combo5");
-      const ganho = S.valorGota * (dour ? 5 : 1) * this.combo * (this.boost > 0 ? 2 : 1);
+      const ganho = Math.max(1, Math.round(S.valorGota * (dour ? 5 : 1) * this.combo * (this.boost > 0 ? 2 : 1)));
       S.sangue += ganho;
       this.mundo.emitir(g.position, this.mundo.cores[u.tipo], dour ? 20 : 12);
       this.audio.slurp(dour); this.ui.toast(dour ? `✨ +${ganho} · XP×2 por 10s` : `+${ganho} sangue`);
@@ -1591,15 +1762,17 @@ class GameManager {
   picar() {
     const h = this.mundo.humanoPerto; if (!this.jogando || this.menuAberto || !h) return;
     const S = this.estado;
-    this.combo = this.comboT > 0 ? Math.min(this.combo + 1, 5) : 1; this.comboT = CFG.COMBO_T;
+    this.combo = this.comboT > 0 ? Math.min(this.combo + 1, 5) : 1; this.comboT = CFG.COMBO_T * this.estado.attr.combo;
     const ganho = Math.round((25 + S.valorGota * 6) * this.combo * (this.boost > 0 ? 2 : 1));
     S.sangue += ganho; S.picadas++;
+    if (S.attr.cura) this.jogador.vida = Math.min(S.vidaMax, this.jogador.vida + S.attr.cura);   // skins vampíricas curam ao picar
     h.pronto = 18; h.raiva = 4; h.tapa = 0.6;   // 0,6 s de vantagem pra fugir
     this.mundo.emitir(h.alvo, 0xff1744, 26, 4); this.audio.picada(); this.ui.flash("rgba(255,23,68,.35)");
     this.ui.toast(`🩸 Picou ${h.nome}! +${ganho} sangue — fuja do tapa!`); this.ui.hud(S); this.salvarT = 3;
     if (S.picadas >= 10) this.desbloquear("vampiro");
   }
   tapa(h) {
+    if (this.estado.attr.intang) { this.ui.toast("👻 O tapa atravessou você!"); return; }   // fantasma é intangível
     const j = this.jogador;
     j.vel.add(this.tmpEgg.copy(j.pos).sub(h.alvo).setY(0.3).normalize().multiplyScalar(14)); j.shake = 1;
     this.combo = 0; this.comboT = 0; this.kills.tapasRecebidos++; this.audio.tapa(); this.ui.toast(`👋 ${h.nome} te deu um tapa!`);
@@ -1616,19 +1789,20 @@ class GameManager {
     this.ui.abrirColecao(this.estado, aba, this.apiColecao());
   }
   fecharColecao() {
-    this.ui.fecharColecao(); this.menuAberto = false; this.audio.clique();
+    this.ui.fecharColecao(); this.ui.fecharPergunta(); this.menuAberto = false; this.audio.clique();
     if (this.jogando) this.render.domElement.requestPointerLock?.();
   }
+  ajustarLimites() { const S = this.estado, j = this.jogador; j.vida = Math.min(j.vida, S.vidaMax); j.stamina = Math.min(j.stamina, S.staminaMax); }   // bônus de skin podem diminuir os máximos
   escolherSkin(id) {
     const S = this.estado;
     if (id && !S.skins.includes(id)) return;
-    S.skin = id; this.jogador.modelo.aplicar(); this.jogador.modelo.punch = 0.6; this.audio.clique();
+    S.skin = id; this.jogador.modelo.aplicar(); this.jogador.modelo.punch = 0.6; this.ajustarLimites(); this.audio.clique();
     this.ui.toast(id ? `Skin: ${CFG.SKINS[id].nome}` : "Skin: padrão"); S.salvar();
     if (this.menuAberto) this.ui.abrirColecao(S, this.aba, this.apiColecao());
   }
   desbloquear(id) {
     const S = this.estado, sk = CFG.SKINS[id]; if (!sk || S.skins.includes(id)) return;
-    S.skins.push(id); S.skin = id; this.jogador.modelo.aplicar(); this.jogador.modelo.punch = 1;
+    S.skins.push(id); S.skin = id; this.jogador.modelo.aplicar(); this.jogador.modelo.punch = 1; this.ajustarLimites();
     this.audio.egg(); this.mundo.emitir(this.jogador.pos, sk.brilho || 0xffffff, 40, 6);
     if (id === "eletrizado") { this.ui.flash("rgba(120,200,255,.85)"); this.jogador.shake = 1; }
     if (id === "pintado") this.ui.flash("rgba(208,16,32,.7)");
@@ -1637,9 +1811,10 @@ class GameManager {
     this.ganhar("skin_" + id);
   }
   dica() {
-    const falta = Object.keys(CFG.SKINS).filter((k) => !this.estado.skins.includes(k));
-    if (!falta.length) { this.ui.toast("🏆 Você achou todos os easter eggs!"); return; }
-    this.ui.toast(`🔍 ${CFG.SKINS[falta[this.egg.dica++ % falta.length]].dica}`);
+    const S = this.estado, msgs = Object.keys(CFG.SKINS).filter((k) => !S.skins.includes(k)).map((k) => CFG.SKINS[k].dica);
+    if (S.skins.includes("tusk") && S.mantis.length < 4) msgs.push(`Tusk Ato ${S.mantis.length}/4: faltam ${4 - S.mantis.length} partes do louva-a-deus (procure um brilho verde)`);
+    if (!msgs.length) { this.ui.toast("🏆 Você achou todos os easter eggs!"); return; }
+    this.ui.toast(`🔍 ${msgs[this.egg.dica++ % msgs.length]}`);
   }
   checarEggs(dt) {
     const p = this.jogador.pos, F = CFG.YMIN, e = this.egg, P = this.mundo.pontos, S = this.estado;
@@ -1666,6 +1841,10 @@ class GameManager {
     if (p.distanceToSquared(P.tomada) < 1.6 * 1.6) this.desbloquear("eletrizado");
     if (Math.hypot(p.x - P.tinta.x, p.z - P.tinta.z) < 3.4 && p.y < F + 3) this.desbloquear("pintado");
     for (const x of P.extintores) if (Math.hypot(p.x - x.x, p.z - x.z) < 1.5 && p.y < F + 4.2) { this.desbloquear("extintor"); break; }
+    // Armário trancado (F), partes do louva-a-deus (Tusk) e quadro de matemática (Q)
+    this.checarArmario(dt);
+    for (const m of P.mantis) if (!S.mantis.includes(m.id) && p.distanceToSquared(m.pos) < 2.4 * 2.4) this.pegarParte(m.id);
+    if (!this.eggMsg && !S.skins.includes("mosquito8000") && p.z < -78 && p.distanceToSquared(P.quadroMat) < 22 * 22) this.eggMsg = "📝 Quadro de matemática: aperte Q para responder";
     // Salas visitadas
     const sala = CFG.SALAS.find(([, x0, x1, z0, z1]) => p.x >= x0 && p.x < x1 && p.z >= z0 && p.z < z1);
     if (sala && !S.salas.includes(sala[0])) {
@@ -1674,6 +1853,45 @@ class GameManager {
       if (id) this.ganhar(id);
       if (S.salas.length >= CFG.SALAS.length) this.ganhar("explorador");
     }
+  }
+
+  checarArmario(dt) {
+    const A = this.mundo.armario; if (!A || A.aberto) return;
+    const perto = this.jogador.pos.distanceToSquared(A.pos) < 5.5 * 5.5;
+    if (perto && this.teclas.f) {
+      A.prog = Math.min(1, A.prog + dt / 3.2); this.eggMsg = `🔓 Arrombando o armário... ${Math.round(A.prog * 100)}%`;
+      this.fxT2 = (this.fxT2 || 0) - dt;
+      if (this.fxT2 <= 0) { this.fxT2 = 0.14; this.mundo.emitir(A.cad.position, 0xffcc55, 4, 3); this.audio.tom(260 + Math.random() * 260, 120, 0.08, "square", 0.13); this.jogador.shake = Math.max(this.jogador.shake, 0.12); }
+      if (A.prog >= 1) { A.aberto = true; A.vy = 0; this.mundo.emitir(A.cad.position, 0xffd84d, 40, 6); this.desbloquear("cadeado"); }
+    } else {
+      A.prog = Math.max(0, A.prog - dt * 0.6);
+      if (perto) this.eggMsg = "🔒 Armário trancado e amassado... segure F para arrombar";
+    }
+  }
+  pegarParte(id) {   // cada parte do louva-a-deus evolui o Tusk em um Ato
+    const S = this.estado, nomes = { cabeca: "Cabeça", foices: "Foices", torax: "Tórax e asas", abdomen: "Abdômen e patas" };
+    S.mantis.push(id); const n = S.mantis.length;
+    this.audio.egg(); this.mundo.emitir(this.jogador.pos, 0x7dff3a, 30, 5); S.salvar();
+    this.ui.toast(`🦗 Louva-a-deus: ${nomes[id]} (${n}/4)`);
+    if (n === 1) this.desbloquear("tusk");
+    else {
+      if (S.skin === "tusk") { this.jogador.modelo.aplicar(); this.jogador.modelo.punch = 1; this.ajustarLimites(); } else this.ui.toast(`🦗 O Tusk evoluiu para o Ato ${n}! Equipe no menu K`);
+      this.ui.evolucao(`TUSK — ATO ${n}`);
+    }
+    if (n >= 4) this.ganhar("mantis");
+  }
+  abrirPergunta() {
+    if (this.menuAberto || !this.jogando) return;
+    if (this.jogador.pos.distanceToSquared(this.mundo.pontos.quadroMat) > 22 * 22) { this.ui.toast("Chegue perto do quadro de matemática (Sala 1)"); return; }
+    this.menuAberto = true; this.audio.silenciar();
+    this.ui.pergunta("📝 Matemática — Sala 1", "2 + 2 = ?", (txt) => this.responderQuadro(txt), () => this.fecharColecao());
+  }
+  responderQuadro(txt) {
+    const r = String(txt).trim().toLowerCase().replace(/[\s.]/g, "");
+    if (r === "") return { msg: "Digite uma resposta." };
+    if (r === "8000") { this.desbloquear("mosquito8000"); return { msg: "🤖 O quadro processou... 8000?! Sistema MOSQUITO-8000 online!", fechar: true }; }
+    if (r === "4" || r === "quatro") { this.ganhar("matematica"); return { msg: "✔ Correto! 2 + 2 = 4.", fechar: true }; }
+    return { msg: "✘ Resposta errada. Tente de novo!" };
   }
 
   // Efeitos contínuos das skins: fumaça, espuma, pingos de tinta e notas musicais
@@ -1685,7 +1903,8 @@ class GameManager {
       this.fxT = 0.07;
       if (sk.fumaca) w.emitir(mo.traseira(o), 0x8a8f99, 1, 0.8, "fumaca");
       if (sk.espuma) w.emitir(mo.traseira(o), 0xffffff, 2, 2.2, "espuma");
-      if (sk.goticulas && Math.random() < 0.4) w.emitir(mo.traseira(o), 0xd01020, 1, 0.6);
+      if (sk.goticulas && Math.random() < 0.85) w.pingar(mo.traseira(o), this.jogador.vel);   // pingos viram manchas no chão
+      if (sk.neblina) w.emitir(mo.traseira(o), 0xbfe6ff, 1, 0.6, "fumaca");
     }
     if (sk.rig) { const b = mo.beat; if (b > 0.9 && !this.fxBeat) { this.fxBeat = true; w.emitir(mo.traseira(o), Math.random() < 0.5 ? 0xff44cc : 0x44ddff, 6, 4); } else if (b < 0.5) this.fxBeat = false; }
   }
@@ -1712,7 +1931,7 @@ class GameManager {
     const S = this.estado, k = this.kills, n = Object.keys(CFG.SKINS).length;
     const m = { sangue500: [S.sangue, 500], sangue5000: [S.sangue, 5000], nivel10: [S.total, 10], nivel40: [S.total, 40], asas10: [S.nv.asas, 10], tromba10: [S.nv.tromba, 10], estomago10: [S.nv.estomago, 10], corpo10: [S.nv.corpo, 10],
       picada25: [S.picadas, 25], picada100: [S.picadas, 100], tapas: [k.tapasRecebidos, 5], gas3: [k.gas, 3], sobreviver: [this.egg.vida, 180],
-      colecionador: [S.skins.length, 5], todas: [S.skins.length, n], dez: [S.conq.length, 10], explorador: [S.salas.length, CFG.SALAS.length] }[id];
+      colecionador: [S.skins.length, 5], mantis: [S.mantis.length, 4], todas: [S.skins.length, n], dez: [S.conq.length, 10], explorador: [S.salas.length, CFG.SALAS.length] }[id];
     return m ? { v: Math.min(m[0], m[1]), max: m[1] } : null;
   }
   checarConquistas(dt) {
@@ -1751,11 +1970,12 @@ class GameManager {
       "NORTE: Artes · Sala 1 · Sala 2 · Biblioteca · Laboratório · Enfermaria\n" +
       "SUL: Cantina · Ginásio · Banheiro · Auditório (palco, telão e a estátua do Mosquitão)\n\n" +
       "E pica humanos · K skins · C conquistas · H dica de easter egg\n" +
-      "Há 10 skins para achar, e cada uma rende uma conquista secreta.",
+      "Há 15 skins para achar, algumas evoluem (o Tusk) e têm atributos próprios, e cada uma rende uma conquista secreta.",
       "Feche com = ou clique aqui", 12000);
   }
 
   dano(v, continuo = false) {
+    v *= 1 - this.estado.attr.def;   // redução de dano da skin
     if (this.jogador.tomarDano(v)) return this.morrer();
     if (!continuo) { this.ui.flash("rgba(232,41,75,.8)"); this.audio.dano(); }
   }
