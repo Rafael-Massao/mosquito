@@ -105,10 +105,21 @@ const CFG = {
 };
 // Atributos de cada skin (multiplicadores; def = redução de dano; gas = dano de gás/poças; cura = vida por picada)
 const ATRIB = {
-  pixel: { vel: 1.08 }, dengue: { sangue: 1.15, stam: 1.1 }, relojoeiro: { combo: 1.5 }, radioativo: { gas: 0.2, def: 0.1 }, jogador: { vel: 1.1, stam: 1.3 },
-  fantasma: { intang: true, gas: 0, vida: -30 }, vampiro: { sangue: 1.25, cura: 15, vida: -20 }, mosquito: { vida: 40, def: 0.15 }, carreta: { combo: 1.4, stam: 1.25 },
-  eletrizado: { vel: 1.12, def: 0.2 }, pintado: { sangue: 1.2, vel: 0.95 }, extintor: { gas: 0.4, def: 0.2 }, cadeado: { def: 0.35, vida: 30, vel: 0.92 },
-  tusk: CFG.TUSK[0].attr, mosquito8000: { vel: 1.3, stam: 1.5, colhe: 1.2 },
+  pixel: { vel: 1.08 }, 
+  dengue: { sangue: 1.15, stam: 1.1 }, 
+  relojoeiro: { combo: 1.5 }, 
+  radioativo: { gas: 0.2, def: 0.1 }, 
+  jogador: { vel: 1.1, stam: 1.3 },
+  fantasma: { intang: true, gas: 0, vida: -30 }, 
+  vampiro: { sangue: 1.25, cura: 15, vida: -20 }, 
+  mosquito: { vida: 40, def: 0.15 }, 
+  carreta: { combo: 1.4, stam: 1.25 },
+  eletrizado: { vel: 1.12, def: 0.2 }, 
+  pintado: { sangue: 1.2, vel: 0.95 }, 
+  extintor: { gas: 0.4, def: 0.2 }, 
+  cadeado: { def: 0.35, vida: 30, vel: 0.92 },
+  tusk: CFG.TUSK[0].attr, 
+  mosquito8000: { vel: 1.3, stam: 1.5, colhe: 1.2 },
 };
 for (const id in ATRIB) CFG.SKINS[id].attr = ATRIB[id];
 const descAttr = (a = {}) => {   // texto dos atributos para o menu de skins
@@ -1201,7 +1212,7 @@ class WorldManager {
         parte(new THREE.CylinderGeometry(0.05, 0.02, 8, 6), M2, l * 0.5, 9, -4.2, 1.4, 0, l * 0.25); }
       const trompa = parte(new THREE.CylinderGeometry(0.22, 0.05, 7, 8), M2, 0, 4.2, -8.4, Math.PI / 2.1);
       // Estátua de enfeite no canto do auditório (~3 unidades de altura).
-      mm.scale.setScalar(0.14);
+      mm.scale.setScalar(0.1);
       this.mosquito = { g: mm, olhos: [1, -1].map((l) => mm.children.find((c) => c.geometry && c.geometry.type === "SphereGeometry" && c.position.z < -4)), trompa, centro: V(111, F + 2.8 + 1.0, 93) };
     }
     // Lâmpadas do teto nas salas
