@@ -77,6 +77,10 @@ const CFG = {
     { id: "carteira", nome: "Bom cidadão", ico: "🎒", desc: "Devolva uma carteira perdida (tecla B)", cat: "Exploração", r: "b", premio: 60 },
     { id: "fala", nome: "Bom ouvinte", ico: "💬", desc: "Escute o Mosquitão da rua", cat: "Exploração", r: "b", premio: 40 },
     { id: "matematica", nome: "Nota dez", ico: "📝", desc: "Responda a pergunta do quadro de matemática (tecla Q)", cat: "Exploração", r: "b", premio: 50 },
+    { id: "mantis_cabeca", nome: "Mente Predadora", ico: "🧠", desc: "Encontre a cabeça do louva-a-deus", cat: "Segredos", r: "b", premio: 100 },
+    { id: "mantis_foices", nome: "Garras Mortais", ico: "⚔️", desc: "Encontre as foices dianteiras do louva-a-deus", cat: "Segredos", r: "b", premio: 100 },
+    { id: "mantis_torax", nome: "Asas do Caçador", ico: "🪽", desc: "Encontre o tórax e as asas do louva-a-deus", cat: "Segredos", r: "p", premio: 150 },
+    { id: "mantis_abdomen", nome: "Corpo de Combate", ico: "🦗", desc: "Encontre o abdômen e as patas do louva-a-deus", cat: "Segredos", r: "p", premio: 150 },
     { id: "mantis", nome: "Entomólogo", ico: "🦗", desc: "Reúna as 4 partes do louva-a-deus (Tusk no Ato 4)", cat: "Segredos", r: "o", premio: 600 },
     { id: "colecionador", nome: "Colecionador", ico: "🎨", desc: "Desbloqueie 5 skins", cat: "Segredos", r: "p", premio: 250 },
     { id: "todas", nome: "Guarda-roupa completo", ico: "👗", desc: "Desbloqueie todas as skins", cat: "Segredos", r: "o", premio: 1200 },
@@ -1953,17 +1957,74 @@ class GameManager {
       if (perto) this.eggMsg = "🔒 Armário trancado e amassado... segure F para arrombar";
     }
   }
-  pegarParte(id) {   // cada parte do louva-a-deus evolui o Tusk em um Ato
-    const S = this.estado, nomes = { cabeca: "Cabeça", foices: "Foices", torax: "Tórax e asas", abdomen: "Abdômen e patas" };
-    S.mantis.push(id); const n = S.mantis.length;
-    this.audio.egg(); this.mundo.emitir(this.jogador.pos, 0x7dff3a, 30, 5); S.salvar();
-    this.ui.toast(`🦗 Louva-a-deus: ${nomes[id]} (${n}/4)`);
-    if (n === 1) this.desbloquear("tusk");
-    else {
-      if (S.skin === "tusk") { this.jogador.modelo.aplicar(); this.jogador.modelo.punch = 1; this.ajustarLimites(); } else this.ui.toast(`🦗 O Tusk evoluiu para o Ato ${n}! Equipe no menu K`);
+    pegarParte(id) {
+    // Cada parte encontrada desbloqueia uma conquista individual
+    const S = this.estado;
+
+    const partes = {
+      cabeca: {
+        nome: "Cabeça",
+        conquista: "mantis_cabeca"
+      },
+      foices: {
+        nome: "Foices dianteiras",
+        conquista: "mantis_foices"
+      },
+      torax: {
+        nome: "Tórax e asas",
+        conquista: "mantis_torax"
+      },
+      abdomen: {
+        nome: "Abdômen e patas",
+        conquista: "mantis_abdomen"
+      }
+    };
+
+    const parte = partes[id];
+
+    if (!parte || S.mantis.includes(id)) return;
+
+    // Registra a parte coletada
+    S.mantis.push(id);
+
+    const n = S.mantis.length;
+
+    // Efeitos da coleta
+    this.audio.egg();
+    this.mundo.emitir(this.jogador.pos, 0x7dff3a, 30, 5);
+
+    // Salva o progresso
+    S.salvar();
+
+    // Notificação da parte encontrada
+    this.ui.toast(`🦗 Parte encontrada: ${parte.nome} (${n}/4)`);
+
+    // Desbloqueia a conquista individual
+    this.ganhar(parte.conquista);
+
+    // Primeira parte: desbloqueia a skin Tusk
+    if (n === 1) {
+      this.desbloquear("tusk");
+    } else {
+      // Evolução visual do Tusk
+      if (S.skin === "tusk") {
+        this.jogador.modelo.aplicar();
+        this.jogador.modelo.punch = 1;
+        this.ajustarLimites();
+      } else {
+        this.ui.toast(
+          `🦗 O Tusk evoluiu para o Ato ${n}! Equipe no menu K`
+        );
+      }
+
       this.ui.evolucao(`TUSK — ATO ${n}`);
     }
-    if (n >= 4) this.ganhar("mantis");
+
+    // Conquista especial ao completar todas as partes
+    if (n >= 4) {
+      this.ganhar("mantis");
+      this.ui.evolucao("🦗 TUSK — ATO 4 COMPLETO!");
+    }
   }
   abrirPergunta() {
     if (this.menuAberto || !this.jogando) return;
