@@ -38,16 +38,16 @@ const CFG = {
     pintado:    { nome: "Meio pintado",       corpo: 0x1c1c22, abd: 0x2a1a20, perna: 0x0b0b0e, brilho: 0xd01020, ei: 0.15, meia: 0xd01020, goticulas: true, dica: "Na sala de artes alguém derrubou tinta vermelha. Encoste na poça" },
     extintor:   { nome: "Bombeiro",           corpo: 0x111111, abd: 0xc0182a, perna: 0x0b0b0b, brilho: 0xff2a2a, ei: 0.3, asa: 0xffd0d0, faixas: true, espuma: true, dica: "Encoste em um extintor de incêndio (há um escondido na cozinha da cantina)" },
     cadeado:    { nome: "Mosquito Cadeado", corpo: 0x3c424e, abd: 0x2c313b, perna: 0x181b21, brilho: 0xffc933, ei: 0.2, metal: true, asa: 0xcfd6e2, cadeado: true, dica: "Há um armário trancado e amassado no corredor, entre as salas 1 e 2. Segure F perto dele para arrombar" },
-    tusk:       { nome: "Tusk", corpo: 0xf0e6d2, abd: 0xe2d4b4, perna: 0xc9b98c, brilho: 0xffd24a, ei: 0.3, tusk: true, dica: "Há 4 partes de um louva-a-deus espalhadas pela escola (brilho verde). Cada uma evolui o Tusk de Ato, como o stand do JoJo" },
+    tusk:       { nome: "Tusk", corpo: 0xf59ab8, abd: 0xef7fa6, perna: 0xc2527f, brilho: 0xff8ac0, ei: 0.18, tusk: true, dica: "Há 4 partes de um louva-a-deus espalhadas pela escola (brilho verde). Cada uma evolui o Tusk de Ato, como o stand do JoJo" },
     mosquito8000: { nome: "Mosquito 8000", corpo: 0x8f9bb0, abd: 0x6c7890, perna: 0x3b4252, brilho: 0x00e5ff, ei: 0.9, metal: true, asa: 0x9be9ff, robo: true, dica: "O quadro de matemática da Sala 1 aceita respostas (tecla Q). A certa dá conquista... mas e se você pensar bem maior?" },
   },
   // CONQUISTAS: cat = categoria · r = raridade (b/p/o) · premio = sangue · secreto = escondida até ser obtida
   RAR: { b: { nome: "Bronze", cor: "#cd7f32", pts: 10 }, p: { nome: "Prata", cor: "#c4ccdc", pts: 25 }, o: { nome: "Ouro", cor: "#ffd84d", pts: 50 } },
   TUSK: [   // o Tusk evolui a cada parte do louva-a-deus encontrada (Ato 1 a 4): visual e atributos
-    { nome: "Ato 1", visual: { corpo: 0xf0e6d2, abd: 0xe2d4b4, perna: 0xc9b98c, brilho: 0xffd24a, ei: 0.3 }, attr: { colhe: 1.1 } },
-    { nome: "Ato 2", visual: { corpo: 0xf3dcd2, abd: 0xe8c4b8, perna: 0xcaa090, brilho: 0xffb05a, ei: 0.45 }, attr: { colhe: 1.25, sangue: 1.1 } },
-    { nome: "Ato 3", visual: { corpo: 0xe9c8d2, abd: 0xd9a0b4, perna: 0x9a6a7c, brilho: 0xff6aa0, ei: 0.6 }, attr: { colhe: 1.4, sangue: 1.2, vel: 1.1 } },
-    { nome: "Ato 4", visual: { corpo: 0xffd24a, abd: 0xe0a800, perna: 0x9a7000, brilho: 0xffe066, ei: 1.0, metal: true }, attr: { colhe: 1.6, sangue: 1.4, vel: 1.2, def: 0.1, cura: 8 } },
+    { nome: "Ato 1", visual: { corpo: 0xf59ab8, abd: 0xef7fa6, perna: 0xc2527f, brilho: 0xff8ac0, ei: 0.18, asa: 0xffc8dc, olho: 0x8a4fd0 }, attr: { colhe: 1.1 } },
+    { nome: "Ato 2", visual: { corpo: 0xf07cad, abd: 0xd95b90, perna: 0x9a4f9a, brilho: 0xff6fb0, ei: 0.2, asa: 0xffc8dc }, attr: { colhe: 1.25, sangue: 1.1 } },
+    { nome: "Ato 3", visual: { corpo: 0xf28ab6, abd: 0x2a3580, perna: 0xc8d0dc, brilho: 0xff80b8, ei: 0.2, asa: 0xffc8dc }, attr: { colhe: 1.4, sangue: 1.2, vel: 1.1 } },
+    { nome: "Ato 4", visual: { corpo: 0xf4a0c4, abd: 0xf08ab4, perna: 0xf4a0c4, brilho: 0xffd24a, ei: 0.25, asa: 0xfff0b0 }, attr: { colhe: 1.6, sangue: 1.4, vel: 1.2, def: 0.1, cura: 8 } },
   ],
   CONQ: [
     { id: "primeiro", nome: "Primeiro voo", ico: "🦟", desc: "Comece uma partida", cat: "Progresso", r: "b", premio: 20 },
@@ -397,7 +397,7 @@ class UIManager {
       document.body.appendChild(e); this.perg = e;
     }
     const c = this.perg.children[0].children, inp = c[2], fb = c[3];
-    c[0].textContent = titulo; c[1].textContent = enunciado; inp.value = ""; fb.textContent = ""; this.perg.style.display = "flex";
+    c[0].textContent = titulo; c[1].textContent = enunciado; inp.value = ""; fb.textContent = ""; this.perg.style.display = "flex"; document.exitPointerLock?.();
     inp.onkeydown = (ev) => {
       if (ev.key === "Escape") { aoFechar(); return; }
       if (ev.key !== "Enter") return;
@@ -637,17 +637,91 @@ let escalaBase = 1.2, punch = 0;   // tamanho original do corpo
 
 // ---- Skins novas: Cadeado (corrente + cadeado), Tusk (chifre, lançadores, espinhos e órbita de unhas por Ato) e Mosquito 8000 (visor, antena, propulsores) ----
 const matOuroC = mat(0xd9a521, { metalness: 0.9, roughness: 0.3 }), matAcoC = mat(0x8a929e, { metalness: 0.9, roughness: 0.35 });
-const cadG = new THREE.Group(), cadC = new THREE.Group(); cadG.visible = cadC.visible = false; abdomen.add(cadG); corpoG.add(cadC);
-for (let i = 0; i < 3; i++) { const e = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.022, 6, 12), matAcoC); e.position.set(0, -0.1 - i * 0.1, 1.5); e.rotation.y = i % 2 ? 0 : Math.PI / 2; cadG.add(e); }
-{ const cc = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.26, 0.12), matOuroC); cc.position.set(0, -0.5, 1.5); cadG.add(cc);
-  const ar = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.03, 8, 14, Math.PI), matAcoC); ar.position.set(0, -0.37, 1.5); cadG.add(ar); }
-for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2, e = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.02, 6, 10), matAcoC); e.position.set(Math.cos(a) * 0.23, Math.sin(a) * 0.21, -0.02); e.rotation.set(i % 2 ? Math.PI / 2 : 0, 0, a); cadC.add(e); }   // corrente enrolada no tórax
-const tuskG = new THREE.Group(); tuskG.visible = false; corpoG.add(tuskG);
-const matMarfim = mat(0xf7f0dc, { roughness: 0.35 }), matUnha = mat(0xffe29a, { roughness: 0.2, emissive: 0xffc233, emissiveIntensity: 0.8 });
-const chifre = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.4, 10), matMarfim); chifre.rotation.x = -Math.PI / 2; chifre.position.set(0, 0.08, -0.57); tuskG.add(chifre);
-const tuskLanc = new THREE.Group(), tuskEsp = new THREE.Group(), orbG = new THREE.Group(); tuskLanc.visible = tuskEsp.visible = orbG.visible = false; tuskG.add(tuskLanc, tuskEsp); mosquito.add(orbG);
-for (const l of [1, -1]) { const lc = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.055, 0.3, 8), matUnha); lc.rotation.x = Math.PI / 2; lc.position.set(l * 0.2, -0.02, -0.12); tuskLanc.add(lc); }
-for (let i = 0; i < 3; i++) tuskEsp.add(cone(0.045, 0.22, matMarfim, 0, 0.27, -0.12 + i * 0.14));
+const cadG = new THREE.Group(), cadC = new THREE.Group(); cadG.visible = cadC.visible = false;
+// Todo o conjunto do cadeado fica no mesmo grupo do abdômen: corrente e cadeado
+// passam a acompanhar a escala/crescimento sem se separarem do mosquito.
+abdomenCorpo.add(cadG, cadC);
+for (let i = 0; i < 3; i++) { const e = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.022, 6, 12), matAcoC); e.position.set(0, -0.1 - i * 0.1, 1.05); e.rotation.y = i % 2 ? 0 : Math.PI / 2; cadG.add(e); }
+{ const cc = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.26, 0.12), matOuroC); cc.position.set(0, -0.5, 1.05); cadG.add(cc);
+  const ar = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.03, 8, 14, Math.PI), matAcoC); ar.position.set(0, -0.37, 1.05); cadG.add(ar); }
+for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2, e = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.02, 6, 10), matAcoC); e.position.set(Math.cos(a) * 0.23, Math.sin(a) * 0.21, 0.12); e.rotation.set(i % 2 ? Math.PI / 2 : 0, 0, a); cadC.add(e); }   // corrente enrolada na base do abdômen
+// Tusk (JoJo parte 7): Ato 1 bichinho de orelhas-asa e corações · Ato 2 capacete, vagens e bola com estrela · Ato 3 bípede de crista e pernas de garra · Ato 4 guerreiro de saia de placas
+const matRosa = mat(0xf08ab4, { roughness: 0.45 }), matRosaC = mat(0xffc0d8, { roughness: 0.4 }), matRosaE = mat(0xc2527f, { roughness: 0.5 }), matRoxo = mat(0x9a4f9a, { roughness: 0.45 });
+const matAzulT = mat(0x1f2a6b, { roughness: 0.35, metalness: 0.3 }), matAzulB = mat(0x2f6fd0, { roughness: 0.4 }), matPrataT = mat(0xc8d0dc, { roughness: 0.25, metalness: 0.85 }), matVermT = mat(0xd8202e, { roughness: 0.35 });
+const matEstrela = new THREE.MeshBasicMaterial({ color: 0xffd84d, side: THREE.DoubleSide }), matCoracao = new THREE.MeshBasicMaterial({ color: 0xe0202a, side: THREE.DoubleSide });
+const matFolha = new THREE.MeshStandardMaterial({ color: 0xf08ab4, roughness: 0.5, side: THREE.DoubleSide }), matViseira = mat(0x15152e, { roughness: 0.3 });
+const matUnha = mat(0xffe29a, { roughness: 0.2, emissive: 0xffc233, emissiveIntensity: 0.8 });
+const geoEstrela = (() => { const sh = new THREE.Shape(); for (let i = 0; i < 10; i++) { const an = -Math.PI / 2 + (i * Math.PI) / 5, r = i % 2 ? 0.45 : 1; if (i) sh.lineTo(Math.cos(an) * r, Math.sin(an) * r); else sh.moveTo(Math.cos(an) * r, Math.sin(an) * r); } return new THREE.ShapeGeometry(sh); })();
+const geoCoracao = (() => { const h = new THREE.Shape(); h.moveTo(0, -0.5); h.bezierCurveTo(-0.9, 0.1, -0.5, 0.8, 0, 0.35); h.bezierCurveTo(0.5, 0.8, 0.9, 0.1, 0, -0.5); return new THREE.ShapeGeometry(h); })();
+const estrela = (r, x, y, z, ry = 0, rx = 0) => { const e = new THREE.Mesh(geoEstrela, matEstrela); e.scale.setScalar(r); e.position.set(x, y, z); e.rotation.set(rx, ry, 0); return e; };
+const caixaT = (w, h, d, mt, x, y, z) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mt); o.position.set(x, y, z); return o; };
+const tA = [0, 1, 2, 3].map(() => ({ c: new THREE.Group(), a: new THREE.Group() }));   // c = no corpo, a = no abdômen
+tA.forEach((t) => { t.c.visible = t.a.visible = false; corpoG.add(t.c); abdomenCorpo.add(t.a); });   // a = escala junto com o estômago
+{ // ATO 1: bico prateado, orelhas-asa moles, antenas onduladas, estrelas e três corações pendurados na cauda
+  const g = tA[0].c, bico = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.32, 10), mat(0xb9c4d8, { roughness: 0.3, metalness: 0.5 }));
+  bico.rotation.x = -Math.PI / 2 - 0.12; bico.position.set(0, -0.03, -0.5); g.add(bico);
+  const fs = new THREE.Shape(); fs.moveTo(0, 0.09); fs.quadraticCurveTo(0.3, 0.27, 0.66, 0.06); fs.quadraticCurveTo(0.48, -0.04, 0.58, -0.22); fs.quadraticCurveTo(0.26, -0.1, 0, -0.1); fs.closePath();
+  const geoFolha = new THREE.ShapeGeometry(fs);
+  for (const l of [1, -1]) {
+    const o = new THREE.Group(), f = new THREE.Mesh(geoFolha, matFolha); f.rotation.x = -Math.PI / 2; o.add(f); o.position.set(l * 0.1, 0.06, -0.25); o.scale.x = l; o.rotation.z = -0.4 * l; g.add(o);
+    const pts = [V(0, 0, 0), V(0.06 * l, 0.1, 0.02), V(-0.02 * l, 0.2, 0.06), V(0.07 * l, 0.3, 0.1), V(0, 0.4, 0.16)], tb = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 18, 0.014, 6), matRosaE);
+    tb.position.set(l * 0.06, 0.1, -0.26); g.add(tb);
+    g.add(estrela(0.055, l * 0.178, 0.03, 0.04, l * Math.PI / 2));
+  }
+  g.add(estrela(0.07, 0, 0.108, -0.3, 0, -1.1));
+  const h = tA[0].a;
+  // Os pingentes nascem na ponta real do abdômen. Como h é filho de
+  // abdomenCorpo, eles acompanham tanto a posição quanto a escala do abdômen.
+  h.position.set(0, 0, 0.76);
+  for (const [x, len] of [[-0.12, 0.3], [0, 0.42], [0.12, 0.3]]) {
+    const ancoraX = x === 0 ? 0 : x * 0.52;
+    h.add(tubo(V(ancoraX, 0.035, 0.02), V(x, -len, 0.13), 0.008, matRosaE));
+    const co = new THREE.Mesh(geoCoracao, matCoracao);
+    co.scale.setScalar(0.11); co.position.set(x, -len - 0.04, 0.13); h.add(co);
+  }
+}
+{ // ATO 2: capacete com viseira, vagens azul-marinho com estrela, braços de garra e a bola vermelha com estrela
+  const g = tA[1].c;
+  g.add(elipsoide(0.14, 1.08, 1.05, 1.08, matRosaC, 0, 0.02, -0.27)); g.add(caixaT(0.2, 0.06, 0.05, matViseira, 0, 0.0, -0.415));
+  for (const dx of [-0.07, -0.035, 0, 0.035, 0.07]) g.add(caixaT(0.008, 0.07, 0.02, matPrataT, dx, 0.0, -0.435));
+  for (const l of [1, -1]) {
+    const pod = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.06, 20), matAzulT); pod.rotation.z = Math.PI / 2; pod.position.set(l * 0.28, 0.2, -0.25); g.add(pod);
+    g.add(estrela(0.06, l * 0.312, 0.2, -0.25, l * Math.PI / 2)); g.add(tubo(V(l * 0.09, 0.12, -0.26), V(l * 0.22, 0.2, -0.25), 0.02, matRosaE));
+    const a = V(l * 0.16, -0.05, -0.08), b = V(l * 0.3, -0.12, -0.38), c = V(l * 0.22, -0.2, -0.6);
+    g.add(tubo(a, b, 0.035, matRoxo)); g.add(tubo(b, c, 0.03, matRosaE)); g.add(elipsoide(0.045, 1, 1, 1, matPrataT, b.x, b.y, b.z));
+    for (const d of [-0.04, 0.04]) { const ga = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.18, 6), matPrataT); ga.position.set(c.x + d, c.y - 0.03, c.z - 0.08); ga.rotation.x = -Math.PI / 2 - 0.3; g.add(ga); }
+  }
+  g.add(elipsoide(0.19, 1, 0.9, 1, matVermT, 0, -0.32, 0.1)); g.add(estrela(0.08, 0, -0.515, 0.1, 0, Math.PI / 2)); g.add(estrela(0.075, 0, -0.32, -0.095, Math.PI, 0));
+  const fx = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.02, 6, 24), matRosaC); fx.rotation.x = Math.PI / 2; fx.position.set(0, -0.32, 0.1); g.add(fx);
+}
+{ // ATO 3: capacete de crista pontuda, ombros redondos com estrela, pernas finas de garra tripla e barriga azul-marinho
+  const g = tA[2].c;
+  g.add(elipsoide(0.135, 1.05, 1.0, 1.1, matRosa, 0, 0.03, -0.27)); g.add(caixaT(0.16, 0.05, 0.04, matViseira, 0, 0.02, -0.415));
+  const crista = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.38, 4), matRosaC); crista.scale.x = 0.45; crista.position.set(0, 0.25, -0.24); crista.rotation.x = -0.25; g.add(crista);
+  for (const l of [1, -1]) {
+    g.add(elipsoide(0.11, 1, 1, 1, matRosaC, l * 0.25, 0.1, 0.02));
+    const d = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.03, 16), matAzulT); d.rotation.z = Math.PI / 2; d.position.set(l * 0.355, 0.1, 0.02); g.add(d); g.add(estrela(0.035, l * 0.372, 0.1, 0.02, l * Math.PI / 2));
+    const q = V(l * 0.1, -0.1, 0.05), j = V(l * 0.34, -0.5, 0.05), p = V(l * 0.3, -1.05, 0.05);
+    g.add(tubo(q, j, 0.022, matRosa)); g.add(tubo(j, p, 0.018, matPrataT)); g.add(elipsoide(0.04, 1, 1, 1, matPrataT, j.x, j.y, j.z));
+    for (const dx of [-0.04, 0, 0.04]) { const pr = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.16, 5), matPrataT); pr.rotation.x = Math.PI; pr.position.set(p.x + dx, p.y - 0.08, p.z); g.add(pr); }
+  }
+  tA[2].a.add(elipsoide(0.17, 0.95, 0.55, 1.9, matAzulT, 0, -0.1, 0.6));
+}
+{ // ATO 4: guerreiro de ombreiras largas, mãos e botas azuis e saia de placas ovais
+  const g = tA[3].c;
+  g.add(elipsoide(0.13, 1.05, 1.0, 1.1, matRosa, 0, 0.03, -0.27)); g.add(caixaT(0.15, 0.045, 0.04, matViseira, 0, 0.02, -0.405));
+  for (const l of [1, -1]) {
+    g.add(elipsoide(0.13, 1.5, 0.75, 1.2, matRosaC, l * 0.25, 0.1, 0.02)); g.add(elipsoide(0.08, 1.4, 0.7, 1.1, matRosa, l * 0.3, 0.15, 0.02));
+    const o = V(l * 0.24, 0, 0.02), m = V(l * 0.36, -0.28, 0), mao = V(l * 0.36, -0.52, 0.02);
+    g.add(tubo(o, m, 0.055, matRosa)); g.add(tubo(m, mao, 0.045, matRosaC)); g.add(elipsoide(0.07, 1, 1.2, 0.8, matAzulB, mao.x, mao.y - 0.04, mao.z));
+    const q = V(l * 0.1, -0.12, 0.1), j = V(l * 0.18, -0.55, 0.12), p = V(l * 0.16, -0.95, 0.1);
+    g.add(tubo(q, j, 0.055, matRosa)); g.add(tubo(j, p, 0.045, matRosaC)); g.add(elipsoide(0.07, 1, 0.8, 1.5, matAzulB, p.x, p.y - 0.03, p.z - 0.04));
+  }
+  for (let k = 0; k < 6; k++) for (const x of [-0.14, 0, 0.14]) {   // saia: placas ovais sobrepostas penduradas sob o abdômen
+    const pl = elipsoide(0.085, 1, 1.6, 0.35, (k + (x ? 1 : 0)) % 2 ? matRosaC : matRosa, x, -0.14 - Math.abs(x) * 0.5, 0.1 + k * 0.16); pl.rotation.set(0.3, 0, -x * 2.5); tA[3].a.add(pl);
+  }
+}
+const orbG = new THREE.Group(); orbG.visible = false; mosquito.add(orbG);   // Ato 4: unhas e anéis dourados girando ("rotação infinita")
 for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2, n = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.24, 8), matUnha); n.position.set(Math.cos(a) * 0.95, 0.1 * Math.sin(i * 2), Math.sin(a) * 0.95); n.rotation.set(Math.PI / 2, 0, -a); orbG.add(n); }
 const aneis = []; for (const rx of [0.4, -0.4]) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.012, 6, 48), mat(0xffd24a, { emissive: 0xffc233, emissiveIntensity: 1 })); r.rotation.x = Math.PI / 2 + rx; orbG.add(r); aneis.push(r); }   // "rotação infinita"
 const roboG = new THREE.Group(); roboG.visible = false; corpoG.add(roboG);
@@ -716,7 +790,7 @@ function aplicarEvolucaoVisual() {
     matCorpo.color.setHex(sk.corpo); matAbd.color.setHex(sk.abd); matPerna.color.setHex(sk.perna ?? sk.corpo);
     matCorpo.emissive.setHex(sk.brilho); matCorpo.emissiveIntensity = sk.ei;
     matAbd.emissive.setHex(sk.brilho); matAbd.emissiveIntensity = sk.ei;
-    matOlho.emissive.setHex(sk.brilho); matBordaAsa.color.setHex(sk.brilho);
+    matOlho.emissive.setHex(sk.olho ?? sk.brilho); matBordaAsa.color.setHex(sk.brilho);
     luzCorpo.color.setHex(sk.brilho); luzCorpo.intensity = Math.max(luzCorpo.intensity, 0.6);
     if (sk.asa) matAsa.color.setHex(sk.asa);
     if (sk.metal) { matCorpo.metalness = 0.7; matCorpo.roughness = 0.25; }
@@ -739,8 +813,8 @@ function aplicarEvolucaoVisual() {
   if (sk && sk.faixas) { matAbd.map = cacheTex.faixas = cacheTex.faixas || texFaixas(); matAbd.color.setHex(0xffffff); }
   rigG.visible = !!(sk && sk.rig); raiosG.visible = !!(sk && sk.raios);
   cadG.visible = cadC.visible = !!(sk && sk.cadeado);
-  { const ato = sk && sk.tusk ? Math.max(1, S.mantis.length) : 0;   // Tusk: Ato 1 chifre · 2 lançadores · 3 espinhos · 4 órbita dourada de unhas
-    tuskG.visible = ato >= 1; chifre.scale.set(1, [1, 1.35, 1.6, 1.9][Math.max(0, ato - 1)], 1); tuskLanc.visible = ato >= 2; tuskEsp.visible = ato >= 3; orbG.visible = ato >= 4; }
+  { const ato = sk && sk.tusk ? Math.max(1, S.mantis.length) : 0;   // Tusk: cada Ato mostra o seu próprio visual; o Ato 4 ganha a órbita dourada
+    tA.forEach((t, i) => { t.c.visible = t.a.visible = ato === i + 1; }); orbG.visible = ato >= 4; olhos.forEach((o) => { o.visible = ato < 2; }); }
   roboG.visible = !!(sk && sk.robo);
   if (sk && sk.robo) { matCorpo.map = cacheTex.roboC = cacheTex.roboC || texRobo(sk.corpo, ""); matAbd.map = cacheTex.roboA = cacheTex.roboA || texRobo(sk.abd, "8000"); matCorpo.color.setHex(0xffffff); matAbd.color.setHex(0xffffff); matCorpo.roughness = 0.3; }
   matCorpo.needsUpdate = matAbd.needsUpdate = true;
