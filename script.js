@@ -1791,10 +1791,43 @@ class GameManager {
       if (this.menuAberto) return;
       const mapa = { 1: "asas", 2: "tromba", 3: "estomago", 4: "corpo" };
       if (mapa[k]) this.evoluir(mapa[k]);
-      // Easter eggs por teclado (Konami e a palavra "dengue")
-      this.buf = (this.buf + "|" + k).slice(-160); this.letras = (this.letras + (k.length === 1 ? k : "")).slice(-12);
-      if (this.buf.endsWith("|arrowup|arrowup|arrowdown|arrowdown|arrowleft|arrowright|arrowleft|arrowright|b|a")) this.desbloquear("pixel");
-      if (this.letras.endsWith("dengue")) this.desbloquear("dengue");
+       // Easter eggs por teclado (Konami e a palavra "dengue").
+      // Aceita setas e WASD, inclusive sequências misturadas.
+
+      const sequenciaKonami =
+        "|arrowup|arrowup|arrowdown|arrowdown|arrowleft|arrowright|arrowleft|arrowright|b|a";
+
+      const prefixoFinalKonami =
+        "|arrowup|arrowup|arrowdown|arrowdown|arrowleft|arrowright|arrowleft|arrowright|b";
+
+      // Se o B já foi digitado na sequência, o próximo A é o comando final.
+      const comandoFinal = k === "a" && this.buf.endsWith(prefixoFinalKonami);
+
+      // Converte WASD para as direções correspondentes.
+      const mapaKonami = {
+        w: "arrowup",
+        s: "arrowdown",
+        a: "arrowleft",
+        d: "arrowright"
+      };
+
+      const teclaKonami = comandoFinal ? "a" : (mapaKonami[k] || k);
+
+      this.buf = (this.buf + "|" + teclaKonami).slice(-160);
+
+      this.letras = (
+        this.letras + (k.length === 1 ? k : "")
+      ).slice(-12);
+
+      // Desbloqueia a conquista do código Konami.
+      if (this.buf.endsWith(sequenciaKonami)) {
+        this.desbloquear("pixel");
+      }
+
+      // Easter egg da palavra DENGUE.
+      if (this.letras.endsWith("dengue")) {
+        this.desbloquear("dengue");
+      }
       if (k === "e") this.picar();
       if (k === "h") this.dica();
       if (k === "q") this.abrirPergunta();
