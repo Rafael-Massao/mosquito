@@ -483,11 +483,12 @@ kbd{font:700 .7rem Figtree,sans-serif;border:1px solid rgba(255,255,255,.25);bor
 <div class="hxm-ctrl" id="hx-controles-mobile" hidden>
 <b>Direcional</b><span>mover com o polegar esquerdo</span>
 <b>Arrastar</b><span>olhar pelo cenário</span>
-<b>↑ / ↓</b><span>segurar para subir / descer</span>
+<b>Altitude</b><span>olhe para cima ou para baixo enquanto voa</span>
 <b>Sprint</b><span>segurar para acelerar</span>
 <b>Picar / Poder</b><span>atacar / usar habilidade</span>
 <b>Pegar</b><span>pegar ou devolver objetos</span>
-<b>Evoluções</b><span>tocar nos quatro cartões</span>
+<b>Evoluções</b><span>cartões entre o direcional e as ações</span>
+<b>Skins / Conquistas</b><span>botões sempre visíveis no topo</span>
 <b>••• / Ⅱ</b><span>mais ações / pausar</span>
 </div></div></div><div class="hxm-bottom"><div class="hxm-res" id="hx-resumo"></div><p class="hxm-save" id="hx-save"></p></div></section>`;
     document.body.appendChild(m); this.menuEl = m;
@@ -3732,12 +3733,12 @@ class TouchControls {
     const el = document.createElement("div"); el.id = "hx-touch"; el.hidden = true;
     el.innerHTML = `
 <div class="mt-toolbar">
+  <button type="button" data-action="skins" class="mt-collection"><span>🎨</span> Skins</button>
+  <button type="button" data-action="conq" class="mt-collection"><span>🏆</span> Conquistas</button>
   <button type="button" id="mt-more" aria-label="Mais ações" aria-expanded="false" aria-controls="mt-panel">•••</button>
   <button type="button" id="mt-pause" aria-label="Pausar jogo"><span class="mt-pause-icon" aria-hidden="true"></span></button>
 </div>
 <div id="mt-panel" hidden aria-label="Mais ações">
-  <button type="button" data-action="skins">🎨 Skins</button>
-  <button type="button" data-action="conq">🏆 Conquistas</button>
   <button type="button" data-action="dica">💡 Dica</button>
   <button type="button" data-action="som">♫ Som</button>
   <button type="button" data-action="quadro">📝 Quadro</button>
@@ -3747,10 +3748,8 @@ class TouchControls {
 <div id="mt-stick" aria-label="Direcional de movimento"><span id="mt-thumb"></span><small>MOVER</small></div>
 <p id="mt-look-hint">Arraste no cenário para olhar</p>
 <div class="mt-actions" aria-label="Ações do jogo">
-  <button type="button" data-hold=" " aria-label="Subir, segure"><span>↑</span>Subir</button>
   <button type="button" data-action="picar" class="mt-bite"><span>🩸</span>Picar</button>
   <button type="button" data-action="poder"><span>✦</span>Poder</button>
-  <button type="button" data-hold="control" aria-label="Descer, segure"><span>↓</span>Descer</button>
   <button type="button" data-hold="shift" aria-label="Sprint, segure"><span>»</span>Sprint</button>
   <button type="button" data-action="pegar" aria-label="Pegar ou devolver carteira ou livro"><span>✋</span>Pegar</button>
 </div>`;

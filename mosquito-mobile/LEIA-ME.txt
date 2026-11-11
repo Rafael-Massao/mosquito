@@ -1,0 +1,22 @@
+MOSQUITO EVOLUTION — CONTROLES MOBILE
+
+Instalação
+1. Substitua index.html, style.css e script.js pelos arquivos deste pacote, na mesma pasta do site.
+2. Mantenha as pastas icons/ e sound/ do seu projeto original. Elas não foram enviadas e não estão neste pacote.
+3. Recarregue a página. Se houver cache no servidor ou navegador, atualize-o.
+
+Como jogar
+No menu inicial ou de pausa, escolha “Celular / toque” e toque em Jogar.
+O modo é selecionado automaticamente em dispositivos de toque e a escolha fica salva no navegador.
+Use o direcional à esquerda para mover e arraste pelo cenário para olhar.
+Para subir ou descer, direcione a câmera enquanto voa. Segure Sprint; toque em Picar, Poder e Pegar para agir.
+Toque nos quatro cartões para evoluir. Skins e Conquistas ficam visíveis no topo. Use ••• para dicas, som, tour, quadro e arrombar armários.
+Use o botão de pausa para voltar ao menu e trocar o modo de controle.
+O modo gráfico Leve é o padrão mobile quando não há uma preferência gráfica salva.
+A tela funciona em pé e deitada; deitada oferece mais espaço para ver o cenário.
+
+Validação
+Testes automatizados de controles e navegador Chromium com toque emulado, em 320×568, 390×844, 768×1024, 844×390, 667×375 568×320 e 1464×818.
+Incluem multitoque, câmera, sprint, cancelamento de gestos, pausa, coleção e compatibilidade com teclado.
+Não houve teste em aparelho físico. A taxa de quadros depende do dispositivo.
+O jogo continua usando Three.js pela CDN e fontes do Google, como no projeto original.
