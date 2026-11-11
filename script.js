@@ -30,7 +30,7 @@ const CFG = {
     relojoeiro: { nome: "Relojoeiro dourado", corpo: 0xffd84d, abd: 0xc9a227, brilho: 0xffaa00, ei: 0.35, metal: true, dica: "O tempo voa... encoste no relógio da aula de Biologia" },
     radioativo: { nome: "Radioativo",         corpo: 0x1a3a1a, abd: 0x39ff14, brilho: 0x39ff14, ei: 0.9, asa: 0xb6ffb0, dica: "Pouse 1 s em cima do galão radioativo do laboratório" },
     jogador:    { nome: "Craque da quadra",   corpo: 0xff7a1a, abd: 0x1a1a1a, brilho: 0xff7a1a, ei: 0.3,  dica: "Faça uma cesta: atravesse um aro do ginásio de cima para baixo" },
-    fantasma:   { nome: "Fantasma", neblina: true,           corpo: 0xdff4ff, abd: 0xbfe6ff, brilho: 0x88ccff, ei: 0.6, alfa: 0.35, asa: 0xffffff, dica: "Encare seu reflexo no espelho do banheiro" },
+    fantasma:   { nome: "Fantasma", corpo: 0xdff4ff, abd: 0xbfe6ff, brilho: 0x88ccff, ei: 0.6, alfa: 0.35, asa: 0xffffff, dica: "Encare seu reflexo no espelho do banheiro" },
     vampiro:    { nome: "Conde Drácula",      corpo: 0x14000a, abd: 0x8b0000, brilho: 0xff0033, ei: 0.7,  dica: "Pique 10 humanos" },
     mosquito:   { nome: "Mosquitão da rua",   corpo: 0x5a7a22, abd: 0x42591a, perna: 0x2b3416, brilho: 0xb8ff4d, asa: 0xcfe98c, ei: 0.35, rua: true, dica: "Encare o Mosquitão da rua: a estátua sobre o palco do auditório" },
     carreta:    { nome: "Caminhão de som",    corpo: 0x15151f, abd: 0x1b1b2b, perna: 0x0a0a12, brilho: 0xff44cc, ei: 1.0, asa: 0xffd9f5, rig: true, dica: "Fique parado 3 s diante do telão do auditório (a moldura muda de cor)" },
@@ -40,6 +40,7 @@ const CFG = {
     cadeado:    { nome: "Mosquito Cadeado", corpo: 0x3c424e, abd: 0x2c313b, perna: 0x181b21, brilho: 0xffc933, ei: 0.2, metal: true, asa: 0xcfd6e2, cadeado: true, dica: "Há um armário trancado e amassado no corredor, entre as salas 1 e 2. Segure F perto dele para arrombar" },
     tusk:       { nome: "Tusk", corpo: 0xf59ab8, abd: 0xef7fa6, perna: 0xc2527f, brilho: 0xff8ac0, ei: 0.18, tusk: true, dica: "Há 4 partes de um louva-a-deus espalhadas pela escola (brilho verde). Cada uma evolui o Tusk de Ato, como o stand do JoJo" },
     mosquito8000: { nome: "Mosquito 8000", corpo: 0x8f9bb0, abd: 0x6c7890, perna: 0x3b4252, brilho: 0x00e5ff, ei: 0.9, metal: true, asa: 0x9be9ff, robo: true, dica: "O quadro de matemática da Sala 1 aceita respostas (tecla Q). A certa dá conquista... mas e se você pensar bem maior?" },
+    encadernado: { nome: "Mosquito Encadernado", corpo: 0x29365d, abd: 0x63528a, perna: 0x282646, brilho: 0xffd28b, olho: 0xf0d59d, asa: 0xffe9bf, ei: 0.12, livro: true, dica: "Alguém esqueceu um livro em uma mesa da cantina. Leve-o à estante marcada da biblioteca (tecla B)." },
   },
   // CONQUISTAS: cat = categoria · r = raridade (b/p/o) · premio = sangue · secreto = escondida até ser obtida
   RAR: { b: { nome: "Bronze", cor: "#cd7f32", pts: 10 }, p: { nome: "Prata", cor: "#c4ccdc", pts: 25 }, o: { nome: "Ouro", cor: "#ffd84d", pts: 50 } },
@@ -75,6 +76,7 @@ const CFG = {
     { id: "explorador", nome: "Explorador", ico: "🧭", desc: "Visite todas as salas da escola", cat: "Exploração", r: "p", premio: 250 },
     { id: "turista", nome: "Turista", ico: "🗺️", desc: "Faça o tour da escola (tecla =)", cat: "Exploração", r: "b", premio: 30 },
     { id: "carteira", nome: "Bom cidadão", ico: "🎒", desc: "Devolva uma carteira perdida (tecla B)", cat: "Exploração", r: "b", premio: 60 },
+    { id: "livro_devolvido", nome: "Página Recuperada", ico: "📚", desc: "Ache o livro na cantina e devolva-o à estante da biblioteca (tecla B)", cat: "Exploração", r: "p", premio: 140 },
     { id: "fala", nome: "Bom ouvinte", ico: "💬", desc: "Escute o Mosquitão da rua", cat: "Exploração", r: "b", premio: 40 },
     { id: "matematica", nome: "Nota dez", ico: "📝", desc: "Responda a pergunta do quadro de matemática (tecla Q)", cat: "Exploração", r: "b", premio: 50 },
     { id: "mantis_cabeca", nome: "Mente Predadora", ico: "🧠", desc: "Encontre a cabeça do louva-a-deus", cat: "Segredos", r: "b", premio: 100 },
@@ -127,6 +129,7 @@ const ATRIB = {
   cadeado: { def: 0.35, vida: 30, vel: 0.92 },
   tusk: CFG.TUSK[0].attr, 
   mosquito8000: { vel: 1.3, stam: 1.5, colhe: 1.2 },
+  encadernado: { stam: 1.12, colhe: 1.10 },
 };
 for (const id in ATRIB) CFG.SKINS[id].attr = ATRIB[id];
 const descAttr = (a = {}) => {   // texto dos atributos para o menu de skins
@@ -150,7 +153,7 @@ for (const id of Object.keys(CFG.SKINS)) CFG.CONQ.push({ id: "skin_" + id, nome:
     r: i <= 3 ? "b" : i <= 8 ? "p" : "o", premio: Math.round(30 * Math.pow(1.35, i)) })).filter(Boolean);
   CFG.CONQ.splice(CFG.CONQ.findIndex((c) => c.id === "corpo10") + 1, 0, ...lista);
 }
-const SKIN_ICO = { pixel: "👾", dengue: "🦟", relojoeiro: "⏳", radioativo: "☢️", jogador: "🏀", fantasma: "👻", vampiro: "🧛", mosquito: "🪰", carreta: "🔊", eletrizado: "⚡", pintado: "🎨", extintor: "🧯", cadeado: "🔒", tusk: "🦗", mosquito8000: "🤖" };
+const SKIN_ICO = { pixel: "👾", dengue: "🦟", relojoeiro: "⏳", radioativo: "☢️", jogador: "🏀", fantasma: "👻", vampiro: "🧛", mosquito: "🪰", carreta: "🔊", eletrizado: "⚡", pintado: "🎨", extintor: "🧯", cadeado: "🔒", tusk: "🦗", mosquito8000: "🤖", encadernado: "📖" };
 
 // ---- Habilidades especiais (tecla R): cada skin tem a sua; "padrao" vale para quem está sem skin. usar(g) recebe o GameManager e pode devolver false para cancelar a recarga ----
 const HABS = {
@@ -160,7 +163,7 @@ const HABS = {
   relojoeiro: { nome: "Tempo Parado", ico: "⏳", cd: 25, dur: 5, desc: "Por 5 s humanos e nuvens de gás quase congelam.", usar(g) { g.buff.tempo = 5; g.ui.flash("rgba(255,216,77,.55)"); } },
   radioativo: { nome: "Aura Radioativa", ico: "☢️", cd: 20, dur: 8, desc: "Por 8 s nenhum humano consegue te dar tapa.", usar(g) { g.buff.radio = 8; g.mundo.emitir(g.jogador.pos, 0x39ff14, 30, 6); } },
   jogador:    { nome: "Arrancada", ico: "🏀", cd: 14, dur: 4, desc: "Por 4 s velocidade +70% e stamina infinita.", usar(g) { g.buff.vel = 4; g.buff.stamInf = 4; } },
-  fantasma:   { nome: "Invisibilidade", ico: "👻", cd: 18, dur: 6, desc: "Por 6 s os humanos não te veem: picar não os irrita.", usar(g) { g.buff.invis = 6; g.mundo.emitir(g.jogador.pos, 0xbfe6ff, 24, 3, "fumaca"); } },
+  fantasma:   { nome: "Invisibilidade", ico: "👻", cd: 18, dur: 6, desc: "Por 6 s os humanos não te veem: picar não os irrita.", usar(g) { g.buff.invis = 6; } },
   vampiro:    { nome: "Frenesi", ico: "🧛", cd: 28, dur: 8, desc: "Por 8 s: sangue em dobro e +30 de vida por picada. Um humano pode levar a segunda picada após 3 s, mas apenas uma repetição por Frenesi.", usar(g) {
     g.finalizarFrenesi();
     g.alvosFrenesi = new Map(); // por humano: contador de picadas feitas na ativação
@@ -183,6 +186,11 @@ const HABS = {
   cadeado:    { nome: "Cadeado Fechado", ico: "🔒", cd: 20, dur: 5, desc: "Por 5 s você é invulnerável, mas anda 55% mais devagar.", usar(g) { g.jogador.escudo = 5; g.buff.pesado = 5; } },
   tusk:       { nome: "Rajada de Unhas", ico: "🦗", cd: 10, dur: 0, desc: "Dispara unhas douradas que picam humanos à distância sem irritá-los. Ato 1: 1 alvo, Ato 2: 2, Ato 3: 3, Ato 4: todos no raio de 25 (e a recarga cai de 10 para 4 s).", usar(g) { return g.rajadaTusk(); } },
   mosquito8000: { nome: "Scanner 8000", ico: "🤖", cd: 22, dur: 10, desc: "Por 10 s o alcance de coleta fica 2,5x maior e as gotas ficam realçadas.", usar(g) { g.buff.scan = 10; } },
+  encadernado: { nome: "Páginas Vivas", ico: "📖", cd: 24, dur: 0, desc: "Enfeitiça os humanos num raio de 14 por 5 s e recupera 35 de stamina.", usar(g) {
+    g.atordoar(14, 5);
+    g.jogador.stamina = Math.min(g.estado.staminaMax, g.jogador.stamina + 35);
+    return true;
+  } },
 };
 const $ = (id) => document.getElementById(id);
 const { clamp } = THREE.MathUtils;
@@ -192,7 +200,8 @@ const GRAF_KEY = 'mosquito-evolution-graficos-v1';
 const GRAFICOS = Object.freeze({
   leve: { nome: 'Desempenho', resolucao: 0.7, particulas: 0.35, maxParticulas: 80, alcanceDecor: 34, distancia: 135, fps: 30, aneis: 1 },
   medio: { nome: 'Equilibrado', resolucao: 1, particulas: 0.7, maxParticulas: 160, alcanceDecor: 75, distancia: 230, fps: 60, aneis: 2 },
-  alto: { nome: 'Qualidade', resolucao: 1.7, particulas: 1, maxParticulas: 260, alcanceDecor: Infinity, distancia: 500, fps: 0, aneis: 2 }
+  alto: { nome: 'Qualidade', resolucao: 1.7, particulas: 1, maxParticulas: 260, alcanceDecor: Infinity, distancia: 500, fps: 0, aneis: 2 },
+  ultra: { nome: 'Ultra · shaders V11', resolucao: 1.65, particulas: 1.2, maxParticulas: 330, alcanceDecor: Infinity, distancia: 500, fps: 0, aneis: 3 }
 });
 function lerGraficos() {
   try { const modo = localStorage.getItem(GRAF_KEY); return GRAFICOS[modo] ? modo : 'medio'; }
@@ -214,14 +223,14 @@ class GameState {
     this.sangue = 0;
     this.nv = { asas: 0, tromba: 0, estomago: 0, corpo: 0 };
     this.skins = []; this.skin = null; this.picadas = 0; this.auraTusk = true; this.pixelCor = COR_PIXEL_PADRAO;
-    this.conq = []; this.salas = []; this.carteiras = 0; this.mantis = []; this.habs = [];
+    this.conq = []; this.salas = []; this.carteiras = 0; this.livroDevolvido = false; this.mantis = []; this.habs = [];
     try {
       const s = JSON.parse(localStorage.getItem(CFG.SAVE));
       if (s && s.nv) { this.sangue = +s.sangue || 0; for (const k in this.nv) this.nv[k] = clamp(Math.floor(Number(s.nv[k]) || 0), 0, CFG.UP_MAX); }
-      if (s) { this.auraTusk = s.auraTusk !== false; this.pixelCor = corPixelValida(s.pixelCor) ? s.pixelCor.toLowerCase() : COR_PIXEL_PADRAO; const mig = (k) => (k === "arcoiris" ? "pixel" : k); this.skins = Array.isArray(s.skins) ? s.skins.map(mig).filter((k) => CFG.SKINS[k]) : []; this.skin = CFG.SKINS[mig(s.skin)] ? mig(s.skin) : null; this.picadas = +s.picadas || 0; this.conq = Array.isArray(s.conq) ? s.conq.filter((id) => CFG.CONQ.some((c) => c.id === id)) : []; this.salas = Array.isArray(s.salas) ? s.salas : []; this.carteiras = +s.carteiras || 0; this.habs = Array.isArray(s.habs) ? s.habs : []; this.mantis = Array.isArray(s.mantis) ? s.mantis.filter((i) => ["cabeca", "foices", "torax", "abdomen"].includes(i)) : []; }
+      if (s) { this.auraTusk = s.auraTusk !== false; this.pixelCor = corPixelValida(s.pixelCor) ? s.pixelCor.toLowerCase() : COR_PIXEL_PADRAO; const mig = (k) => (k === "arcoiris" ? "pixel" : k); this.skins = Array.isArray(s.skins) ? s.skins.map(mig).filter((k) => CFG.SKINS[k]) : []; this.skin = CFG.SKINS[mig(s.skin)] ? mig(s.skin) : null; this.picadas = +s.picadas || 0; this.conq = Array.isArray(s.conq) ? s.conq.filter((id) => CFG.CONQ.some((c) => c.id === id)) : []; this.salas = Array.isArray(s.salas) ? s.salas : []; this.carteiras = +s.carteiras || 0; this.livroDevolvido = s.livroDevolvido === true; this.habs = Array.isArray(s.habs) ? s.habs : []; this.mantis = Array.isArray(s.mantis) ? s.mantis.filter((i) => ["cabeca", "foices", "torax", "abdomen"].includes(i)) : []; }
     } catch (e) { /* sem save */ }
   }
-  salvar() { try { localStorage.setItem(CFG.SAVE, JSON.stringify({ sangue: this.sangue, nv: this.nv, skins: this.skins, skin: this.skin, picadas: this.picadas, conq: this.conq, salas: this.salas, carteiras: this.carteiras, mantis: this.mantis, habs: this.habs, auraTusk: this.auraTusk, pixelCor: this.pixelCor })); } catch (e) {} }
+  salvar() { try { localStorage.setItem(CFG.SAVE, JSON.stringify({ sangue: this.sangue, nv: this.nv, skins: this.skins, skin: this.skin, picadas: this.picadas, conq: this.conq, salas: this.salas, carteiras: this.carteiras, livroDevolvido: this.livroDevolvido, mantis: this.mantis, habs: this.habs, auraTusk: this.auraTusk, pixelCor: this.pixelCor })); } catch (e) {} }
   get total() { return this.nv.asas + this.nv.tromba + this.nv.estomago + this.nv.corpo; }
   get estagio() { let e = CFG.ESTAGIOS[0]; for (const x of CFG.ESTAGIOS) if (this.total >= x.min) e = x; return e; }
   custo(k) { return this.nv[k] >= CFG.UP_MAX ? Infinity : Math.floor(CFG.UPS[k].base * Math.pow(CFG.CRESCE, this.nv[k])); }
@@ -420,7 +429,7 @@ kbd{font:700 .7rem Figtree,sans-serif;border:1px solid rgba(255,255,255,.25);bor
 .sk-eq{margin-top:6px;padding:11px;border:0;border-radius:11px;font:800 .9rem Syne,sans-serif;cursor:pointer;background:#ffd84d;color:#0e0c18}.sk-eq:disabled{background:rgba(255,255,255,.1);color:#98a0af;cursor:default}
 .hxm-graficos{margin-top:14px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.04)}
 .hxm-graficos b{font:800 .85rem Syne,sans-serif;color:#ffd84d}
-.hxm-graf-botoes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:9px}
+.hxm-graf-botoes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:9px}
 .hxm-graf-botoes button{padding:10px 5px;border-radius:8px;font:700 .72rem Figtree,sans-serif;cursor:pointer;color:#dbe3ee;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.18)}
 .hxm-graf-botoes button.ativo{background:#ffd84d;color:#14101e;border-color:#ffd84d;box-shadow:0 0 10px rgba(255,216,77,.25)}
 .hxm-graficos small{display:block;font-size:.7rem;color:#a8b0bd;line-height:1.4;margin-top:9px}
@@ -450,12 +459,12 @@ kbd{font:700 .7rem Figtree,sans-serif;border:1px solid rgba(255,255,255,.25);bor
   montarMenu() {
     const m = document.createElement("div"); m.id = "hx-menu";
     const voa = Array.from({ length: 9 }, (_, i) => `<i style="left:${-5 - i * 7}vw;top:${8 + ((i * 37) % 80)}vh;font-size:${1.4 + (i % 3)}rem;animation-duration:${22 + i * 5}s;animation-delay:-${i * 4}s">🦟</i>`).join("");
-    const ctrl = [["W A S D", "mover"], ["Mouse", "olhar"], ["Espaço / Ctrl", "subir / descer"], ["Shift", "sprint"], ["1 2 3 4", "evoluir"], ["E", "picar um humano"], ["R", "habilidade da skin"], ["K / C", "skins / conquistas"], ["F", "arrombar armário"], ["Q", "responder o quadro"], ["B", "devolver carteira"], ["H · M · =", "dica · som · tour"]]
+    const ctrl = [["W A S D", "mover"], ["Mouse", "olhar"], ["Espaço / Ctrl", "subir / descer"], ["Shift", "sprint"], ["1 2 3 4", "evoluir"], ["E", "picar um humano"], ["R", "habilidade da skin"], ["K / C", "skins / conquistas"], ["F", "arrombar armário"], ["Q", "responder o quadro"], ["B", "carteira / livro"], ["H · M · =", "dica · som · tour"]]
       .map(([a, b]) => `<kbd>${a}</kbd><span>${b}</span>`).join("");
     m.innerHTML = `<div class="hxm-fundo">${voa}</div><section class="hxm-painel"><header><h1 id="hx-menu-titulo">MOSQUITO</h1><p>Evolução noturna · escola assombrada de humanos</p></header>
 <div class="hxm-grid"><div class="hxm-col"><button class="hx-btn" id="hx-btn-jogar">Jogar</button><div class="hxm-atalhos"><button id="hx-btn-skins">🎨 Skins <kbd>K</kbd></button><button id="hx-btn-conq">🏆 Conquistas <kbd>C</kbd></button></div>
 <div class="hxm-graficos"><b>⚙️ Modo gráfico</b><div class="hxm-graf-botoes">
-<button type="button" data-modo-grafico="leve">🚀 Leve</button><button type="button" data-modo-grafico="medio">⚖️ Normal</button><button type="button" data-modo-grafico="alto">✨ Alto</button></div>
+<button type="button" data-modo-grafico="leve">🚀 Leve</button><button type="button" data-modo-grafico="medio">⚖️ Normal</button><button type="button" data-modo-grafico="alto">✨ Alto</button><button type="button" data-modo-grafico="ultra">💎 Ultra</button></div>
 <small id="hx-graf-desc">Escolha o desempenho ideal para o seu PC.</small></div></div>
 <div class="hxm-col"><h3>Controles</h3><div class="hxm-ctrl">${ctrl}</div></div></div><div class="hxm-bottom"><div class="hxm-res" id="hx-resumo"></div><p class="hxm-save" id="hx-save"></p></div></section>`;
     document.body.appendChild(m); this.menuEl = m;
@@ -708,7 +717,8 @@ ${sel === "tusk" && liberada ? `<button id="sk-aura-tusk" type="button" aria-pre
     const descricoes = {
       leve: 'Para PCs fracos: menos pixels, partículas e decoração distante; limite de 30 FPS.',
       medio: 'Equilíbrio entre visual e desempenho; limite de 60 FPS.',
-      alto: 'Melhor imagem e efeitos completos; FPS livre.'
+      alto: 'Melhor imagem e efeitos completos; FPS livre.',
+      ultra: 'Ultra natural: sombras reais, materiais mais definidos, luz equilibrada e bloom discreto.'
     };
     this.menuEl.querySelectorAll('[data-modo-grafico]').forEach(b => {
       const ativo = b.dataset.modoGrafico === modo;
@@ -1154,6 +1164,170 @@ for (let i = 0; i < 6; i++) {
   if (i < 5) { const an = new THREE.Mesh(new THREE.TorusGeometry(w * 0.88, 0.013, 6, 16), matRuaOsso); an.position.set(0, -0.01 - i * 0.005, z + 0.045); ruaA.add(an); }
   if (i >= 1 && i <= 4) for (const l of [1, -1]) { const esp = new THREE.Mesh(new THREE.ConeGeometry(0.015, 0.12, 5), matRuaClara); esp.position.set(l * (w * 0.9), -0.01 - i * 0.005, z); esp.rotation.z = l > 0 ? -Math.PI / 2 : Math.PI / 2; ruaA.add(esp); }
 }
+// MOSQUITO ENCADERNADO V15B — modelo caderno vivo com conexões reforçadas.
+// Nada fica sobreposto ao corpo organico: cabeca, torax, patas, ferrão e
+// abdomen de papel usam grupos proprios e os mesmos pivôs de voo.
+const encG = new THREE.Group(), encAbd = new THREE.Group(), encFerrão = new THREE.Group();
+const encDetalhes = new THREE.Group(), encDetalhesAbd = new THREE.Group(), encEspiral = new THREE.Group();
+const encAsas = [], encAsasDetalhes = [], encPernas = [];
+encG.visible = encAbd.visible = encFerrão.visible = false;
+mosquito.add(encG, encFerrão); abdomen.add(encAbd);
+const encCapa = mat(0x314779, { roughness: 0.82, metalness: 0.05 });
+const encBordaCapa = mat(0x1d284a, { roughness: 0.85 });
+const encPapel = mat(0xfff0c9, { roughness: 0.96, side: THREE.DoubleSide });
+const encPapelSombra = mat(0xdbd0b3, { roughness: 0.97, side: THREE.DoubleSide });
+const encOuro = mat(0xcda961, { roughness: 0.47, metalness: 0.26 });
+const encTinta = mat(0x27314c, { roughness: 0.6 });
+const encMetal = mat(0xd6dce7, { roughness: 0.29, metalness: 0.74 });
+const encOlho = mat(0x3b284d, { roughness: 0.22, metalness: 0.04 });
+const encCiano = mat(0x72c4d3, { roughness: 0.56 });
+const encNovo = (pai, w, h, d, material, x, y, z, rz = 0) => {
+  const obj = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+  obj.position.set(x, y, z); obj.rotation.z = rz; pai.add(obj); return obj;
+};
+// Torax: caderno aberto como carapaca, com paginas dobradas e lombada central.
+encG.add(elipsoide(0.19, 1.22, 0.91, 1.32, encBordaCapa, 0, 0.005, -0.03));
+encG.add(elipsoide(0.145, 1.28, 0.84, 1.28, encPapelSombra, 0, 0.015, -0.075));
+// Cintura verdadeira: a mesma peça atravessa o final do tórax e o início do abdômen.
+// Como pertence ao encG, cresce com Corpo e continua conectada nos níveis altos.
+const encCintura = elipsoide(0.115, 1.13, 0.9, 1.8, encBordaCapa, 0, -0.014, 0.176);
+encG.add(encCintura);
+encG.add(elipsoide(0.083, 1.12, 0.82, 1.35, encPapelSombra, 0, -0.005, 0.222));
+// Ligação curta, interna, unindo a base do crânio ao tórax.
+encG.add(elipsoide(0.091, 1.12, 0.91, 1.36, encBordaCapa, 0, 0.01, -0.195));
+encNovo(encG, 0.39, 0.055, 0.46, encBordaCapa, 0, 0.166, 0.012);
+for (const l of [-1, 1]) {
+  // O vinco encontra o centro; capas permanecem presas ao torax.
+  encNovo(encG, 0.235, 0.038, 0.47, encCapa, l * 0.118, 0.200, 0.007, l * 0.16);
+  encNovo(encG, 0.215, 0.022, 0.44, encPapel, l * 0.109, 0.229, 0.008, l * 0.16);
+  encNovo(encDetalhes, 0.195, 0.012, 0.028, encOuro, l * 0.11, 0.252, -0.19);
+  encNovo(encDetalhes, 0.195, 0.012, 0.025, encOuro, l * 0.11, 0.250, 0.207);
+  for (let i = 0; i < 3; i++) {
+    encNovo(encDetalhes, 0.125, 0.008, 0.009, encCiano,
+      l * 0.125, 0.254, -0.125 + i * 0.082);
+  }
+}
+encNovo(encG, 0.035, 0.057, 0.5, encOuro, 0, 0.215, 0.008);
+const encEmblema = new THREE.Mesh(new THREE.IcosahedronGeometry(0.035, 1), encOuro);
+encEmblema.position.set(0, 0.265, -0.12); encG.add(encEmblema);
+encG.add(encDetalhes);
+for (const l of [-1, 1]) {
+  // As asas são filhas dos pivôs globais; estas bases se encontram com eles
+  // em todas as escalas de Corpo, sem alterar as animações de voo.
+  encG.add(tubo(V(l * 0.078, 0.105, -0.02), V(l * 0.108, 0.165, 0), 0.023, encBordaCapa));
+  encG.add(elipsoide(0.041, 1.0, 0.72, 1.0, encOuro, l * 0.105, 0.15, 0));
+}
+// Cabeca: borda de capa, rosto de papel, olhos de tinta e marcadores de pagina.
+encG.add(elipsoide(0.125, 1.13, 0.92, 0.92, encBordaCapa, 0, 0.016, -0.287));
+encG.add(elipsoide(0.112, 1.03, 0.87, 0.96, encPapel, 0, 0.013, -0.305));
+encNovo(encG, 0.23, 0.025, 0.12, encCapa, 0, 0.107, -0.318);
+for (const l of [-1, 1]) {
+  encG.add(elipsoide(0.025, 0.9, 1.03, 0.62, encOlho, l * 0.057, 0.038, -0.405));
+  encG.add(elipsoide(0.008, 1, 1, 1, encPapel, l * 0.06 - 0.005, 0.049, -0.419));
+  // Antenas parecem clipes de papel, mas seguem a silhueta de mosquito.
+  encG.add(tubo(V(l * 0.04, 0.105, -0.32), V(l * 0.11, 0.22, -0.42), 0.008, encMetal));
+  encG.add(tubo(V(l * 0.11, 0.22, -0.42), V(l * 0.175, 0.28, -0.46), 0.006, encMetal));
+  encG.add(elipsoide(0.013, 1, 1, 1, encCapa, l * 0.175, 0.28, -0.46));
+}
+// Seis pernas: duas hastes por perna com ponta de caneta, sempre ligadas ao torax.
+for (const l of [-1, 1]) {
+  for (let i = 0; i < 3; i++) {
+    const perna = new THREE.Group();
+    perna.position.set(l * 0.15, -0.080, -0.145 + i * 0.14);
+    const joelho = V(l * (0.21 + i * 0.045), -0.17 - i * 0.017, -0.15 + i * 0.13);
+    const ponta = V(l * (0.42 + i * 0.080), -0.32 - i * 0.015, -0.34 + i * 0.30);
+    // A anca nasce dentro do tórax; articulação redonda mascara a transição.
+    perna.add(elipsoide(0.041, 1.04, 1.04, 1.04, encBordaCapa, 0, 0, 0));
+    perna.add(tubo(V(0, 0, 0), joelho, 0.020, encCapa));
+    perna.add(tubo(joelho, ponta, 0.012, encTinta));
+    perna.add(elipsoide(0.024, 1, 1, 1, encOuro, joelho.x, joelho.y, joelho.z));
+    perna.add(elipsoide(0.014, 1.25, 1.05, 1.6, encMetal, ponta.x, ponta.y, ponta.z));
+    encG.add(perna); encPernas.push(perna);
+  }
+}
+// Ferrão em formato de pena de caneta, dimensionado com o upgrade de Tromba.
+encFerrão.add(tubo(V(0, 0, 0), V(0, -0.018, -0.48), 0.026, encCapa));
+encFerrão.add(tubo(V(0, -0.018, -0.48), V(0, -0.035, -0.68), 0.014, encMetal));
+const encBico = new THREE.Mesh(new THREE.ConeGeometry(0.033, 0.16, 7), encTinta);
+encBico.rotation.x = -Math.PI / 2; encBico.position.set(0, -0.035, -0.755); encFerrão.add(encBico);
+encNovo(encFerrão, 0.053, 0.048, 0.08, encOuro, 0, -0.015, -0.20);
+// Abdomen-caderno: folhas em blocos conectados, capas externas e espiral
+// HELICOIDAL CONTINUA no dorso. Nenhum Torus isolado: nao parece corrente.
+const encCentro = new THREE.Group(); encAbd.add(encCentro, encDetalhesAbd);
+for (let i = 0; i < 9; i++) {
+  const z = 0.06 + i * 0.112;
+  const largura = 0.34 - i * 0.025;
+  const altura = 0.115 - i * 0.006;
+  const yc = -i * 0.009;
+  const topo = yc + altura * 0.5;
+  // Profundidade 0.135 > passo 0.112: os nove segmentos se interpenetram,
+  // mantendo a superfície continua mesmo depois do upgrade de Estômago.
+  encNovo(encCentro, largura, altura, 0.135, encPapel, 0, yc, z);
+  encNovo(encCentro, 0.022, altura + 0.018, 0.136, encCapa, -largura * 0.5 + 0.009, yc, z);
+  encNovo(encCentro, 0.022, altura + 0.018, 0.136, encCapa, largura * 0.5 - 0.009, yc, z);
+  // A lombada segue a curva das folhas, em vez de flutuar reta sobre a cauda.
+  encNovo(encAbd, 0.102 - i * 0.005, 0.024, 0.145, encBordaCapa, 0, topo + 0.005, z);
+  encNovo(encDetalhesAbd, largura * 0.65, 0.009, 0.016, encPapelSombra, 0, topo + 0.004, z - 0.037);
+}
+encAbd.add(encEspiral);
+// Curva helicoidal usando UM tubo ininterrupto, nao argolas separadas.
+function encCriarMola(voltas, segmentos, faces, raioFio) {
+  const pts = [];
+  for (let i = 0; i <= segmentos; i++) {
+    const f = i / segmentos, a = f * Math.PI * 2 * voltas;
+    // raio ligeiramente menor na ponta do abdomen, como caderno afunilado.
+    const r = 0.046 - f * 0.010;
+    // A altura acompanha o afinamento/curvatura dos segmentos: sem mola no ar.
+    pts.push(V(Math.cos(a) * r, 0.084 - 0.095 * f + Math.sin(a) * r, 0.045 + f * 0.94));
+  }
+  const curva = new THREE.CatmullRomCurve3(pts);
+  return new THREE.Mesh(new THREE.TubeGeometry(curva, segmentos, raioFio, faces, false), encMetal);
+}
+const encMolaLeve = encCriarMola(7, 100, 4, 0.011);
+const encMolaAlta = encCriarMola(11, 320, 6, 0.010);
+encEspiral.add(encMolaLeve, encMolaAlta);
+// Furos de encadernacao em ambos os lados do espiral, como em caderno.
+for (let i = 0; i < 12; i++) {
+  const z = 0.064 + i * 0.079;
+  const f = i / 11;
+  for (const l of [-1, 1]) {
+    encNovo(encDetalhesAbd, 0.013, 0.012, 0.024, encTinta,
+      l * (0.082 - f * 0.018), 0.068 - 0.095 * f, z);
+  }
+}
+// Ultima folha afunila ate o ferrão traseiro.
+const encCauda = new THREE.Mesh(new THREE.ConeGeometry(0.046, 0.17, 7), encCapa);
+encCauda.rotation.x = Math.PI / 2; encCauda.position.set(0, -0.080, 1.105); encAbd.add(encCauda);
+// Asas de papel: folhas delineadas, vinco e pautas discretas; acompanham a animacao original.
+const encFormaAsa = new THREE.Shape();
+encFormaAsa.moveTo(0, 0);
+encFormaAsa.bezierCurveTo(0.30, 0.16, 0.78, 0.17, 1.10, 0.04);
+encFormaAsa.quadraticCurveTo(1.24, -0.04, 1.14, -0.14);
+encFormaAsa.bezierCurveTo(0.79, -0.22, 0.30, -0.11, 0, 0);
+encFormaAsa.closePath();
+const encGeoAsa = new THREE.ShapeGeometry(encFormaAsa);
+const encBordaAsa = new THREE.LineBasicMaterial({ color: 0x9a7b50 });
+const encPautaAsa = new THREE.LineBasicMaterial({ color: 0x9daac0 });
+for (const pivo of asas) {
+  const lado = pivo.userData.lado;
+  const pagina = new THREE.Group(); pagina.visible = false; pivo.add(pagina);
+  const folha = new THREE.Mesh(encGeoAsa, encPapel);
+  folha.rotation.x = -Math.PI / 2; folha.scale.x = lado; pagina.add(folha);
+  const margem = new THREE.LineSegments(new THREE.EdgesGeometry(encGeoAsa), encBordaAsa);
+  margem.rotation.x = -Math.PI / 2; margem.scale.x = lado; margem.position.y = 0.014; pagina.add(margem);
+  const linhas = new THREE.Group(); pagina.add(linhas); encAsasDetalhes.push(linhas);
+  for (let i = 0; i < 4; i++) {
+    const a = 0.19 + i * 0.19;
+    const pts = [V(lado * a, 0.022, -0.055), V(lado * (a + 0.12), 0.022, 0.015)];
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    linhas.add(new THREE.Line(geo, encPautaAsa));
+  }
+  const vinco = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+    V(0, 0.025, 0), V(lado * 0.96, 0.025, -0.045)
+  ]), encBordaAsa);
+  linhas.add(vinco);
+  encAsas.push(pagina);
+}
 const texRobo = (base, texto) => {   // placas metálicas com circuito ciano (e "8000" no abdômen)
   const c = document.createElement("canvas"); c.width = 128; c.height = 64; const g = c.getContext("2d");
   g.fillStyle = hexCss(base); g.fillRect(0, 0, 128, 64); g.strokeStyle = "rgba(20,30,50,.55)"; g.lineWidth = 1;
@@ -1340,6 +1514,8 @@ function aplicarCorPixel() {
 }
 
 let zoom = 1;   // tamanho atual relativo ao inicial (a câmera usa isto)
+// Guarda a transição da habilidade na instância do mosquito (não afeta o preview).
+let invisFantasmaAnterior = null, luzFantasmaBase = 0, brilhoOlhoFantasmaBase = 0;
 
 function aplicarEvolucaoVisual() {
   const n = nivelTotal(), est = estagioAtual(), idx = ESTAGIOS.indexOf(est);
@@ -1380,10 +1556,16 @@ function aplicarEvolucaoVisual() {
   luzCorpo.color.setHex(est.cor); luzCorpo.intensity = Math.min(n * 0.12, 1.6) + Math.max(0, idx - 9) * 0.4;
 
   // SKIN (easter egg): sobrescreve cores e materiais, sem mudar tamanhos
-  matCorpo.transparent = matAbd.transparent = matPerna.transparent = false;
+  // Restaura os materiais compartilhados ao trocar de skin (inclusive depois do Fantasma).
+  for (const m of [matCorpo, matAbd, matPerna, matPale, matOlho, matBrilho, matEspinho, matOuro]) {
+    m.transparent = false; m.opacity = 1; m.depthWrite = true;
+  }
+  matVeia.transparent = true; matVeia.opacity = 0.55; matVeia.depthWrite = true;
+  matBordaAsa.transparent = false; matBordaAsa.opacity = 1; matBordaAsa.depthWrite = true;
+  matBrilho.emissiveIntensity = 1.3; matOuro.emissiveIntensity = 0.6;
   matCorpo.opacity = matAbd.opacity = matPerna.opacity = 1;
   // Asas semitransparentes nas skins normais: não herdar aspecto sólido do robô.
-  matAsa.transparent = true; matAsa.opacity = Math.min(0.65, 0.4 + a * 0.03);
+  matAsa.transparent = true; matAsa.depthWrite = true; matAsa.opacity = Math.min(0.65, 0.4 + a * 0.03);
   matCorpo.metalness = matAbd.metalness = 0; matCorpo.roughness = matAbd.roughness = 0.5;
   matPerna.metalness = 0; matPerna.roughness = 0.55; matPerna.color.setHex(0x0b0b0e);
   matAsa.metalness = 0; matAsa.roughness = 0.2;
@@ -1397,22 +1579,32 @@ function aplicarEvolucaoVisual() {
     luzCorpo.color.setHex(sk.brilho); luzCorpo.intensity = Math.max(luzCorpo.intensity, 0.6);
     if (sk.asa) matAsa.color.setHex(sk.asa);
     if (sk.metal) { matCorpo.metalness = 0.7; matCorpo.roughness = 0.25; }
-    if (sk.alfa) { matCorpo.transparent = matAbd.transparent = matPerna.transparent = true; matCorpo.opacity = matAbd.opacity = matPerna.opacity = sk.alfa; }
+    if (sk.alfa) {
+      // Estado normal da V16C: apenas corpo/abdômen/pernas translúcidos (35%).
+      // Olhos, nervuras, detalhes e asas preservam o visual original fora da habilidade.
+      for (const m of [matCorpo, matAbd, matPerna]) {
+        m.transparent = true; m.opacity = sk.alfa; m.depthWrite = true;
+      }
+      luzFantasmaBase = luzCorpo.intensity;
+      brilhoOlhoFantasmaBase = matOlho.emissiveIntensity;
+    }
   }
+  invisFantasmaAnterior = null; // evolução/troca de skin redefine todos os materiais
   // SKIN PIXEL: troca TODA a silhueta do mosquito por cubos 3D.
   // As outras skins seguem com a geometria original, sem modificação.
-  const px = !!(sk && sk.pixel), robo = !!(sk && sk.robo);
-  corpoG.visible = !(px || robo);
-  abdomenCorpo.visible = !(px || robo);
-  hasteGrupo.visible = !px;
-  trompa.visible = !robo;
+  const px = !!(sk && sk.pixel), robo = !!(sk && sk.robo), enc = !!(sk && sk.livro);
+  corpoG.visible = !(px || robo || enc);
+  abdomenCorpo.visible = !(px || robo || enc);
+  hasteGrupo.visible = !(px || enc);
+  trompa.visible = !(robo || enc);
   pxCorpo.visible = px;
   if (px) aplicarCorPixel();
   pxAbdomen.visible = px;
   pxTromba.visible = px;
   for (let i = 0; i < asas.length; i++) {
-    asas[i].children[0].visible = !(px || robo); // asa normal não aparece no robô/voxel
-    pxAsas[i].visible = px;          // asa com degraus de pixels
+    asas[i].children[0].visible = !(px || robo || enc); // sem sobreposição nas asas especiais
+    pxAsas[i].visible = px;
+    encAsas[i].visible = enc;
   }
   pxCorpo.scale.setScalar(cs);
   pxAbdomen.scale.set(abx, abx, abz);
@@ -1423,12 +1615,30 @@ function aplicarEvolucaoVisual() {
   matPale.color.setHex(lis ? 0xffffff : 0xe8e2d6); matPale.emissive.setHex(lis ? 0x777777 : 0x000000);
   matAbd.map = lis ? texListras() : matAbd.map; matPerna.map = lis ? texListras(true) : matPerna.map;
   if (lis) { matAbd.color.setHex(0xffffff); matPerna.color.setHex(0xffffff); matCorpo.map = texLira(); matCorpo.color.setHex(0xffffff); }
-  for (const mm of [matCorpo, matAbd, matPerna, matPale]) mm.needsUpdate = true;
+  for (const mm of [matCorpo, matAbd, matPerna, matPale, matOlho, matBrilho, matEspinho, matOuro, matAsa, matVeia, matBordaAsa]) mm.needsUpdate = true;
   // Skins com visual próprio: meio pintado, faixas de bombeiro, caminhão de som e raios
   if (sk && sk.meia) { const kc = sk.corpo + "-" + sk.meia; matCorpo.map = cacheTex[kc] = cacheTex[kc] || texMeia(sk.corpo, sk.meia); matAbd.map = cacheTex[kc + "a"] = cacheTex[kc + "a"] || texMeia(sk.abd, sk.meia); matCorpo.color.setHex(0xffffff); matAbd.color.setHex(0xffffff); }
   if (sk && sk.faixas) { matAbd.map = cacheTex.faixas = cacheTex.faixas || texFaixas(); matAbd.color.setHex(0xffffff); }
   rigG.visible = !!(sk && sk.rig); raiosG.visible = !!(sk && sk.raios);
   cadG.visible = cadC.visible = !!(sk && sk.cadeado);
+  encG.visible = encAbd.visible = encFerrão.visible = enc;
+  if (enc) {
+    encG.scale.setScalar(cs);
+    // O abdômen normal começa em 0.30 * Corpo; isso separava as peças do
+    // Encadernado ao subir os níveis. O modelo próprio usa uma ancoragem mais
+    // curta, dentro da cintura, preservando a escala do Estômago.
+    abdomen.position.z = 0.18 * cs;
+    encAbd.scale.set(abx, abx, abz);
+    encFerrão.position.set(0, -0.035 * cs, -0.34 * cs);
+    encFerrão.scale.set(1 + (e - 1) * 0.15, 1 + (e - 1) * 0.15, c);
+    // O Leve mantem a espiral reconhecivel com geometria reduzida.
+    const simplificado = lerGraficos() === 'leve';
+    encMolaLeve.visible = simplificado;
+    encMolaAlta.visible = !simplificado;
+    encDetalhes.visible = encDetalhesAbd.visible = !simplificado;
+    encAsasDetalhes.forEach(g => { g.visible = !simplificado; });
+    luzCorpo.intensity = Math.min(luzCorpo.intensity, 0.15);
+  }
   ruaG.visible = ruaA.visible = !!(sk && sk.rua);
   if (sk && sk.rua) {
     matCorpo.roughness = 0.72; matAbd.roughness = 0.68; matPerna.roughness = 0.74;
@@ -1485,10 +1695,41 @@ function texLira() {
 
 // Animação das skins (chamada todo frame)
 let rayT = 0, beatV = 0, tPrev = 0;
-function tickSkin(t) {
+function tickSkin(t, _dt, invisAtiva = false) {
   const dt = Math.min(0.05, Math.max(0, t - tPrev)); tPrev = t;
   const sk = S.skin && CFG.SKINS[S.skin];
-  if (sk && sk.alfa) { const o = sk.alfa + 0.1 * Math.sin(t * 3); matCorpo.opacity = matAbd.opacity = matPerna.opacity = o; }   // fantasma oscila
+  if (sk && sk.alfa) {
+    const ativa = !!invisAtiva;
+    if (invisFantasmaAnterior !== ativa) {
+      invisFantasmaAnterior = ativa;
+      // Materiais extras só ficam transparentes durante os seis segundos da habilidade.
+      for (const m of [matPale, matOlho, matBrilho, matEspinho, matOuro]) {
+        m.transparent = ativa; m.depthWrite = !ativa; m.needsUpdate = true;
+      }
+      for (const m of [matCorpo, matAbd, matPerna]) {
+        m.transparent = true; m.depthWrite = !ativa; m.needsUpdate = true;
+      }
+      matAsa.transparent = true; matAsa.depthWrite = !ativa;
+      matVeia.depthWrite = !ativa;
+      matBordaAsa.transparent = ativa; matBordaAsa.depthWrite = !ativa;
+      for (const m of [matAsa, matVeia, matBordaAsa]) m.needsUpdate = true;
+    }
+    // Fora da habilidade: mesma opacidade pulsante da V16C (35% + oscilação).
+    // Invisibilidade ativa: 11% no corpo; olhos, asas e detalhes também desaparecem.
+    const op = ativa ? Math.max(0.08, 0.11 + 0.012 * Math.sin(t * 2)) : sk.alfa + 0.1 * Math.sin(t * 3);
+    matCorpo.opacity = matAbd.opacity = matPerna.opacity = op;
+    for (const m of [matPale, matOlho, matBrilho, matEspinho, matOuro]) m.opacity = ativa ? op * 0.8 : 1;
+    matAsa.opacity = ativa ? 0.085 : Math.min(0.65, 0.4 + S.nv.asas * 0.03);
+    matVeia.opacity = ativa ? 0.09 : 0.55;
+    matBordaAsa.opacity = ativa ? 0.13 : 1;
+    matCorpo.emissiveIntensity = matAbd.emissiveIntensity = ativa ? 0.025 : sk.ei;
+    matOlho.emissiveIntensity = ativa ? 0.035 : brilhoOlhoFantasmaBase;
+    matBrilho.emissiveIntensity = ativa ? 0.05 : 1.3;
+    matOuro.emissiveIntensity = ativa ? 0.05 : 0.6;
+    luzCorpo.intensity = ativa ? 0 : luzFantasmaBase;
+  } else {
+    invisFantasmaAnterior = null;
+  }
   if (sk && sk.tusk && orbG.visible) { orbG.rotation.y += dt * 3.2; aneis[0].rotation.z += dt * 2; aneis[1].rotation.z -= dt * 2.6; }
   if (sk && sk.robo) {
     const pulso = 0.5 + 0.5 * Math.sin(t * 7.0);
@@ -1502,6 +1743,13 @@ function tickSkin(t) {
     // As articulações flexionam pouco, sem soltar os membros.
     roboArticulacoes.forEach((g, i) => { g.rotation.z = Math.sin(t * 6 + i * 1.1) * 0.12; });
     luzCorpo.intensity = 1.0 + 0.55 * pulso;
+  }
+  if (S.skin === 'encadernado') {
+    // Oscilacao discreta das pernas/canetas, sem soltar as articulacoes.
+    encPernas.forEach((p, i) => {
+      p.rotation.x = Math.sin(t * 7 + i * 1.37) * 0.045;
+      p.rotation.z = Math.sin(t * 6.3 + i * 1.74) * 0.025;
+    });
   }
   if (S.skin === "pixel") {
     for (let i = 0; i < pxPernas.length; i++) {
@@ -1522,7 +1770,7 @@ function traseiraMundo(v) { return abdomen.localToWorld(v.set(0, 0, 1.7)); }
 
 
 return { mosquito, asas, abdomen, pernas, aplicar: aplicarEvolucaoVisual, tick: tickSkin, traseira: traseiraMundo, get beat() { return beatV; },
-  get escala() { return escalaBase; }, get zoom() { return zoom; }, get punch() { return punch; }, set punch(v) { punch = v; } };
+  get escala() { return escalaBase; }, get zoom() { return zoom; }, get luzSkin() { return luzCorpo; }, get punch() { return punch; }, set punch(v) { punch = v; } };
 }
 
 // ------------------------------------------------------------
@@ -1544,11 +1792,13 @@ class WorldManager {
     this.qualidadeParticulas = 1; this.limiteParticulas = 260; this.anelsPorHabilidade = 2;
     this.alcanceHumanos = Infinity; this.alcanceGotas = Infinity;
     this.col = [];                  // { mesh, box } estáticos
+    this.candidatosSombra = [];    // geometrias pequenas perto do jogador (somente Ultra)
+    this.sombrasHumanos = null;
     this.perto = [];                // buffer reutilizável de malhas próximas
     this.raycaster = new THREE.Raycaster();
     this.dirs = [V(1, 0, 0), V(-1, 0, 0), V(0, 1, 0), V(0, -1, 0), V(0, 0, 1), V(0, 0, -1)];
     this.emPerigo = null; this.avisoGas = false;
-    this.construirCenario(); this.criarGotas(); this.criarParticulas(); this.criarPerigos(); this.criarHumanos(); this.criarCarteira(); this.criarPingos();
+    this.construirCenario(); this.criarGotas(); this.criarParticulas(); this.criarPerigos(); this.criarHumanos(); this.criarCarteira(); this.criarLivroPerdido(); this.criarPingos();
     this.efeitosHabilidade = []; this.unhasTusk = [];
 
   }
@@ -1556,19 +1806,88 @@ class WorldManager {
   // Registra malha estática: matriz congelada + AABB pré-calculada
   fixo(mesh, x, y, z, ry = 0, rx = 0) {
     mesh.position.set(x, y, z); mesh.rotation.set(rx, ry, 0);
+    this.registrarSombra(mesh);
     this.cena.add(mesh); mesh.updateMatrix(); mesh.matrixAutoUpdate = false; mesh.updateMatrixWorld(true);
     this.col.push({ mesh, box: new THREE.Box3().setFromObject(mesh) });
     return mesh;
   }
 
   deco(mesh, x, y, z, ry = 0) {   // decoração sem colisão
-    mesh.position.set(x, y, z); mesh.rotation.y = ry; this.cena.add(mesh); mesh.updateMatrix(); mesh.matrixAutoUpdate = false;
+    mesh.position.set(x, y, z); mesh.rotation.y = ry;
+    this.registrarSombra(mesh);
+    this.cena.add(mesh); mesh.updateMatrix(); mesh.matrixAutoUpdate = false;
     if (mesh.geometry) {
       if (!mesh.geometry.boundingSphere) mesh.geometry.computeBoundingSphere();
       const r = mesh.geometry.boundingSphere ? mesh.geometry.boundingSphere.radius : Infinity;
       if (r <= 4.5) this.decoracoesPerformance.push(mesh);
     }
     return mesh;
+  }
+  registrarSombra(mesh) {
+    // Todo material opaco recebe sombra. Piso, teto e paredes grandes nao projetam:
+    // o sol virtual entra pelo teto no modo Ultra, sem escurecer salas inteiras.
+    if (mesh.userData.semSombraUltra) { mesh.castShadow = false; mesh.receiveShadow = false; return; }
+    const mat = mesh.material, geo = mesh.geometry;
+    if (!mat || !mat.isMeshStandardMaterial || mat.transparent || !geo) return;
+    const p = geo.parameters || {};
+    // Placas, cartazes, frisos decorativos e molduras não devem gerar nem
+    // receber sombras fortes. Eles são quase planos e causavam manchas
+    // artificiais nos letreiros das portas no modo Ultra.
+    const superficieFina = geo.type === 'BoxGeometry' && p.width > 0 && p.height > 0 && p.depth > 0 && (
+      (p.height > 2.4 && (p.width < 0.36 || p.depth < 0.36)) ||
+      (p.height > 1.0 && p.width > 2.0 && p.depth < 0.52) ||
+      (p.height > 1.0 && p.depth > 2.0 && p.width < 0.52) ||
+      (p.height < 0.42 && p.depth < 0.4 && p.width > 2.2) ||
+      (p.height < 0.42 && p.width < 0.4 && p.depth > 2.2)
+    );
+    if (geo.type === 'PlaneGeometry' || superficieFina) {
+      mesh.castShadow = false; mesh.receiveShadow = false; return;
+    }
+    mesh.receiveShadow = true;
+    if (geo.type !== 'BoxGeometry' || !(p.width > 0 && p.height > 0 && p.depth > 0)) return;
+    if (p.width > 17 || p.height > 9 || p.depth > 17 || p.height < 0.22) return;
+    if (p.width * p.depth < 0.14) return;
+    this.candidatosSombra.push(mesh);
+  }
+  atualizarSombras(pos, ativo) {
+    // Culling de casters por proximidade: reduz muito o custo do shadow map.
+    const limite = 29 * 29;
+    for (const mesh of this.candidatosSombra) {
+      const dx = mesh.position.x - pos.x, dz = mesh.position.z - pos.z;
+      mesh.castShadow = !!ativo && dx * dx + dz * dz < limite;
+    }
+    if (this.humanos) {
+      if (!this.sombrasHumanos) {
+        this.sombrasHumanos = this.humanos.map(h => {
+          const malhas = [];
+          h.g.traverse(o => {
+            if (o.isMesh && o.material && !o.material.transparent && !o.material.isMeshBasicMaterial) {
+              o.receiveShadow = true;
+              malhas.push(o);
+            }
+          });
+          return malhas;
+        });
+      }
+      this.humanos.forEach((h, i) => {
+        const perto = ativo && h.g.position.distanceToSquared(pos) < limite;
+        for (const m of this.sombrasHumanos[i]) m.castShadow = !!perto;
+      });
+    }
+  }
+  atualizarDetalhesBanheiro(modo) {
+    // Apenas detalhes opcionais mudam entre Leve, Normal, Alto e Ultra.
+    // Bases das pias, divisórias, portas e colisões continuam ativas.
+    if (this.detalhesBanheiro) this.detalhesBanheiro.visible = modo !== 'leve';
+    if (this.detalhesBanheiroAvancados) this.detalhesBanheiroAvancados.visible = modo === 'alto' || modo === 'ultra';
+  }
+  atualizarDetalhesLouvaDeus(modo) {
+    if (!this.pontos || !this.pontos.mantis) return;
+    const detalhado = modo !== 'leve', completo = modo === 'alto' || modo === 'ultra';
+    for (const item of this.pontos.mantis) {
+      item.normal.visible = detalhado;
+      item.extra.visible = completo;
+    }
   }
   atualizarDecoracoes(pos, alcance, forcar = false) {
     if (alcance === Infinity) {
@@ -1595,6 +1914,13 @@ class WorldManager {
     const tela = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return [c, c.getContext("2d")]; };
     const tex = (c) => new THREE.CanvasTexture(c);
     const caixa = (w, h, d, mt, x, y, z) => this.fixo(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mt), x, y, z);
+    // Paredes, lintéis e molduras não podem gerar faixas/silhuetas no shadow-map do Ultra.
+    // A marcação vem ANTES de fixo() registrar os candidatos a sombra.
+    const caixaParede = (w, h, d, mt, x, y, z) => {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mt);
+      mesh.userData.semSombraUltra = true;
+      return this.fixo(mesh, x, y, z);
+    };
     const dbox = (w, h, d, mt, x, y, z) => this.deco(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mt), x, y, z);
     const cil = (rt, rb, h, mt, x, y, z) => this.fixo(new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, 14), mt), x, y, z);
     const chao = (w, d, mt, x, z, dy = 0.06) => { const p = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mt); p.rotation.x = -Math.PI / 2; return this.deco(p, x, F + dy, z); };
@@ -1619,15 +1945,21 @@ class WorldManager {
       g.fillStyle = "#ffffff"; g.font = "bold 51px sans-serif";
       g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(t, 256, 64, 485);
       // A porta tem 9.5 de altura: placa apoiada imediatamente acima dela.
-      const zFace = z + (lado < 0 ? 0.56 : -0.56);
+      const zFace = z + (lado < 0 ? 0.72 : -0.72);
       const frente = lado < 0 ? 0 : Math.PI;
-      this.deco(new THREE.Mesh(new THREE.PlaneGeometry(8.8, 1.7),
-        new THREE.MeshBasicMaterial({ map: tex(c), side: THREE.DoubleSide })),
+      const letreiro = this.deco(new THREE.Mesh(new THREE.PlaneGeometry(8.8, 1.7),
+        new THREE.MeshBasicMaterial({ map: tex(c), side: THREE.DoubleSide, toneMapped: false,
+          depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })),
         x, F + 10.55, zFace, frente);
+      letreiro.userData.semSombraUltra = true;
+      letreiro.castShadow = false; letreiro.receiveShadow = false;
     };
     const m = { piso: M(0xffffff, 0.55, { map: tPiso }), par: M(0x6f8f7a, 0.9), teto: M(0xcfd3d8, 0.9), mad: M(0x8a5a2e, 0.6), metal: M(0x4a5560, 0.4), cad: M(0x2f6fb5, 0.6),
       l1: M(0x3a5f8a), l2: M(0x2e4d70), tampo: M(0xd9c7a0, 0.5), estante: M(0xffffff, 0.8, { map: tex(cb) }), mesa: M(0xc9a36a, 0.6), banco: M(0xa0522d, 0.7),
       azul: M(0xe3edf2, 0.4), porc: M(0xf4f4f4, 0.2), bancada: M(0x2d3b44, 0.4), vidro: M(0x66ffaa, 0.2, { emissive: 0x22aa66, transparent: true, opacity: 0.4 }), laranja: M(0xff7a1a, 0.5) };
+    // Materiais compartilhados: o Ultra pode ajustar suas superficies sem
+    // transformar as outras qualidades graficas.
+    this.materiaisCenario = m;
     // Âncoras dos easter eggs: o jogo lê as posições daqui, então mover um objeto no cenário move a hitbox junto
     this.pontos = { extintores: [], aros: [V(-2.1, F + 7.6, 29), V(37.1, F + 7.6, 29)], relogio: V(9, F + 11, -MZ + 0.6),
       espelho: { x0: 45.6, x1: 51, z0: 20, z1: 82, y: F + 7.5 } };
@@ -1647,9 +1979,9 @@ class WorldManager {
 
 
     // Luzes: ambiente + hemisfério (cobrem as salas fundas) + poucas luzes pontuais (a do corredor pisca)
-    this.cena.add(new THREE.AmbientLight(0x8a8fb0, 0.85));
-    this.cena.add(new THREE.HemisphereLight(0xdfe8ff, 0x4a4540, 0.75));
-    const lua = new THREE.DirectionalLight(0x7692ff, 0.5); lua.position.set(-30, 30, 10); this.cena.add(lua);
+    this.luzAmbiente = new THREE.AmbientLight(0x8a8fb0, 0.85); this.cena.add(this.luzAmbiente);
+    this.luzCeu = new THREE.HemisphereLight(0xdfe8ff, 0x4a4540, 0.75); this.cena.add(this.luzCeu);
+    this.luzLua = new THREE.DirectionalLight(0x7692ff, 0.5); this.luzLua.position.set(-30, 30, 10); this.cena.add(this.luzLua);
     [[0, 0], [28, -54], [94, -54], [-64, 56], [17, 56], [94, 70]].forEach(([x, z], i) => {
       const l = new THREE.PointLight(0xdff0ff, i ? 1.1 : 1.6, 70); l.position.set(x, YMAX - 2, z); this.cena.add(l); if (!i) this.luz = l;
     });
@@ -1657,14 +1989,14 @@ class WorldManager {
 
     // Casca externa: piso, teto e 4 paredes
     const cy = (YMAX + F) / 2, H = YMAX - F + 4, T = 1;
-    caixa(MX * 2, 2, MZ * 2, m.piso, 0, F - 1, 0); caixa(MX * 2 + 4, 2, MZ * 2 + 4, m.teto, 0, YMAX + 1, 0);
-    caixa(MX * 2 + 4, H, 4, m.par, 0, cy, -MZ - 2); caixa(MX * 2 + 4, H, 4, m.par, 0, cy, MZ + 2);
-    caixa(2, H, MZ * 2, m.par, -MX - 1, cy, 0); caixa(2, H, MZ * 2, m.par, MX + 1, cy, 0);
+    caixa(MX * 2, 2, MZ * 2, m.piso, 0, F - 1, 0); caixaParede(MX * 2 + 4, 2, MZ * 2 + 4, m.teto, 0, YMAX + 1, 0);
+    caixaParede(MX * 2 + 4, H, 4, m.par, 0, cy, -MZ - 2); caixaParede(MX * 2 + 4, H, 4, m.par, 0, cy, MZ + 2);
+    caixaParede(2, H, MZ * 2, m.par, -MX - 1, cy, 0); caixaParede(2, H, MZ * 2, m.par, MX + 1, cy, 0);
 
     // Planta: corredor central (z -8..8) com 10 portas reais; divisórias terminam nas paredes do corredor
     const parede = (eixo, fixo, ini, fim, portas = []) => {
       const altura = YMAX - F, portaH = 9.5, larg = 10;
-      const seg = (a, b, h, y) => { if (b - a < 0.02 || h <= 0) return; if (eixo === "x") caixa(b - a, h, T, m.par, (a + b) / 2, y, fixo); else caixa(T, h, b - a, m.par, fixo, y, (a + b) / 2); };
+      const seg = (a, b, h, y) => { if (b - a < 0.02 || h <= 0) return; if (eixo === "x") caixaParede(b - a, h, T, m.par, (a + b) / 2, y, fixo); else caixaParede(T, h, b - a, m.par, fixo, y, (a + b) / 2); };
       let cur = ini;
       for (const c of [...portas].sort((a, b) => a - b)) { const a = c - larg / 2, b = c + larg / 2; if (a < cur - 0.01 || b > fim + 0.01) continue; seg(cur, a, altura, cy); seg(a, b, altura - portaH, F + portaH + (altura - portaH) / 2); cur = b; }
       seg(cur, fim, altura, cy);
@@ -1676,15 +2008,51 @@ class WorldManager {
     const piso = (x1, x2, z1, z2, cor) => chao(x2 - x1 - 0.6, z2 - z1 - 0.6, M(cor, 0.85), (x1 + x2) / 2, (z1 + z2) / 2, 0.075);   // piso próprio de cada sala
     piso(-118, -70, -100, -8, 0xc9b99a); piso(-70, -28, -100, -8, 0xb9ad8f); piso(-28, 14, -100, -8, 0xa7b5a6); piso(14, 42, -100, -8, 0x34425f);
     piso(42, 71, -100, -8, 0xdde6ea); piso(71, 118, -100, -8, 0xc6dbd7); piso(71, 118, 8, 100, 0x4a1f30);
-    for (const [x, z] of [...PN.map((x) => [x, -8]), ...PS.map((x) => [x, 8])]) for (const dx of [-5.2, 5.2]) caixa(0.28, 9.5, 0.34, m.metal, x + dx, F + 4.75, z);   // batentes
+    for (const [x, z] of [...PN.map((x) => [x, -8]), ...PS.map((x) => [x, 8])]) for (const dx of [-5.2, 5.2]) caixaParede(0.28, 9.5, 0.34, m.metal, x + dx, F + 4.75, z);   // batentes sem sombra no Ultra
     ["ARTES", "SALA 1", "SALA 2", "BIBLIOTECA", "LABORATÓRIO", "ENFERMARIA"].forEach((t, i) => placa(t, PN[i], -8, -1));
     ["CANTINA", "GINÁSIO", "BANHEIRO", "AUDITÓRIO"].forEach((t, i) => placa(t, PS[i], 8, 1));
 
-    // Corredor: armários (pulando as portas), janelas nas pontas e lâmpadas
+    // Corredor: portas sempre voltadas para o CENTRO do corredor.
+    // O norte (z negativo) olha para +Z; o sul (z positivo) olha para -Z.
+    // Colisores nao precisam ser desenhados e funcionam em todos os modos graficos.
+    const geoColArmario = new THREE.BoxGeometry(3.42, 7, 1.16);
+    const matColArmario = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
+    const armarioCorredor = (x, z, corpoMat, portaMat) => {
+      const g = new THREE.Group();
+      g.position.set(x, F, z);
+      g.rotation.y = z > 0 ? Math.PI : 0;
+      this.cena.add(g);
+      const colArmario = new THREE.Mesh(geoColArmario, matColArmario);
+      colArmario.position.set(x, F + 3.5, z);
+      colArmario.updateMatrixWorld(true);
+      // Collider sem adicao a cena: nao acrescenta chamadas de desenho no modo Leve.
+      this.col.push({ mesh: colArmario, box: new THREE.Box3().setFromObject(colArmario) });
+      const corpo = new THREE.Mesh(new THREE.BoxGeometry(3.4, 7, 1.08), corpoMat); corpo.position.set(0, 3.5, 0); g.add(corpo);
+      const base = new THREE.Mesh(new THREE.BoxGeometry(3.46, 0.18, 1.14), M(0x334254, 0.55)); base.position.set(0, 0.09, 0); g.add(base);
+      // A tampa antiga terminava em Y=7.00 exatamente como o casco,
+      // provocando Z-FIGHTING na face superior. A nova tampa ultrapassa o
+      // casco sem dividir plano com ele (superficie superior Y=7.12).
+      const teto = new THREE.Mesh(new THREE.BoxGeometry(3.54, 0.16, 1.20),
+        M(0x94a9c9, 0.52, { metalness: 0.18 }));
+      teto.position.set(0, 7.04, 0); g.add(teto);
+      for (const l of [-1, 1]) {
+        const porta = new THREE.Mesh(new THREE.BoxGeometry(1.53, 6.55, 0.08), portaMat); porta.position.set(l * 0.79, 3.54, 0.57); g.add(porta);
+        for (const yy of [5.55, 4.95, 4.35]) {
+          const vent = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.06, 0.03), M(0x354b68, 0.65)); vent.position.set(l * 0.79, yy, 0.62); g.add(vent);
+        }
+        const pux = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.92, 0.08), M(0xd8e1ef, 0.18, { metalness: 0.88 })); pux.position.set(l * 0.40, 3.55, 0.63); g.add(pux);
+        const fecho = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.16, 0.08), M(0x223347, 0.45)); fecho.position.set(l * 0.40, 2.95, 0.63); g.add(fecho);
+        const plaqueta = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.22, 0.03), M(0xf3f8ff, 0.12)); plaqueta.position.set(l * 0.79, 1.12, 0.61); g.add(plaqueta);
+      }
+      const coluna = M(0x3d536f, 0.55, { metalness: 0.28 });
+      for (const sx of [-1.63, 1.63]) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.1, 6.9, 0.16), coluna); c.position.set(sx, 3.45, 0); g.add(c); }
+      const divisao = new THREE.Mesh(new THREE.BoxGeometry(0.08, 6.75, 0.1), M(0x58718f, 0.52)); divisao.position.set(0, 3.46, 0.54); g.add(divisao);
+      return g;
+    };
     for (let x = -MX + 5; x <= MX - 5; x += 5) {
       const livre = (portas) => portas.every((p) => Math.abs(x - p) >= 8.5);
-      if (livre(PN) && x !== -23) caixa(3.4, 7, 1.1, m.l1, x, F + 3.5, -6.85);   // x = -23: armário trancado (easter egg)
-      if (livre(PS)) caixa(3.4, 7, 1.1, m.l2, x, F + 3.5, 6.85);
+      if (livre(PN) && x !== -23) armarioCorredor(x, -6.85, M(0x7089aa, 0.55, { metalness: 0.16 }), M(0x87a0c2, 0.42, { metalness: 0.08 }));   // x = -23: armário trancado (easter egg)
+      if (livre(PS)) armarioCorredor(x, 6.85, M(0x58729a, 0.56, { metalness: 0.18 }), M(0x7090bf, 0.42, { metalness: 0.08 }));
     }
     janela(-MX + 0.05, 0, Math.PI / 2); janela(MX - 0.05, 0, -Math.PI / 2);
     for (let x = -110; x <= 110; x += 20) dbox(14, 0.3, 1.6, B(0xeaf6ff), x, YMAX - 0.15, 0);
@@ -1804,10 +2172,132 @@ class WorldManager {
       const vidro = new THREE.Mesh(new THREE.SphereGeometry(1.5, 32, 12, 0, Math.PI * 2, 0, 0.5), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.12, roughness: 0.05 }));
       vidro.rotation.x = Math.PI / 2; vidro.position.z = 0.0; vidro.scale.set(1, 0.3, 1); vidro.position.z = 0.35; rel.add(vidro);
     }
-    // Biblioteca (x 14..42): estantes com lombadas, mesas de leitura e balcão (o carpete cobre a sala toda)
-    for (const x of [18, 38]) for (const z of [-90, -70, -50, -30]) caixa(2.4, 10, 16, m.estante, x, F + 5, z);
-    for (const z of [-84, -60, -36]) { caixa(8, 0.5, 5, m.mad, 28, F + 3.3, z); for (const l of [-1, 1]) caixa(0.4, 3, 4.4, m.mad, 28 + l * 3.2, F + 1.5, z); }
-    caixa(7, 3.2, 2.6, m.mad, 37, F + 1.6, -17);
+    // Biblioteca (x 14..42): estantes mais ricas, livros separados, mesas de leitura e balcão
+    {
+      const madeira = M(0x6b4a2a, 0.82), escuro = M(0x43301d, 0.86), metal = M(0x5d6678, 0.38, { metalness: 0.42 });
+      const capa = [0xb33652, 0x2f6cc3, 0x3da45d, 0xe0ab2f, 0x7f53b5, 0xe0783c, 0xd7d8df, 0x5b4030];
+      this.estantesLivros = [];
+      const estanteLivros = (x, z, rot = 0) => {
+        const g = new THREE.Group(); g.position.set(x, F, z); g.rotation.y = rot; this.cena.add(g);
+        const lateralMat = madeira, prateleiraMat = escuro, fundoMat = M(0x7b5a38, 0.9);
+        const W = 14.2, H = 9.4, D = 2.45;
+        const add = (w, h, d, mt, px, py, pz) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mt); o.position.set(px, py, pz); g.add(o); return o; };
+        // Estrutura aberta: frente e costas acessíveis, lados ficam nas pontas compridas da estante.
+        add(W, 0.3, D, escuro, 0, 0.15, 0); // base
+        add(W, 0.24, D, lateralMat, 0, H - 0.12, 0); // topo
+        add(0.26, H, D, lateralMat, -W * 0.5 + 0.13, H * 0.5, 0);
+        add(0.26, H, D, lateralMat,  W * 0.5 - 0.13, H * 0.5, 0);
+        add(W - 0.34, H - 0.5, 0.12, fundoMat, 0, H * 0.5 - 0.05, -D * 0.5 + 0.06); // costas finas
+        for (const sx of [-W * 0.25, 0, W * 0.25]) add(0.12, H - 0.36, D - 0.24, lateralMat, sx, H * 0.5 - 0.02, 0);
+        const prateleiras = [1.75, 3.5, 5.25, 7.0];
+        for (const y of prateleiras) add(W - 0.28, 0.16, D - 0.1, prateleiraMat, 0, y, 0);
+        // Livro por livro, porém em instâncias agrupadas: o Leve desenha menos,
+        // o Ultra desenha prateleiras cheias, com pouquíssimos draw calls extras.
+        const livrosVisuais = new THREE.Group(); g.add(livrosVisuais);
+        this.estantesLivros.push({ grupo: g, livrosVisuais, x, z, devolucao: x === 18 && z === -30 });
+        const escada = new THREE.Mesh(new THREE.BoxGeometry(0.26, 6.8, 0.32), metal); escada.position.set(W * 0.5 + 0.46, 3.4, 0.55); escada.rotation.z = -0.15; g.add(escada);
+        // Colisão: corpo inteiro da estante bloqueia o jogador em todos os modos.
+        const invisivel = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
+        this.fixo(new THREE.Mesh(new THREE.BoxGeometry(W + 0.12, H, D + 0.12), invisivel), x, F + H * 0.5, z, rot);
+        return g;
+      };
+      let estanteDaDevolucao = null;
+      for (const x of [18, 38]) for (const z of [-90, -70, -50, -30]) {
+        // Os dois lados da biblioteca devem abrir para o corredor central.
+        const g = estanteLivros(x, z, x === 18 ? Math.PI / 2 : -Math.PI / 2);
+        if (x === 18 && z === -30) estanteDaDevolucao = g;
+      }
+      // Atualiza a densidade dos livros ao trocar a qualidade, sem mudar colisões.
+      const geoLivroBib = new THREE.BoxGeometry(1, 1, 1);
+      const matLivrosBib = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.74 });
+      const matFaixaBib = M(0xe9dac2, 0.72);
+      const coresLivrosBib = capa.map(c => new THREE.Color(c));
+      this.ajustarLivrosBiblioteca = (modo) => {
+        if (this.modoLivrosBiblioteca === modo) return;
+        const colunas = modo === 'leve' ? 15 : modo === 'medio' ? 22 : modo === 'alto' ? 29 : 34;
+        const linhas = (modo === 'leve' || modo === 'medio') ? 1 : 2;
+        const matriz = new THREE.Object3D();
+        this.estantesLivros.forEach(({ livrosVisuais, devolucao }, nEstante) => {
+          // Os objetos anteriores são removidos; geometria e materiais são compartilhados.
+          while (livrosVisuais.children.length) livrosVisuais.remove(livrosVisuais.children[0]);
+          const modelos = [];
+          let id = 0;
+          for (const base of [0.28, 1.75, 3.5, 5.25, 7.0]) {
+            for (let linha = 0; linha < linhas; linha++) {
+              const pz = linhas === 1 ? 0.46 : (linha === 0 ? -0.38 : 0.55);
+              for (let i = 0; i < colunas; i++) {
+                const px = -6.46 + i * (12.92 / Math.max(1, colunas - 1));
+                // Deixa um nicho real, vazio, na frente da estante de devolução.
+                if (devolucao && base === 3.5 && linha === linhas - 1 && Math.abs(px - 0.95) < 0.83) continue;
+                const alt = 1.02 + ((i * 3 + linha + nEstante) % 5) * 0.105;
+                const esp = linhas === 1 ? 0.36 : 0.34;
+                const largura = Math.min(0.49, 12.8 / colunas * 0.83);
+                modelos.push({ px, py: base + 0.15 + alt / 2, pz, w: largura, h: alt, d: esp,
+                                ang: ((i + nEstante) % 9 === 0) ? -0.055 : 0, cor: coresLivrosBib[(i + linha * 3 + nEstante * 2 + id) % coresLivrosBib.length] });
+                id++;
+              }
+            }
+          }
+          if (!modelos.length) return;
+          const livros = new THREE.InstancedMesh(geoLivroBib, matLivrosBib, modelos.length);
+          const linhasDouradas = new THREE.InstancedMesh(geoLivroBib, matFaixaBib, modelos.length);
+          modelos.forEach((b, i) => {
+            matriz.position.set(b.px, b.py, b.pz); matriz.rotation.set(0, 0, b.ang);
+            matriz.scale.set(b.w, b.h, b.d); matriz.updateMatrix(); livros.setMatrixAt(i, matriz.matrix);
+            livros.setColorAt(i, b.cor);
+            matriz.position.z = b.pz + b.d * 0.5 + 0.013;
+            matriz.scale.set(b.w * 0.75, b.h * 0.08, 0.012);
+            matriz.updateMatrix(); linhasDouradas.setMatrixAt(i, matriz.matrix);
+          });
+          livros.instanceMatrix.needsUpdate = true;
+          if (livros.instanceColor) livros.instanceColor.needsUpdate = true;
+          linhasDouradas.instanceMatrix.needsUpdate = true;
+          livros.frustumCulled = false; linhasDouradas.frustumCulled = false;
+          livros.castShadow = modo === 'ultra';
+          livrosVisuais.add(livros, linhasDouradas);
+        });
+        this.modoLivrosBiblioteca = modo;
+      };
+      this.ajustarLivrosBiblioteca(lerGraficos());
+      for (const z of [-84, -60, -36]) {
+        caixa(8.6, 0.42, 5.2, m.mad, 28, F + 3.15, z);
+        dbox(8.8, 0.08, 5.4, M(0xf0e4ca, 0.82), 28, F + 3.42, z);
+        for (const l of [-1, 1]) caixa(0.45, 3.0, 4.6, m.mad, 28 + l * 3.35, F + 1.5, z);
+        for (const l of [-1, 1]) {
+          caixa(8.0, 0.32, 1.35, M(0xc47a4a, 0.7), 28, F + 1.72, z + l * 3.42);
+          for (const dx of [-3.1, 3.1]) caixa(0.38, 1.55, 1.1, m.metal, 28 + dx, F + 0.78, z + l * 3.42);
+        }
+      }
+      caixa(7.5, 3.2, 2.9, m.mad, 37, F + 1.6, -17); caixa(7.8, 0.28, 3.1, M(0xe2d7bf, 0.8), 37, F + 3.32, -17);
+      for (const dx of [-2.6, 0, 2.6]) this.deco(new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.2, 0.55), M(capa[(dx + 10) % capa.length | 0], 0.72)), 37 + dx, F + 4.1, -17);
+      // O ponto de devolução fica DENTRO DA ESTANTE, nunca no chão.
+      // Mesma orientação da estante esquerda; sua frente aponta para o corredor.
+      const slot = new THREE.Group();
+      estanteDaDevolucao.updateMatrixWorld(true);
+      slot.position.copy(estanteDaDevolucao.localToWorld(V(0.95, 4.26, 1.23)));
+      slot.rotation.y = Math.PI / 2;
+      const geomNicho = new THREE.BoxGeometry(0.70, 1.20, 0.095);
+      const contorno = new THREE.LineSegments(new THREE.EdgesGeometry(geomNicho),
+        new THREE.LineBasicMaterial({ color: 0x59f0ff, transparent: true, opacity: 0.9, depthTest: true }));
+      slot.add(contorno);
+      const miolo = new THREE.Mesh(new THREE.BoxGeometry(0.62, 1.13, 0.055),
+        new THREE.MeshBasicMaterial({ color: 0x4be2ef, transparent: true, opacity: 0.14, depthWrite: false }));
+      slot.add(miolo);
+      const marca = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.035, 0.11),
+        new THREE.MeshBasicMaterial({ color: 0xc9faff }));
+      marca.position.y = -0.69; slot.add(marca);
+      slot.visible = false;
+      this.cena.add(slot); this.livroDevolucaoHalo = slot;
+      // Livro azul ocupa a lacuna depois da devolução (inclusive após carregar save).
+      const devolvido = new THREE.Group();
+      // Capa fica encaixada para dentro da estante, não flutuando na frente.
+      devolvido.position.copy(estanteDaDevolucao.localToWorld(V(0.95, 4.26, 0.77)));
+      devolvido.rotation.y = slot.rotation.y;
+      const capaLivro = new THREE.Mesh(new THREE.BoxGeometry(0.52, 1.18, 0.28), M(0x305d9c, 0.74)); devolvido.add(capaLivro);
+      const faixaLivro = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.065, 0.03), M(0xd9c36a, 0.54));
+      faixaLivro.position.set(0, 0.25, 0.16); devolvido.add(faixaLivro);
+      devolvido.visible = false; this.cena.add(devolvido); this.livroDevolvidoVisual = devolvido;
+    }
 
 
     // Laboratório (x 42..71): bancadas com frascos, galão radioativo e o PROJETO DE ELETRICIDADE (easter egg)
@@ -1958,46 +2448,125 @@ class WorldManager {
     for (const z of [82, 85]) this.deco(new THREE.Mesh(new THREE.SphereGeometry(0.9, 14, 10), m.laranja), -5, F + 0.9, z);
     for (const [x, z] of [[10, 25], [22, 33], [30, 22]]) this.deco(new THREE.Mesh(new THREE.SphereGeometry(0.9, 14, 10), m.laranja), x, F + 0.9, z);
 
-    // Banheiro ampliado: ocupa toda a faixa x=45..71, z=8..100.
-    // Cabines e lavatórios distribuidos ao longo da sala, sem corredor vazio no fundo.
-    const pisoBanheiro = M(0xc5d7df, 0.78);
-    chao(24.5, 89, pisoBanheiro, 58, 54);
-    const divisoriaBanheiro = M(0x8daab8, 0.65);
-    const portaBanheiro = M(0xb3cbd3, 0.65);
-    // Oito cabines na parede leste; entrada aberta para o corredor central do banheiro.
-    for (let i = 0; i < 8; i++) {
-      const z = 18 + i * 10;
-      caixa(7.5, 7, 0.32, divisoriaBanheiro, 66.5, F + 3.5, z - 4.6);
-      caixa(0.3, 7, 9.1, divisoriaBanheiro, 70.1, F + 3.5, z);
-      // Porta da cabine na lateral interna, deixando passagem livre.
-      caixa(0.28, 6.3, 5.0, portaBanheiro, 62.8, F + 3.15, z + 2.0);
-      cil(1, 0.8, 2, m.porc, 67.4, F + 1, z);
-      caixa(1.2, 2.5, 2.4, m.porc, 69.1, F + 3.2, z);
-    }
-    // Bancada de pias do lado oposto, com espelhos e torneiras.
-    for (const z of [20, 32, 44, 56, 68, 80]) {
-      caixa(3.2, 0.45, 4.8, m.bancada, 48.2, F + 3.2, z);
-      caixa(2.2, 0.25, 2.7, m.porc, 48.2, F + 3.5, z);
-      cil(0.14, 0.14, 0.8, m.metal, 48.8, F + 4, z);
-    }
-    // Espelho contínuo preserva o easter egg nas coordenadas originais (z=36).
-    this.deco(new THREE.Mesh(new THREE.PlaneGeometry(68, 5), B(0x9bb8c8)), 45.55, F + 7.5, 51, Math.PI / 2);
-    // Armário de limpeza e bancos próximos ao fundo, sem bloquear as cabines.
-    caixa(3, 8, 7, m.azul, 48.2, F + 4, 91);
-    caixa(4.5, 1.6, 2.2, m.metal, 56, F + 0.8, 93);
-    
-
-    // ENFERMARIA (x 71..118): 8 camas junto às paredes com cortinas, armário de remédios, cruz e mesa da enfermeira
-    { const lencol = M(0xf4f6ff, 0.8), manta = M(0x6aa0d8, 0.8), trava = M(0xffffff, 0.9), cort = M(0xbfe0d8, 0.9, { transparent: true, opacity: 0.8 });
-      for (const z of [-30, -50, -70, -90]) for (const x of [79, 110]) {
-        caixa(5, 1.6, 9, m.metal, x, F + 0.8, z); caixa(4.8, 0.6, 8.8, lencol, x, F + 1.9, z);
-        dbox(3.6, 0.5, 1.8, trava, x, F + 2.4, z - 3.4); dbox(4.9, 0.25, 5.5, manta, x, F + 2.3, z + 1.4); caixa(5, 3, 0.4, m.metal, x, F + 1.5, z - 4.5);
-        dbox(0.2, 9, 9, cort, x + (x < 94 ? 3.4 : -3.4), F + 6, z);
+    // BANHEIRO V16: seis pias sustentadas por pedestais reais e oito boxes
+    // com divisórias, portas, puxadores, ferragens e vasos completos.
+    // Os elementos interativos e as colisões ficam iguais nos quatro modos;
+    // apenas acessórios decorativos mudam de densidade.
+    {
+      const pisoBanheiro = M(0xc5d7df, 0.86),
+        divisoria = M(0x98b5c4, 0.69), porta = M(0xc1d5de, 0.65),
+        aluminio = M(0x717f91, 0.34, { metalness: 0.55 }),
+        porcelana = M(0xf1f4f6, 0.47), bacia = M(0xadc8d8, 0.45),
+        metalCromado = M(0xc9d2de, 0.23, { metalness: 0.80 }),
+        metalEscuro = M(0x4c5f74, 0.55);
+      chao(24.5, 89, pisoBanheiro, 58, 54);
+      this.detalhesBanheiro = new THREE.Group();
+      this.detalhesBanheiroAvancados = new THREE.Group();
+      this.cena.add(this.detalhesBanheiro, this.detalhesBanheiroAvancados);
+      const detalhe = (grupo, w, h, d, mt, x, y, z) => {
+        const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mt);
+        o.position.set(x, y, z); o.castShadow = false; o.receiveShadow = false;
+        grupo.add(o); return o;
+      };
+      // Cada box é um espaço de 9.5 no eixo Z; x=62.65 é a frente,
+      // x=70 fica próximo da parede leste. A abertura é realmente transitável.
+      for (let i = 0; i < 8; i++) {
+        const z = 18 + i * 10;
+        caixa(7.7, 7.05, 0.23, divisoria, 66.3, F + 3.525, z - 4.72);
+        if (i === 7) caixa(7.7, 7.05, 0.23, divisoria, 66.3, F + 3.525, z + 4.72);
+        // Pequeno painel fixo + porta: sobra passagem central de ~3 unidades.
+        caixa(0.20, 6.95, 2.25, divisoria, 62.58, F + 3.525, z - 3.48);
+        caixa(0.17, 6.10, 3.48, porta, 62.58, F + 3.50, z + 2.70);
+        // Travessa metálica de topo e batente.
+        dbox(0.24, 0.20, 9.34, aluminio, 62.58, F + 7.0, z);
+        dbox(0.20, 6.25, 0.16, metalEscuro, 62.46, F + 3.54, z + 0.88);
+        dbox(0.22, 0.48, 0.14, metalCromado, 62.40, F + 3.75, z + 1.12);
+        // Base, cuba, assento e caixa de descarga do vaso sanitário.
+        cil(0.75, 0.65, 1.24, porcelana, 67.55, F + 0.64, z);
+        cil(1.02, 0.83, 0.36, porcelana, 67.55, F + 1.42, z);
+        const vaso = new THREE.Mesh(new THREE.TorusGeometry(0.81, 0.10, 8, 20), porcelana);
+        vaso.rotation.x = Math.PI / 2; this.deco(vaso, 67.55, F + 1.67, z);
+        const agua = new THREE.Mesh(new THREE.CircleGeometry(0.57, 20), bacia);
+        agua.rotation.x = -Math.PI / 2; this.deco(agua, 67.55, F + 1.57, z);
+        caixa(1.45, 1.90, 2.0, porcelana, 69.30, F + 2.44, z);
+        dbox(1.53, 0.16, 2.08, porcelana, 69.30, F + 3.45, z);
+        // Ferragens e cartelas com numeração, visíveis no Normal e superiores.
+        detalhe(this.detalhesBanheiro, 0.13, 0.28, 0.13, metalCromado, 62.35, F + 5.88, z + 4.30);
+        detalhe(this.detalhesBanheiro, 0.11, 0.14, 0.38, metalCromado, 62.35, F + 3.40, z + 1.10);
+        detalhe(this.detalhesBanheiro, 0.11, 0.50, 0.11, aluminio, 62.35, F + 2.35, z + 4.30);
+        // Dispensador de papel higiênico fixado na divisória, nunca flutuando.
+        detalhe(this.detalhesBanheiroAvancados, 0.36, 0.55, 0.58, porcelana, 64.15, F + 2.35, z - 4.49);
+        detalhe(this.detalhesBanheiroAvancados, 0.39, 0.08, 0.62, metalCromado, 64.15, F + 2.68, z - 4.49);
       }
+      // Lavatórios: parede real em X=45 (face interna em 45.5). O fundo de
+      // cada gabinete vai até essa face e o tampo sobrepõe alguns centímetros.
+      // Nada fica suspenso nem depende de detalhes gráficos opcionais.
+      for (let i = 0; i < 6; i++) {
+        const z = [20, 32, 44, 56, 68, 80][i], x = 47.60;
+        // Gabinete traseiro X=45.43, discretamente dentro da parede X=45.5.
+        // A pequena sobreposição também evita z-fighting da face posterior.
+        caixa(4.34, 3.08, 4.42, porcelana, x, F + 1.54, z);
+        // Tampo traseiro X=45.32, ligeiramente maior que o gabinete.
+        caixa(4.56, 0.30, 4.70, m.bancada, x, F + 3.23, z);
+        // Rodabanca traseira X=45.48, conectada à parede e ao tampo.
+        caixa(0.24, 0.84, 4.70, porcelana, 45.60, F + 3.79, z);
+        // Cuba apoiada, torneira junto à parede e bico projetado sobre a cuba.
+        cil(1.08, 0.86, 0.18, porcelana, x, F + 3.46, z);
+        const fundo = new THREE.Mesh(new THREE.CircleGeometry(0.74, 24), bacia);
+        fundo.rotation.x = -Math.PI / 2; this.deco(fundo, x, F + 3.558, z);
+        const borda = new THREE.Mesh(new THREE.TorusGeometry(0.86, 0.055, 7, 24), porcelana);
+        borda.rotation.x = Math.PI / 2; this.deco(borda, x, F + 3.575, z);
+        cil(0.080, 0.080, 0.74, metalCromado, x - 1.28, F + 3.83, z - 0.45);
+        dbox(0.78, 0.09, 0.12, metalCromado, x - 0.88, F + 4.13, z - 0.45);
+        const dreno = new THREE.Mesh(new THREE.CircleGeometry(0.095, 12), metalEscuro);
+        dreno.rotation.x = -Math.PI / 2; this.deco(dreno, x, F + 3.586, z);
+        // Acessórios opcionais; não alteram o contato do gabinete com a parede.
+        detalhe(this.detalhesBanheiro, 0.28, 1.1, 0.28, aluminio, x, F + 0.6, z - 0.76);
+        detalhe(this.detalhesBanheiro, 0.55, 0.15, 0.13, metalCromado, x - 1.12, F + 3.96, z + 0.85);
+        detalhe(this.detalhesBanheiroAvancados, 0.25, 0.20, 0.16, M(0x3bc0ba, 0.5), x - 1.1, F + 4.12, z + 0.85);
+      }
+      // Espelho contínuo: mesma posição original, para não quebrar a skin Fantasma.
+      const espelho = this.deco(new THREE.Mesh(new THREE.PlaneGeometry(68, 5),
+        new THREE.MeshBasicMaterial({ color: 0xa5c2d0, toneMapped: false })),
+        45.55, F + 7.5, 51, Math.PI / 2);
+      espelho.castShadow = false; espelho.receiveShadow = false;
+      espelho.userData.semSombraUltra = true;
+      for (const z of [16.9, 85.1]) dbox(0.12, 5.12, 0.17, metalCromado, 45.59, F + 7.5, z);
+      for (const y of [F + 4.94, F + 10.06]) dbox(0.12, 0.13, 68, metalCromado, 45.59, y, 51);
+      // Armário de limpeza e banco no fundo — mantidos nos mesmos locais.
+      caixa(3, 8, 7, m.azul, 48.2, F + 4, 91);
+      caixa(4.5, 1.6, 2.2, m.metal, 56, F + 0.8, 93);
+    }
+
+    // ENFERMARIA (x 71..118): macas mais próximas às paredes, sem painéis de vidro soltos, com armário de remédios e equipamentos
+    {
+      const lencol = M(0xf6f8ff, 0.76), manta = M(0x82acd9, 0.78), trav = M(0xffffff, 0.85), metal = M(0x8f98a6, 0.35, { metalness: 0.5 }), roda = M(0x232a36, 0.4), caboM = M(0x5aa0c8, 0.42);
+      const maca = (x, z, lado) => {
+        caixa(4.8, 0.42, 8.6, metal, x, F + 1.38, z); dbox(4.55, 0.55, 8.15, lencol, x, F + 1.92, z);
+        dbox(3.55, 0.44, 1.65, trav, x, F + 2.28, z - 3.05); dbox(4.55, 0.18, 5.3, manta, x, F + 2.17, z + 1.22);
+        for (const lx of [-2.05, 2.05]) for (const lz of [-3.75, 3.75]) { caixa(0.18, 1.26, 0.18, metal, x + lx, F + 0.63, z + lz); cil(0.16, 0.16, 0.18, roda, x + lx, F + 0.09, z + lz); }
+        caixa(4.75, 0.18, 0.26, metal, x, F + 2.72, z - 4.02);
+        // criado-mudo pequeno encostado na lateral da maca
+        caixa(1.35, 1.5, 1.2, M(0xdfe6ee, 0.48), x + lado * 3.0, F + 0.75, z + 2.35);
+        dbox(1.1, 0.08, 1.0, M(0x89b4d6, 0.35), x + lado * 3.0, F + 1.56, z + 2.35);
+        dbox(0.95, 0.04, 0.06, M(0x5c6b7c, 0.4), x + lado * 3.0, F + 1.0, z + 2.84);
+        // soro preso na parede, em vez de painéis transparentes flutuando
+        const haste = new THREE.Group(); haste.position.set(x + lado * 1.85, F, z - 2.0); this.cena.add(haste);
+        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.08, 12), metal); base.position.y = 0.04; haste.add(base);
+        const coluna = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 5.2, 10), metal); coluna.position.y = 2.6; haste.add(coluna);
+        const braco = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.08, 0.08), metal); braco.position.set(-lado * 0.42, 4.9, 0); haste.add(braco);
+        const bolsa = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.95, 0.14), new THREE.MeshStandardMaterial({ color: 0xdff4ff, transparent: true, opacity: 0.78 })); bolsa.position.set(-lado * 0.74, 4.22, 0); haste.add(bolsa);
+        const tubo = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.6, 8), M(0xb3dfff, 0.2, { transparent: true, opacity: 0.8 })); tubo.position.set(-lado * 0.74, 3.35, 0.28); haste.add(tubo);
+      };
+      for (const z of [-30, -50, -70, -90]) { maca(74.8, z, 1); maca(114.2, z, -1); }
       caixa(14, 8, 2.5, M(0xf2f2f2, 0.4), 94.5, F + 4, -MZ + 1.3);
       { const [cc, gc] = tela(128, 128); gc.fillStyle = "#fff"; gc.fillRect(0, 0, 128, 128); gc.fillStyle = "#e0202a"; gc.fillRect(48, 16, 32, 96); gc.fillRect(16, 48, 96, 32);
         this.deco(new THREE.Mesh(new THREE.PlaneGeometry(3, 3), new THREE.MeshBasicMaterial({ map: tex(cc) })), 94.5, F + 10, -MZ + 2.7); }
-      caixa(9, 3.4, 3, m.mad, 104, F + 1.7, -16);
+      // armário de remédios e bancada da enfermeira
+      caixa(9, 3.4, 3, m.mad, 104, F + 1.7, -16); dbox(9.2, 0.16, 3.2, M(0xece2d2, 0.75), 104, F + 3.45, -16);
+      for (const dx of [-2.8, 0, 2.8]) this.deco(new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.1, 0.55), M([0x7fd1ff, 0xff7fb0, 0x8ddc92][(dx + 3) % 3], 0.5)), 104 + dx, F + 4.05, -16);
+      caixa(4.4, 7.6, 1.8, M(0xe5eef4, 0.4), 114.5, F + 3.8, -17);
+      for (const y of [2.2, 4.1, 6.0]) dbox(4.0, 0.08, 1.56, M(0x9bb5c8, 0.35), 114.5, F + y, -17);
       janela(MX - 0.05, -40, -Math.PI / 2); janela(MX - 0.05, -75, -Math.PI / 2);
     }
 
@@ -2084,16 +2653,19 @@ class WorldManager {
       // Não ocupar nenhuma abertura de porta, que tem 10 unidades de largura.
       const portas = norte ? PN : PS;
       if (portas.some(p => Math.abs(x - p) < 7.2)) return;
-      const faceZ = zParede + (norte ? 0.56 : -0.56);
+      const faceZ = zParede + (norte ? 0.72 : -0.72);
       const [c, g] = tela(256, 256);
       g.fillStyle = cor; g.fillRect(0, 0, 256, 256);
       g.strokeStyle = '#f4e8cb'; g.lineWidth = 8; g.strokeRect(9, 9, 238, 238);
       g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
       g.font = 'bold 31px sans-serif'; g.fillText(titulo, 128, 104, 228);
       g.font = 'bold 19px sans-serif'; g.fillText(subtitulo, 128, 152, 230);
-      this.deco(new THREE.Mesh(new THREE.PlaneGeometry(3.8, 3.8),
-        new THREE.MeshBasicMaterial({ map: tex(c), side: THREE.DoubleSide })),
+      const poster = this.deco(new THREE.Mesh(new THREE.PlaneGeometry(3.8, 3.8),
+        new THREE.MeshBasicMaterial({ map: tex(c), side: THREE.DoubleSide, toneMapped: false,
+          depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })),
         x, F + 6.3, faceZ, norte ? 0 : Math.PI);
+      poster.userData.semSombraUltra = true;
+      poster.castShadow = false; poster.receiveShadow = false;
     };
     posterPorta('ARTES', 'crie sem medo', '#a03070', -94, -8, -8);
     posterPorta('EVOLUA!', '1 2 3 4 = crescer', '#b5443a', -49, -8, -8); posterPorta('BIOLOGIA', 'cuide da natureza', '#0f7a4a', -7, -8, 8);
@@ -2107,20 +2679,140 @@ class WorldManager {
     bebedouro(-100.5, -6.7, 1); bebedouro(-13, -6.7, 1); bebedouro(11, 6.7, -1); bebedouro(100.5, -6.7, 1);
     for (const [x, z] of [[-87.6, -6.9], [-42.6, -6.9], [34.4, -6.9], [62.4, -6.9], [-33.6, 6.9], [23.4, 6.9], [63.4, 6.9], [100.4, 6.9]]) extintor(x, z);
 
-    // PARTES DO LOUVA-A-DEUS (easter egg Tusk): 4 peças verdes brilhantes escondidas; cada uma evolui o Tusk em um Ato
+    // PARTES DO LOUVA-A-DEUS V17 (Tusk): quatro modelos anatômicos próprios.
+    // Os modelos giram/flutuam como uma única peça, sem juntas desconectadas.
+    // Núcleo sempre visível; detalhes opcionais seguem Leve/Normal/Alto/Ultra.
     this.pontos.mantis = [];
-    { const verde = M(0x6bd93a, 0.35, { emissive: 0x2a8a10, emissiveIntensity: 0.9 }), verde2 = M(0x3a9a1a, 0.4, { emissive: 0x18600a, emissiveIntensity: 0.7 }), asaV = M(0xcff5a8, 0.2, { transparent: true, opacity: 0.55, side: THREE.DoubleSide });
-      const esf = (r, sx, sy, sz, mt, x, y, z) => { const o = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 10), mt); o.scale.set(sx, sy, sz); o.position.set(x, y, z); return o; };
-      const hast = (r, h, mt, x, y, z, rx = 0, rz = 0) => { const o = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 6), mt); o.position.set(x, y, z); o.rotation.set(rx, 0, rz); return o; };
-      const cria = (id, x, y, z, monta) => {
-        const g = new THREE.Group(), forma = new THREE.Group(); monta(forma);
-        g.add(forma, new THREE.Mesh(new THREE.SphereGeometry(1.5, 12, 10), new THREE.MeshBasicMaterial({ color: 0x66ff33, transparent: true, opacity: 0.13, depthWrite: false })));
-        g.position.set(x, y, z); this.cena.add(g); this.pontos.mantis.push({ id, g, forma, base: y, pos: g.position });
+    {
+      const verde = M(0x6baf31, 0.66), verdeClaro = M(0x9ac94a, 0.58),
+        verdeEscuro = M(0x365c24, 0.79), articulacao = M(0x354e24, 0.62),
+        olho = M(0x253b20, 0.31, { metalness: 0.12 }), brilhoOlho = M(0xa7e87a, 0.36),
+        nervura = M(0x608d35, 0.62), garra = M(0xb6cf7b, 0.42),
+        asa = M(0xa4d78b, 0.63, { transparent: true, opacity: 0.66, side: THREE.DoubleSide, depthWrite: false });
+      const geoEsfera = new THREE.SphereGeometry(1, 12, 8);
+      const modelos = this.pontos.mantis;
+      const esferoide = (pai, x, y, z, rx, ry, rz, mt) => {
+        const o = new THREE.Mesh(geoEsfera, mt);
+        o.position.set(x, y, z); o.scale.set(rx, ry, rz); pai.add(o); return o;
       };
-      cria("cabeca", 38, F + 10.7, -70, (f) => { f.add(esf(0.45, 1.3, 0.9, 0.8, verde, 0, 0, 0)); for (const l of [1, -1]) { f.add(esf(0.2, 1, 1.2, 1, verde2, l * 0.5, 0.12, 0.15)); f.add(hast(0.02, 0.8, verde2, l * 0.2, 0.55, 0, 0, -l * 0.3)); } });
-      cria("foices", 65, F + 5.2, -92, (f) => { for (const l of [1, -1]) { const t = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.07, 6, 14, Math.PI * 0.9), verde); t.position.x = l * 0.5; t.rotation.z = l > 0 ? 0.3 : Math.PI - 0.3; f.add(t); for (let i = 0; i < 4; i++) f.add(esf(0.06, 1, 1.6, 1, verde2, l * (0.5 + 0.3 * i * 0.3), 0.2 + i * 0.12, 0)); } });
-      cria("torax", 17, F + 12.5, 78, (f) => { f.add(hast(0.22, 1.7, verde, 0, 0, 0, Math.PI / 2, 0)); for (const l of [1, -1]) { const a = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.55), asaV); a.position.set(l * 0.7, 0.2, 0.3); a.rotation.set(-Math.PI / 2 + 0.3, 0, l * 0.3); f.add(a); } });
-      cria("abdomen", 65, F + 2.5, 86, (f) => { f.add(esf(0.4, 1, 0.9, 2.1, verde, 0, 0, 0)); for (const l of [1, -1]) for (const z of [-0.4, 0.4]) f.add(hast(0.03, 0.9, verde2, l * 0.4, -0.25, z, 0, l * 0.9)); });
+      const vareta = (pai, a, b, r, mt, lados = 7) => {
+        const v0 = V(...a), v1 = V(...b), delta = v1.clone().sub(v0);
+        const distancia = delta.length();
+        if (distancia < 0.0001) return null;
+        // Os cilindros penetram um pouco nas articulações para impedir lacunas.
+        const m = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.86, r, distancia + 0.045, lados), mt);
+        m.position.copy(v0).add(v1).multiplyScalar(0.5);
+        m.quaternion.setFromUnitVectors(V(0, 1, 0), delta.normalize()); pai.add(m); return m;
+      };
+      const jun = (pai, p, r, mt = articulacao) => esferoide(pai, ...p, r, r, r, mt);
+      const item = (id, x, y, z, construir) => {
+        const g = new THREE.Group(), forma = new THREE.Group();
+        const normal = new THREE.Group(), extra = new THREE.Group();
+        // Os grupos de detalhes são filhos do modelo e acompanham seu giro e altura.
+        forma.add(normal, extra); construir(forma, normal, extra);
+        const aura = new THREE.Mesh(new THREE.SphereGeometry(1.10, 12, 8),
+          new THREE.MeshBasicMaterial({ color: 0x72ed4a, transparent: true, opacity: 0.075, depthWrite: false, side: THREE.BackSide }));
+        g.add(forma, aura); g.position.set(x, y, z); this.cena.add(g);
+        modelos.push({ id, g, forma, normal, extra, base: y, pos: g.position });
+      };
+
+      // CABEÇA: crânio triangular, olhos compostos, mandíbulas e duas antenas.
+      item('cabeca', 38, F + 10.7, -70, (f, normal, extra) => {
+        const perfil = new THREE.Shape();
+        perfil.moveTo(-0.55, 0.24); perfil.lineTo(0.55, 0.24);
+        perfil.lineTo(0.35, -0.10); perfil.lineTo(0, -0.43);
+        perfil.lineTo(-0.35, -0.10); perfil.closePath();
+        const geo = new THREE.ExtrudeGeometry(perfil, {
+          depth: 0.24, bevelEnabled: true, bevelThickness: 0.055, bevelSize: 0.045, bevelSegments: 1, steps: 1
+        });
+        geo.translate(0, 0, -0.12);
+        f.add(new THREE.Mesh(geo, verde));
+        esferoide(f, 0, -0.36, 0, 0.16, 0.20, 0.18, verdeEscuro);
+        for (const l of [-1, 1]) {
+          esferoide(f, l * 0.43, 0.16, 0.16, 0.26, 0.27, 0.25, olho);
+          esferoide(normal, l * 0.48, 0.22, 0.36, 0.075, 0.085, 0.032, brilhoOlho);
+          vareta(f, [l * 0.17, 0.28, 0], [l * 0.31, 0.57, -0.02], 0.034, verdeEscuro);
+          vareta(f, [l * 0.31, 0.57, -0.02], [l * 0.44, 0.88, 0.03], 0.023, verdeEscuro);
+          jun(normal, [l * 0.31, 0.57, -0.02], 0.042);
+          vareta(normal, [l * 0.13, -0.31, 0.12], [l * 0.23, -0.49, 0.16], 0.035, garra);
+          esferoide(extra, l * 0.30, 0.04, 0.18, 0.030, 0.058, 0.028, verdeClaro);
+        }
+        vareta(extra, [-0.16, -0.24, 0.19], [0.16, -0.24, 0.19], 0.025, articulacao);
+      });
+
+      // FOICES: dois braços predadores conectados a um único suporte central.
+      item('foices', 65, F + 5.2, -92, (f, normal, extra) => {
+        esferoide(f, 0, -0.18, 0, 0.34, 0.30, 0.30, verdeEscuro);
+        esferoide(f, 0, -0.06, 0.12, 0.29, 0.18, 0.20, verde);
+        for (const l of [-1, 1]) {
+          const p0 = [l * 0.23, -0.12, 0.07];
+          const p1 = [l * 0.50, -0.23, 0.14];
+          const p2 = [l * 0.81, 0.20, 0.20];
+          const p3 = [l * 0.82, 0.53, 0.22];
+          const ponta = [l * 0.55, 0.82, 0.21];
+          vareta(f, p0, p1, 0.105, verde);
+          vareta(f, p1, p2, 0.084, verdeClaro);
+          vareta(f, p2, p3, 0.090, verdeEscuro);
+          // Foice encurvada e pontiaguda, tocando o antebraço.
+          const curva = new THREE.CatmullRomCurve3([V(...p3), V(l * 0.84, 0.71, 0.22), V(...ponta)]);
+          const lamina = new THREE.Mesh(new THREE.TubeGeometry(curva, 12, 0.055, 6, false), garra);
+          f.add(lamina);
+          jun(f, p0, 0.12, verdeEscuro); jun(f, p1, 0.105); jun(f, p2, 0.10, verde);
+          for (let d = 0; d < 3; d++) {
+            const yy = 0.16 + d * 0.105;
+            vareta(normal, [l * 0.73, yy, 0.20], [l * (0.61 - d * 0.05), yy + 0.08, 0.24], 0.025, garra, 5);
+          }
+          esferoide(extra, l * 0.56, -0.17, 0.20, 0.08, 0.06, 0.08, verdeClaro);
+        }
+      });
+
+      // TÓRAX + ASAS: segmento central rígido com par de asas em forma de folha.
+      item('torax', 17, F + 12.5, 78, (f, normal, extra) => {
+        esferoide(f, 0, 0.02, 0, 0.29, 0.31, 0.73, verde);
+        esferoide(f, 0, 0.06, -0.49, 0.20, 0.22, 0.28, verdeEscuro);
+        esferoide(f, 0, 0.09, 0.47, 0.21, 0.20, 0.25, verdeClaro);
+        for (const l of [-1, 1]) {
+          const formaAsa = new THREE.Shape();
+          formaAsa.moveTo(0, 0);
+          formaAsa.bezierCurveTo(0.34, -0.16, 0.85, -0.34, 1.22, -0.22);
+          formaAsa.bezierCurveTo(1.36, -0.02, 0.99, 0.32, 0.25, 0.39);
+          formaAsa.quadraticCurveTo(0.06, 0.18, 0, 0);
+          const folha = new THREE.Mesh(new THREE.ShapeGeometry(formaAsa), asa);
+          folha.rotation.x = -Math.PI / 2;
+          folha.scale.x = l;
+          folha.position.set(l * 0.17, 0.15, -0.03); f.add(folha);
+          esferoide(f, l * 0.20, 0.14, -0.01, 0.11, 0.10, 0.16, verdeEscuro);
+          vareta(normal, [l * 0.16, 0.155, -0.03], [l * 1.16, 0.16, 0.05], 0.018, nervura, 5);
+          vareta(extra, [l * 0.39, 0.16, 0.02], [l * 0.81, 0.17, -0.20], 0.014, nervura, 5);
+          vareta(extra, [l * 0.39, 0.16, 0.02], [l * 0.86, 0.17, 0.22], 0.014, nervura, 5);
+        }
+        vareta(normal, [0, 0.27, -0.36], [0, 0.28, 0.43], 0.035, verdeEscuro);
+      });
+
+      // ABDÔMEN + PATAS: segmentos contínuos com seis membros articulados.
+      item('abdomen', 65, F + 2.5, 86, (f, normal, extra) => {
+        for (let i = 0; i < 6; i++) {
+          const z = -0.61 + i * 0.26, r = 0.40 - i * 0.045;
+          // Cada segmento se sobrepõe ao vizinho; a carapaça não abre buracos.
+          esferoide(f, 0, 0.10 - i * 0.018, z, r, r * 0.79, 0.27,
+            i % 2 ? verde : verdeClaro);
+          if (i > 0) esferoide(normal, 0, 0.27 - i * 0.016, z - 0.05,
+            r * 0.80, 0.035, 0.08, verdeEscuro);
+        }
+        esferoide(f, 0, 0.01, 0.87, 0.13, 0.16, 0.22, verdeEscuro);
+        for (const l of [-1, 1]) for (let i = 0; i < 3; i++) {
+          const z = -0.47 + i * 0.43, spread = i === 1 ? 1.0 : 0.80;
+          const raiz = [l * 0.29, 0.015, z];
+          const joelho = [l * (0.66 * spread), -0.34, z + (i - 1) * 0.12];
+          const pe = [l * (0.91 * spread), -0.78, z + (i - 1) * 0.22];
+          vareta(f, raiz, joelho, 0.064, verdeEscuro);
+          vareta(f, joelho, pe, 0.039, articulacao);
+          jun(f, raiz, 0.072, verde); jun(f, joelho, 0.071);
+          esferoide(normal, ...pe, 0.058, 0.052, 0.058, garra);
+          vareta(extra, [l * 0.36, -0.08, z], [l * 0.51, -0.17, z - 0.07], 0.022, garra, 5);
+        }
+      });
+      this.atualizarDetalhesLouvaDeus(lerGraficos());
     }
   }
 
@@ -2246,8 +2938,15 @@ class WorldManager {
     return n;
   }
   apagarGas(pos, r) { for (const n of this.gasAtivos) if (n.position.distanceTo(pos) < r) { n.userData.fase = "ativo"; n.userData.t = 0.01; } }   // encerra as nuvens no raio
-  iniciarPontos(S) {   // estado salvo: armário já arrombado fica aberto
+  iniciarPontos(S) {   // estado salvo: armário arrombado e livro já devolvido
     const A = this.armario; if (A && S.skins.includes("cadeado")) { A.aberto = true; A.cad.visible = false; A.pivo.rotation.y = -1.75; A.led.visible = false; }
+    const L = this.livroPerdido;
+    if (L) {
+      L.entregue = S.livroDevolvido === true;
+      L.carregando = false; L.g.visible = !L.entregue;
+      if (L.shelf) L.shelf.visible = false;
+      if (this.livroDevolvidoVisual) this.livroDevolvidoVisual.visible = L.entregue;
+    }
   }
   limitar(p) { p.x = clamp(p.x, -CFG.MX + 1, CFG.MX - 1); p.z = clamp(p.z, -CFG.MZ + 1, CFG.MZ - 1); p.y = clamp(p.y, CFG.YMIN + 0.3, CFG.YMAX - 0.3); }   // fantasma: só os limites do prédio
 
@@ -2334,6 +3033,26 @@ class WorldManager {
     const c = this.carteira; c.visivel = S.carteiras < 3; c.g.visible = c.visivel;
     if (c.visivel) { const [x, z] = c.spots[(Math.random() * c.spots.length) | 0]; c.g.position.set(x, CFG.YMIN + 0.035, z); }
   }
+  criarLivroPerdido() {
+    const g = new THREE.Group();
+    const capa = new THREE.MeshStandardMaterial({ color: 0x305d9c, roughness: 0.76 });
+    const folha = new THREE.MeshStandardMaterial({ color: 0xf3ead4, roughness: 0.92 });
+    const detalhe = new THREE.MeshStandardMaterial({ color: 0xd9c36a, roughness: 0.6, metalness: 0.15 });
+    const corpo = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.22, 1.15), capa); corpo.position.y = 0.11; g.add(corpo);
+    const miolo = new THREE.Mesh(new THREE.BoxGeometry(1.38, 0.12, 1.0), folha); miolo.position.y = 0.18; g.add(miolo);
+    const lombada = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.26, 1.15), detalhe); lombada.position.set(-0.70, 0.11, 0); g.add(lombada);
+    const faixa = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.03, 0.18), detalhe); faixa.position.set(0.1, 0.235, 0); g.add(faixa);
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.06, 6, 36), new THREE.MeshBasicMaterial({ color: 0x8ae4ff, transparent: true, opacity: 0.55 }));
+    halo.rotation.x = Math.PI / 2; halo.position.y = 0.05; g.add(halo);
+    g.rotation.y = -0.45; this.cena.add(g);
+    const shelf = this.livroDevolucaoHalo || null;
+    // Em cima de uma mesa da cantina (x=-78, z=49), não dentro da biblioteca.
+    // Tampo da mesa: F+3.55; livro começa a partir de F+3.57.
+    this.livroPerdido = { g, halo, shelf, carregando: false, entregue: false,
+      spot: V(-78, CFG.YMIN + 3.57, 49), reward: 180 };
+    g.position.copy(this.livroPerdido.spot);
+    if (shelf) shelf.visible = false;
+  }
 
   atualizarHumanos(dt, jogo) {
     const p = jogo.jogador.pos, F = CFG.YMIN, rc = jogo.estado.raioColeta + 0.9;
@@ -2346,12 +3065,22 @@ class WorldManager {
         h.atord -= dt; h.raiva = 0; h.tapa = Math.max(h.tapa, 0.6);
         h.g.position.y = F + h.yo + Math.abs(Math.sin(jogo.t * 9 + h.passo)) * 0.35; h.g.rotation.y += dt * 2.2;
       } else if (h.raiva > 0) {
-        // Bravo: para, encara o mosquito e abana o braço
-        virar(g, Math.atan2(p.x - g.position.x, p.z - g.position.z), 10);
-        h.bracos[1].rotation.x = -2.4 + Math.sin(jogo.t * 16) * 0.7; h.bracos[0].rotation.x = 0; h.bracos[1].userData.cotovelo.rotation.x = -0.6; h.cab.rotation.y *= 0.9;
-        h.pernas.forEach((l) => { l.rotation.x *= 0.8; });
-        const dx = p.x - g.position.x, dy = p.y - (F + 5.2 + h.yo), dz = p.z - g.position.z;
-        if (h.tapa <= 0 && dx * dx + dy * dy + dz * dz < 2.8 * 2.8) { h.tapa = 1.2; jogo.tapa(h); }
+        // Tempo parado: o humano fica travado, sem gesto de tapa e sem avançar na agressão.
+        if (jogo.buff.tempo > 0) {
+          h.bracos[0].rotation.x *= 0.72; h.bracos[1].rotation.x *= 0.72;
+          h.bracos[0].userData.cotovelo.rotation.x += (-0.35 - h.bracos[0].userData.cotovelo.rotation.x) * 0.28;
+          h.bracos[1].userData.cotovelo.rotation.x += (-0.35 - h.bracos[1].userData.cotovelo.rotation.x) * 0.28;
+          h.cab.rotation.y *= 0.85;
+          h.pernas.forEach((l) => { l.rotation.x *= 0.7; l.userData.joelho.rotation.x *= 0.7; });
+          g.position.y = F + h.yo;
+        } else {
+          // Bravo: para, encara o mosquito e abana o braço
+          virar(g, Math.atan2(p.x - g.position.x, p.z - g.position.z), 10);
+          h.bracos[1].rotation.x = -2.4 + Math.sin(jogo.t * 16) * 0.7; h.bracos[0].rotation.x = 0; h.bracos[1].userData.cotovelo.rotation.x = -0.6; h.cab.rotation.y *= 0.9;
+          h.pernas.forEach((l) => { l.rotation.x *= 0.8; l.userData.joelho.rotation.x *= 0.8; });
+          const dx = p.x - g.position.x, dy = p.y - (F + 5.2 + h.yo), dz = p.z - g.position.z;
+          if (h.tapa <= 0 && dx * dx + dy * dy + dz * dz < 2.8 * 2.8) { h.tapa = 1.2; jogo.tapa(h); }
+        }
       } else {
         const dest = h.ida ? h.b : h.a, dx = dest.x - g.position.x, dz = dest.z - g.position.z, d = Math.hypot(dx, dz);
         if (d < 0.2) h.ida = !h.ida;
@@ -2437,11 +3166,12 @@ class WorldManager {
     switch (id) {
       case 'padrao': e(0xf3ffff, 20, 8, 'espuma'); an(0xffffff, 4, 0.45); break;
       case 'pixel': e(0x33ff66, 32, 7); an(0x33ff66, 4, 0.45); break;
+      case 'encadernado': e(0xffe6b9, 34, 6); an(0x627bc6, 11, 0.95); break;
       case 'dengue': e(0xff3044, 30, 5); an(0xff3344, 6, 1); break;
       case 'relojoeiro': e(0xffd84d, 40, 3); an(0xffd84d, 11, 1.5); break;
       case 'radioativo': e(0x39ff14, 32, 6); an(0x39ff14, 8, 1); break;
       case 'jogador': e(0xff9a22, 24, 9); an(0xffa320, 5, 0.6); break;
-      case 'fantasma': e(0xbfe6ff, 28, 3, 'fumaca'); an(0x99ddff, 5, 1); break;
+      case 'fantasma': an(0x99ddff, 3.5, 0.5); break; // pulso curto, sem fumaça
       case 'vampiro': e(0xff1744, 36, 6); an(0xdd0033, 8, 1.2); break;
       case 'mosquito': e(0xc9d13a, 26, 5); an(0xc9d13a, 6, 1); break;
       case 'carreta': e(0xff44cc, 38, 7); an(0xff44cc, 13, 1.25); an(0x44ddff, 10, 1); break;
@@ -2551,7 +3281,7 @@ class WorldManager {
   update(dt, jogo) {
     const p = jogo.jogador.pos, S = jogo.estado;
     this.emPerigo = null; this.avisoGas = false;
-    this.luz.intensity = Math.sin(jogo.t * 3.1) * Math.sin(jogo.t * 17.3) > 0.93 ? 0.5 : 1.6;   // lâmpada falhando
+    this.luz.intensity = (Math.sin(jogo.t * 3.1) * Math.sin(jogo.t * 17.3) > 0.93 ? 0.5 : 1.6) * (jogo.modoGrafico === 'ultra' ? 0.68 : 1);   // lâmpada falhando
     this.atualizarHumanos(dt * jogo.escalaTempo, jogo);   // tempo parado deixa humanos em câmera lenta
     this.atualizarFXHabilidades(dt);
     if (this.relogio) { const d = new Date(), s = d.getSeconds() + d.getMilliseconds() / 1000, mi = d.getMinutes() + s / 60, h = (d.getHours() % 12) + mi / 60;
@@ -2560,6 +3290,11 @@ class WorldManager {
     if (this.pontos.tomada) { if (Math.random() < dt * 4) this.emitir(this.pontos.tomada, 0x9fe0ff, 5, 3); if (this.luzTomada) this.luzTomada.intensity = Math.random() < 0.3 ? 2.2 : 0.4; }   // faíscas na tomada
     if (this.moldTelao) { this.moldTelao.opacity = 0.55 + 0.4 * Math.sin(jogo.t * (3 + this.telaoProg * 12)); this.moldTelao.color.setHex(this.telaoProg > 0 ? 0x66ff99 : 0xff44cc); }
     if (this.carteira && this.carteira.visivel) this.carteira.halo.scale.setScalar(1 + Math.sin(jogo.t * 4) * 0.15);
+    if (this.livroPerdido && !this.livroPerdido.entregue) {
+      const L = this.livroPerdido;
+      if (!L.carregando) { L.halo.scale.setScalar(1 + Math.sin(jogo.t * 4.8) * 0.12); }
+      if (L.shelf) { L.shelf.visible = L.carregando; L.shelf.scale.setScalar(1 + Math.sin(jogo.t * 4.2) * 0.06); }
+    }
     this.atualizarPingos(dt);
     { const Z = jogo.zona; this.zonaMesh.visible = !!Z; if (Z) { this.zonaMesh.position.set(Z.x, CFG.YMIN + 0.12, Z.z); this.zonaMesh.scale.set(Z.r, Z.r, 1); this.zonaMesh.material.opacity = 0.25 + 0.1 * Math.sin(jogo.t * 4); } }   // poça de cura da skin Meio pintado
     for (const m of this.pontos.mantis) { const tem = jogo.estado.mantis.includes(m.id); m.g.visible = !tem; if (!tem) { m.forma.rotation.y += dt * 1.5; m.g.position.y = m.base + Math.sin(jogo.t * 2 + m.pos.x) * 0.15; } }
@@ -2727,6 +3462,212 @@ class PlayerController {
 }
 
 // ------------------------------------------------------------
+// ULTRA V11 — CINEMATIC: shaders com efeito visivel, mas SEM
+// ULTRA NATURAL V12: sombras reais no Three.js; bloom comedido e sem SSAO.
+// "tela lavada": bloom duplo (proximo + difuso), separacao de
+// luzes por cor e contraste local, SSAO opcional (profundidade),
+// FXAA conservador, color grading e vinheta de filme.
+// Apenas para modo Ultra; HUD, colisoes e gameplay nao mudam.
+// ------------------------------------------------------------
+class UltraPostFX {
+  constructor(renderer) {
+    this.renderer = renderer;
+    const mkTarget = () => new THREE.WebGLRenderTarget(1, 1, {
+      minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
+      format: THREE.RGBAFormat, depthBuffer: false, stencilBuffer: false,
+      generateMipmaps: false
+    });
+    this.sceneTarget = new THREE.WebGLRenderTarget(1, 1, {
+      minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
+      format: THREE.RGBAFormat, depthBuffer: true, stencilBuffer: false,
+      generateMipmaps: false
+    });
+    // Sem SSAO de profundidade: gera padroes em paredes lisas obliquas.
+    // O Ultra usa shadow maps reais nos modelos 3D.
+    this.hasDepth = false;
+    this.bloomA = mkTarget(); this.bloomB = mkTarget();
+    this.wideA = mkTarget(); this.wideB = mkTarget();
+    this.cena = new THREE.Scene();
+    this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const vs = `varying vec2 vUv;
+      void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
+    const material = (uniforms, fragmentShader) => new THREE.ShaderMaterial({
+      uniforms, vertexShader: vs, fragmentShader,
+      depthTest: false, depthWrite: false, transparent: false,
+      blending: THREE.NoBlending, toneMapped: false
+    });
+    // Dois tipos de emissivo: LED colorido OU luz branca local (lampada).
+    // Em regioes muito extensas, como piso branco e teto, a mascara
+    // praticamente zera; nao volta o estouro de luz da V9.
+    this.extract = material({
+      uScene: { value: this.sceneTarget.texture },
+      uTexel: { value: new THREE.Vector2(1, 1) }
+    }, `precision highp float;
+      uniform sampler2D uScene;
+      uniform vec2 uTexel;
+      varying vec2 vUv;
+      float lum(vec3 c) { return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
+      void main() {
+        vec2 uv = clamp(vUv, vec2(0.002), vec2(0.998));
+        vec3 c = texture2D(uScene, uv).rgb;
+        float hi = max(c.r, max(c.g, c.b));
+        float lo = min(c.r, min(c.g, c.b));
+        float L = lum(c);
+        vec2 d = uTexel * 15.0;
+        vec3 n1 = texture2D(uScene, clamp(uv + vec2(d.x, 0.0), vec2(0.0), vec2(1.0))).rgb;
+        vec3 n2 = texture2D(uScene, clamp(uv - vec2(d.x, 0.0), vec2(0.0), vec2(1.0))).rgb;
+        vec3 n3 = texture2D(uScene, clamp(uv + vec2(0.0, d.y), vec2(0.0), vec2(1.0))).rgb;
+        vec3 n4 = texture2D(uScene, clamp(uv - vec2(0.0, d.y), vec2(0.0), vec2(1.0))).rgb;
+        float entorno = 0.25 * (lum(n1) + lum(n2) + lum(n3) + lum(n4));
+        float contraste = max(L - entorno, 0.0);
+        // LEDs, auras, sangue brilhante, sensores, luzes coloridas.
+        float saturado = smoothstep(0.28, 0.58, hi-lo) * smoothstep(0.81, 0.98, hi)
+          * smoothstep(0.055, 0.24, contraste);
+        // Pontos brancos so acendem se MUITO mais claros que seu entorno.
+        // Uma area branca uniforme nunca vira bloom.
+        float lampada = smoothstep(0.85, 0.99, L) * smoothstep(0.15, 0.42, contraste);
+        // Evita iluminar paredes inteiras por micro-variações de brilho.
+        float mascara = clamp(0.65 * saturado + 0.70 * lampada, 0.0, 1.0);
+        gl_FragColor = vec4(c * mascara, 1.0);
+      }`);
+    this.blur = material({
+      uInput: { value: this.bloomA.texture },
+      uDirection: { value: new THREE.Vector2(1, 0) },
+      uPixel: { value: new THREE.Vector2(1, 1) }
+    }, `precision highp float;
+      uniform sampler2D uInput;
+      uniform vec2 uDirection;
+      uniform vec2 uPixel;
+      varying vec2 vUv;
+      vec3 ler(vec2 uv) { return texture2D(uInput, clamp(uv, vec2(0.002), vec2(0.998))).rgb; }
+      void main() {
+        vec2 d = uDirection * uPixel;
+        vec3 c = ler(vUv) * 0.227027;
+        c += (ler(vUv+d*1.0)+ler(vUv-d*1.0)) * 0.1945946;
+        c += (ler(vUv+d*2.0)+ler(vUv-d*2.0)) * 0.1216216;
+        c += (ler(vUv+d*3.0)+ler(vUv-d*3.0)) * 0.0540540;
+        c += (ler(vUv+d*4.0)+ler(vUv-d*4.0)) * 0.0162160;
+        gl_FragColor = vec4(c, 1.0);
+      }`);
+    this.composite = material({
+      uScene: { value: this.sceneTarget.texture },
+      uBloomNear: { value: this.bloomA.texture },
+      uBloomFar: { value: this.wideA.texture },
+      uPixel: { value: new THREE.Vector2(1, 1) },
+      uAspect: { value: 1.0 }, uTime: { value: 0 }
+    }, `precision highp float;
+      uniform sampler2D uScene;
+      uniform sampler2D uBloomNear;
+      uniform sampler2D uBloomFar;
+      uniform vec2 uPixel;
+      uniform float uAspect, uTime;
+      varying vec2 vUv;
+      vec3 sampleScene(vec2 uv) { return texture2D(uScene, clamp(uv, vec2(0.001), vec2(0.999))).rgb; }
+      float lum(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
+      vec3 aa(vec2 uv) {
+        vec3 m = sampleScene(uv);
+        vec3 nw = sampleScene(uv + uPixel * vec2(-1.,-1.));
+        vec3 ne = sampleScene(uv + uPixel * vec2( 1.,-1.));
+        vec3 sw = sampleScene(uv + uPixel * vec2(-1., 1.));
+        vec3 se = sampleScene(uv + uPixel * vec2( 1., 1.));
+        float lm=lum(m), l0=lum(nw), l1=lum(ne), l2=lum(sw), l3=lum(se);
+        float lmin=min(lm,min(min(l0,l1),min(l2,l3)));
+        float lmax=max(lm,max(max(l0,l1),max(l2,l3)));
+        if (lmax-lmin < max(0.035,lmax*0.12)) return m;
+        vec2 dir=vec2(-((l0+l1)-(l2+l3)), (l0+l2)-(l1+l3));
+        float reduction=max((l0+l1+l2+l3)*0.03,0.015625);
+        dir=clamp(dir/(min(abs(dir.x),abs(dir.y))+reduction),vec2(-5.),vec2(5.))*uPixel;
+        vec3 a=0.5*(sampleScene(uv+dir*(-0.167))+sampleScene(uv+dir*0.167));
+        vec3 b=a*0.5+0.25*(sampleScene(uv-dir*0.5)+sampleScene(uv+dir*0.5));
+        vec3 suav=(lum(b)<lmin||lum(b)>lmax)?a:b;
+        // Conserva geometria solida: suavizacao limitada a 60%.
+        return mix(m,suav,0.38);
+      }
+      void main() {
+        vec3 scene=aa(vUv);
+        // Sem SSAO de tela: luz e sombras sao calculadas pelas malhas 3D.
+        // Dois raios de bloom: halo nitido e espalhamento cinematografico.
+        vec3 b1=texture2D(uBloomNear,vUv).rgb;
+        vec3 b2=texture2D(uBloomFar,vUv).rgb;
+        vec3 c=scene+b1*0.22+b2*0.10;
+        // Grades de cinema: contraste forte, tons frios nas sombras,
+        // realces discretamente quentes e saturacao contida.
+        c=max(c,vec3(0.0));
+        float l=dot(c,vec3(0.2126,0.7152,0.0722));
+        c=mix(vec3(l),c,1.11);
+        c=(c-0.42)*1.065+0.42;
+        float shade=1.0-smoothstep(0.14,0.72,l);
+        c+=shade*vec3(-0.006,0.004,0.025);
+        float warm=smoothstep(0.65,0.98,l);
+        c*=mix(vec3(1.0),vec3(1.012,0.998,0.978),warm);
+        // Soft shoulder HDR: preserve detalhes no branco e nos brilhos.
+        c=max(c,vec3(0.0));
+        c=c/(vec3(1.0)+max(c-vec3(0.86),vec3(0.0))*0.75);
+        vec2 p=(vUv-0.5)*vec2(uAspect,1.0);
+        c*=1.0-0.18*smoothstep(0.33,1.1,length(p));
+        float grain=fract(sin(dot(vUv/uPixel+uTime*0.19,vec2(12.9898,78.233)))*43758.5453);
+        c+=(grain-0.5)*0.0018;
+        gl_FragColor=vec4(clamp(c,0.0,1.0),1.0);
+      }`);
+    this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.extract);
+    this.quad.frustumCulled = false;
+    this.cena.add(this.quad);
+    this.w=0; this.h=0; this.ajustarTamanho();
+  }
+  ajustarTamanho() {
+    const w=Math.max(1,this.renderer.domElement.width);
+    const h=Math.max(1,this.renderer.domElement.height);
+    if (w===this.w && h===this.h) return;
+    this.w=w; this.h=h;
+    const bw=Math.max(1,Math.ceil(w/3)), bh=Math.max(1,Math.ceil(h/3));
+    const fw=Math.max(1,Math.ceil(w/10)), fh=Math.max(1,Math.ceil(h/10));
+    this.sceneTarget.setSize(w,h);
+    this.bloomA.setSize(bw,bh); this.bloomB.setSize(bw,bh);
+    this.wideA.setSize(fw,fh); this.wideB.setSize(fw,fh);
+    this.extract.uniforms.uTexel.value.set(1/w,1/h);
+    this.composite.uniforms.uPixel.value.set(1/w,1/h);
+    this.composite.uniforms.uAspect.value=w/h;
+  }
+  render(scene,camera,t) {
+    const r=this.renderer;
+    this.composite.uniforms.uTime.value=t;
+    this.ajustarTamanho();
+    const pass=(material,target)=>{this.quad.material=material;r.setRenderTarget(target);r.clear();r.render(this.cena,this.camera);};
+    try {
+      r.setRenderTarget(this.sceneTarget);r.clear();r.render(scene,camera);
+      pass(this.extract,this.bloomA);
+      this.quad.material=this.blur;
+      this.blur.uniforms.uInput.value=this.bloomA.texture;
+      this.blur.uniforms.uDirection.value.set(1,0);
+      this.blur.uniforms.uPixel.value.set(1/this.bloomA.width,1/this.bloomA.height);
+      pass(this.blur,this.bloomB);
+      this.blur.uniforms.uInput.value=this.bloomB.texture;
+      this.blur.uniforms.uDirection.value.set(0,1);
+      pass(this.blur,this.bloomA);
+      // Segunda camada propositalmente mais ampla.
+      this.blur.uniforms.uInput.value=this.bloomA.texture;
+      this.blur.uniforms.uPixel.value.set(1/this.wideA.width,1/this.wideA.height);
+      this.blur.uniforms.uDirection.value.set(1,0);
+      pass(this.blur,this.wideA);
+      this.blur.uniforms.uInput.value=this.wideA.texture;
+      this.blur.uniforms.uDirection.value.set(0,1);
+      pass(this.blur,this.wideB);
+      this.blur.uniforms.uInput.value=this.wideB.texture;
+      this.blur.uniforms.uDirection.value.set(1,0);
+      pass(this.blur,this.wideA);
+      pass(this.composite,null);
+    } finally { r.setRenderTarget(null); }
+  }
+  dispose() {
+    this.cena.remove(this.quad);
+    this.quad.geometry.dispose();
+    this.extract.dispose();this.blur.dispose();this.composite.dispose();
+    this.sceneTarget.dispose();this.bloomA.dispose();this.bloomB.dispose();
+    this.wideA.dispose();this.wideB.dispose();
+  }
+}
+
+// ------------------------------------------------------------
 // GAME MANAGER: orquestra tudo
 // ------------------------------------------------------------
 class GameManager {
@@ -2736,12 +3677,32 @@ class GameManager {
     this.camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 500);
     this.modoGrafico = lerGraficos();
     this.render = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'default' });
+    this.ultraFX = null;
+    this._tomOriginal = this.render.toneMapping;
+    this._expOriginal = this.render.toneMappingExposure;
     this.render.setPixelRatio(Math.min(devicePixelRatio || 1, GRAFICOS[this.modoGrafico].resolucao));
     this.render.setSize(innerWidth, innerHeight);
     $("webgl-container").appendChild(this.render.domElement);
+    console.info('[MOSQUITO EVOLUTION V17] Partes do louva-a-deus remodeladas e adaptadas aos modos graficos');
     this.mundo = new WorldManager(this.cena, this.audio);
     this.jogador = new PlayerController(this.cena, this.camera, this.estado, this.mundo);
     this.jogador.pos.set(0, 2, 0);
+    // Fonte direcional suave de sombra real para a regiao proxima ao jogador.
+    // Ativa apenas no Ultra; tetos/paredes nao bloqueiam a fonte virtual.
+    this.luzUltra = new THREE.DirectionalLight(0xffebd7, 0);
+    this.luzUltra.castShadow = true;
+    this.luzUltra.shadow.mapSize.set(1536, 1536);
+    this.luzUltra.shadow.camera.left = -27;
+    this.luzUltra.shadow.camera.right = 27;
+    this.luzUltra.shadow.camera.top = 27;
+    this.luzUltra.shadow.camera.bottom = -27;
+    this.luzUltra.shadow.camera.near = 0.5;
+    this.luzUltra.shadow.camera.far = 88;
+    this.luzUltra.shadow.bias = -0.00010;
+    this.luzUltra.shadow.normalBias = 0.035;
+    this.luzUltra.shadow.radius = 2.2;
+    this.cena.add(this.luzUltra, this.luzUltra.target);
+    this._sombraT = 0;
     this._ultimoRender = 0; this._ultimoFPS = 0; this._frames = 0; this._fpsStamp = 0;
     this._timerDecor = 0;
     this.ui.aoMudarGraficos = (modo) => this.aplicarGraficos(modo);
@@ -2753,6 +3714,16 @@ class GameManager {
     this.buff = { sangue: 0, tempo: 0, radio: 0, vel: 0, stamInf: 0, invis: 0, frenesi: 0, gas: 0, scan: 0, pesado: 0 }; this.hab = { cd: 0, cdTotal: 1, ativo: 0 }; this.escalaTempo = 1; this.zona = null; this.kills = { tapasRecebidos: 0, gas: 0 }; this.tmpEgg = V(0, 0, 0); this.buf = ""; this.letras = "";
     this.ligar();
     this.ui.atalhos(() => this.abrirColecao("skins"), () => this.abrirColecao("conq")); this.mundo.posicionarCarteira(this.estado); this.mundo.iniciarPontos(this.estado);
+    // Migração do easter egg da V13C: jogador que já devolveu o livro
+    // recebe a nova skin e conquista, sem alterar a skin equipada.
+    if (this.estado.livroDevolvido) {
+      let mudou = false;
+      if (!this.estado.skins.includes('encadernado')) { this.estado.skins.push('encadernado'); mudou = true; }
+      for (const id of ['skin_encadernado','livro_devolvido']) {
+        if (!this.estado.conq.includes(id)) { this.estado.conq.push(id); mudou = true; }
+      }
+      if (mudou) this.estado.salvar();
+    }
     this.jogador.modelo.aplicar(); this.jogador.zoomV = this.jogador.modelo.zoom; this.ui.hud(this.estado); this.ui.saveInfo(this.estado); this.ui.habilidade(this.estado.skin, 0, 1, 0);
     this.laco();
   }
@@ -2761,12 +3732,62 @@ class GameManager {
     if (!GRAFICOS[modo]) return;
     this.modoGrafico = modo;
     const opt = GRAFICOS[modo];
-    this.render.setPixelRatio(Math.min(devicePixelRatio || 1, opt.resolucao));
+    // ACES mapeia o excesso de luz antes do bloom; outros modos nao mudam.
+    this.render.toneMapping = modo === 'ultra' ? THREE.ACESFilmicToneMapping : this._tomOriginal;
+    this.render.toneMappingExposure = modo === 'ultra' ? 0.82 : this._expOriginal;
+    // Ultra usa supersampling real mesmo em monitores DPR 1; os demais preservam o ajuste anterior.
+    this.render.setPixelRatio(modo === 'ultra' ? opt.resolucao : Math.min(devicePixelRatio || 1, opt.resolucao));
     this.render.setSize(innerWidth, innerHeight, false);
+    // Sombras 3D de verdade. Nenhum shader de profundidade nas paredes.
+    this.render.shadowMap.enabled = modo === 'ultra';
+    this.render.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.render.shadowMap.needsUpdate = true;
+    this.luzUltra.intensity = modo === 'ultra' ? 0.72 : 0;
+    this.luzUltra.castShadow = modo === 'ultra';
+    this.mundo.luzAmbiente.intensity = modo === 'ultra' ? 0.64 : 0.85;
+    this.mundo.luzCeu.intensity = modo === 'ultra' ? 0.59 : 0.75;
+    this.mundo.luzLua.intensity = modo === 'ultra' ? 0.28 : 0.5;
+    this._sombraT = 0;
+    this.mundo.atualizarSombras(this.jogador.pos, modo === 'ultra');
+    this.mundo.atualizarDetalhesBanheiro(modo);
+    this.mundo.atualizarDetalhesLouvaDeus(modo);
+    // Sombras do personagem, inclusive InstancedMesh da skin voxel 8-bit.
+    this.jogador.obj.traverse(o => {
+      if (!o.isMesh || !o.material) return;
+      const materiais = Array.isArray(o.material) ? o.material : [o.material];
+      const solido = materiais.every(m => m && !m.transparent && !m.isMeshBasicMaterial);
+      o.castShadow = modo === 'ultra' && solido;
+      o.receiveShadow = modo === 'ultra' && solido;
+    });
+    const matMap = this.mundo.materiaisCenario;
+    if (matMap) {
+      // Roughness maior deixa madeira e pedra foscas, sem aspecto plastificado;
+      // metal passa a refletir luz na medida certa. Restaura ao mudar de modo.
+      const ajustes = [
+        ['par','roughness',0.9,0.97], ['teto','roughness',0.9,0.97],
+        ['mad','roughness',0.6,0.82], ['tampo','roughness',0.5,0.81],
+        ['mesa','roughness',0.6,0.83], ['banco','roughness',0.7,0.86],
+        ['metal','roughness',0.4,0.45], ['metal','metalness',0,0.38],
+        ['bancada','roughness',0.4,0.72], ['porc','roughness',0.2,0.45],
+        ['piso','roughness',0.55,0.93], ['laranja','roughness',0.5,0.8]
+      ];
+      for (const [nome, campo, normal, ultra] of ajustes) matMap[nome][campo] = modo === 'ultra' ? ultra : normal;
+    }
+    if (modo !== 'ultra') this.jogador.modelo.aplicar();
+    if (modo === 'ultra') {
+      if (!this.ultraFX) {
+        try { this.ultraFX = new UltraPostFX(this.render); }
+        catch (err) { console.warn('[MOSQUITO ULTRA] Shader indisponível, render normal.', err); this.ultraFX = null; }
+      }
+      if (this.ultraFX) this.ultraFX.ajustarTamanho();
+    } else if (this.ultraFX) {
+      this.ultraFX.dispose(); this.ultraFX = null;
+    }
     this.camera.far = opt.distancia; this.camera.updateProjectionMatrix();
     this.cena.fog.near = modo === 'leve' ? 38 : modo === 'medio' ? 55 : 60;
     this.cena.fog.far = modo === 'leve' ? 132 : modo === 'medio' ? 200 : 170;
     this.mundo.qualidadeParticulas = opt.particulas;
+    if (this.mundo.ajustarLivrosBiblioteca) this.mundo.ajustarLivrosBiblioteca(modo);
     this.mundo.limiteParticulas = opt.maxParticulas;
     this.mundo.anelsPorHabilidade = opt.aneis;
     this.mundo.alcanceHumanos = modo === 'leve' ? 52 : modo === 'medio' ? 105 : Infinity;
@@ -2783,11 +3804,14 @@ class GameManager {
       if (can.clientWidth && can.clientHeight) this.ui.pv.r.setSize(can.clientWidth, can.clientHeight, false);
     }
     this.ui.exibirGraficos(modo);
-    const fps = $('hx-fps'); if (fps) fps.hidden = modo === 'alto';
+    const fps = $('hx-fps'); if (fps) fps.hidden = modo === 'alto' || modo === 'ultra';
     if (salvar) {
       try { localStorage.setItem(GRAF_KEY, modo); } catch (_) { /* modo em memória */ }
       this.ui.toast('⚙️ Gráficos: ' + opt.nome);
     }
+    // Detalhes do Encadernado acompanham as configurações imediatamente.
+    if (this.estado.skin === 'encadernado') this.jogador.modelo.aplicar();
+    if (this.ui.pv && this.ui.pv.modelo && this.ui.skSel === 'encadernado') this.ui.pv.modelo.aplicar();
     this._ultimoRender = 0;
   }
 
@@ -2847,7 +3871,7 @@ class GameManager {
       if (k === "q") this.abrirPergunta();
       if (k === "r") this.usarHabilidade();
       if (k === "=" && this.jogando) this.tour();
-      if (k === "b" && this.jogando && !this.buf.endsWith("|arrowright|b")) this.pegarCarteira();
+      if (k === "b" && this.jogando && !this.buf.endsWith("|arrowright|b")) this.interagirComPerdidos();
       if (k === "m") this.ui.toast(this.audio.alternarMudo() ? "Som desligado" : "Som ligado");
     });
     document.addEventListener("visibilitychange", () => { if (document.hidden) this.audio.pausarMusica(); });
@@ -2865,6 +3889,7 @@ class GameManager {
     document.addEventListener("pointerlockerror", () => { this.jogando = true; this.ui.esconderMenu(); });
     addEventListener("resize", () => {
       this.camera.aspect = innerWidth / innerHeight; this.camera.updateProjectionMatrix(); this.render.setSize(innerWidth, innerHeight);
+      if (this.ultraFX) this.ultraFX.ajustarTamanho();
     });
   }
 
@@ -2975,6 +4000,7 @@ class GameManager {
     if (S.picadas >= 10) this.desbloquear("vampiro");
   }
   tapa(h) {
+    if (this.buff.tempo > 0) { this.ui.toast("⏳ O tempo está parado: ninguém consegue te acertar!"); return; }
     if (this.estado.attr.intang) { this.ui.toast("👻 O tapa atravessou você!"); return; }   // fantasma é intangível
     if (this.buff.radio > 0 || this.buff.invis > 0 || this.jogador.escudo > 0) { this.ui.toast(this.buff.radio > 0 ? "☢️ A aura impediu o tapa!" : this.buff.invis > 0 ? "👻 Ele não te viu!" : "🔒 O cadeado bloqueou o tapa!"); return; }
     const j = this.jogador;
@@ -3193,16 +4219,15 @@ class GameManager {
       if (sk.fumaca) w.emitir(mo.traseira(o), 0x8a8f99, 1, 0.8, "fumaca");
       if (sk.espuma) w.emitir(mo.traseira(o), 0xffffff, 2, 2.2, "espuma");
       if (sk.goticulas && Math.random() < 0.85) w.pingar(mo.traseira(o), this.jogador.vel);   // pingos viram manchas no chão
-      if (sk.neblina) w.emitir(mo.traseira(o), 0xbfe6ff, 1, 0.6, "fumaca");
     }
     this.fxBuffT = (this.fxBuffT || 0) - dt;
     if (this.fxBuffT <= 0) {
       this.fxBuffT = 0.25;
       const b = this.buff;
       const cor = b.radio>0 ? 0x39ff14 : b.tempo>0 ? 0xffd84d : b.frenesi>0 ? 0xff1744 :
-        b.invis>0 ? 0xbfe6ff : b.vel>0 ? 0xff9a22 : b.scan>0 ? 0x00e5ff :
+        b.vel>0 ? 0xff9a22 : b.scan>0 ? 0x00e5ff :
         b.gas>0 ? 0xcfefff : this.jogador.escudo>0 ? 0xffc933 : null;
-      if (cor!==null) w.emitir(this.jogador.pos,cor,3,1.7,b.invis>0?'fumaca':'');
+      if (cor!==null) w.emitir(this.jogador.pos,cor,3,1.7);
     }
     if (sk.rig) { const b = mo.beat; if (b > 0.9 && !this.fxBeat) { this.fxBeat = true; w.emitir(mo.traseira(o), Math.random() < 0.5 ? 0xff44cc : 0x44ddff, 6, 4); } else if (b < 0.5) this.fxBeat = false; }
   }
@@ -3253,10 +4278,24 @@ class GameManager {
     if (S.conq.length >= 10) this.ganhar("dez");
   }
 
-  // ---- Carteira perdida no corredor (aperte B perto dela): até 3 vezes, 250 de sangue cada ----
-  pegarCarteira() {
-    const c = this.mundo.carteira, S = this.estado;
-    if (!this.jogando || !c || !c.visivel || this.jogador.pos.distanceToSquared(c.g.position) > 36) { this.ui.toast("Nenhuma carteira por perto"); return; }
+  // ---- Itens perdidos do mapa (tecla B): carteira e livro perdido ----
+  interagirComPerdidos() {
+    const S = this.estado, p = this.jogador.pos, c = this.mundo.carteira, L = this.mundo.livroPerdido;
+    if (L && !L.entregue) {
+      if (!L.carregando && L.g.visible && p.distanceToSquared(L.g.position) <= 36) {
+        L.carregando = true; L.g.visible = false; this.audio.egg(); this.ui.toast("📘 Livro da cantina encontrado! Leve-o à estante iluminada da biblioteca (B)."); return;
+      }
+      if (L.carregando && L.shelf && p.distanceToSquared(L.shelf.position) <= 49) {
+        L.carregando = false; L.entregue = true; L.g.visible = false; if (L.shelf) L.shelf.visible = false;
+        if (this.mundo.livroDevolvidoVisual) this.mundo.livroDevolvidoVisual.visible = true;
+        S.livroDevolvido = true;
+        S.sangue += L.reward; this.audio.egg();
+        this.ui.toast(`📚 Livro devolvido! +${L.reward} sangue · Skin Mosquito Encadernado desbloqueada!`);
+        this.desbloquear('encadernado'); this.ganhar('livro_devolvido');
+        this.ui.hud(S); S.salvar(); return;
+      }
+    }
+    if (!this.jogando || !c || !c.visivel || p.distanceToSquared(c.g.position) > 36) { this.ui.toast("Nenhuma carteira ou livro por perto"); return; }
     S.carteiras++; S.sangue += 250; this.jogador.modelo.punch = 0.8; this.mundo.posicionarCarteira(S);
     this.audio.egg(); this.ui.toast(`🎒 Carteira devolvida! +250 sangue (${S.carteiras}/3)`); this.ui.hud(S); S.salvar(); this.ganhar("carteira");
   }
@@ -3265,10 +4304,10 @@ class GameManager {
     this.audio.clique(); this.egg.tour = true;
     this.ui.dialogo("TOUR DA ESCOLA",
       "CORREDOR CENTRAL: armários, bebedouros, extintores e uma carteira perdida (B)\n" +
-      "NORTE: Artes · Sala 1 · Sala 2 · Biblioteca · Laboratório · Enfermaria\n" +
-      "SUL: Cantina · Ginásio · Banheiro · Auditório (palco, telão e a estátua do Mosquitão)\n\n" +
-      "E pica humanos · R habilidade da skin · K skins · C conquistas · H dica de easter egg\n" +
-      "Há 15 skins para achar, algumas evoluem (o Tusk) e têm atributos próprios, e cada uma rende uma conquista secreta.",
+      "NORTE: Artes · Sala 1 · Sala 2 · Biblioteca (estante de devolução, B) · Laboratório · Enfermaria\n" +
+      "SUL: Cantina (livro perdido em uma mesa, B) · Ginásio · Banheiro · Auditório (palco e estátua)\n\n" +
+      "E pica humanos · R habilidade · K skins · C conquistas · H dica\n" +
+      `Há ${Object.keys(CFG.SKINS).length} skins para achar. Devolver o livro libera o Mosquito Encadernado.`,
       "Feche com = ou clique aqui", 12000);
   }
 
@@ -3308,7 +4347,7 @@ class GameManager {
     if (this.boost > 0) this.boost -= dt;
     this.ui.combo(this.combo, this.comboT, this.boost);
     this.ui.barras(j.stamina, S.staminaMax, j.vida, S.vidaMax);
-    this.ui.alerta(w.emPerigo === "gas" ? "☣ GÁS TÓXICO — saia!" : w.emPerigo === "poca" ? "☣ Poça tóxica — suba!" : w.avisoGas ? "⚠ INSETICIDA a caminho!" : w.humanoPerto ? `🩸 Aperte E para picar ${w.humanoPerto.nome}` : this.eggMsg ? this.eggMsg : (w.carteira && w.carteira.visivel && j.pos.distanceToSquared(w.carteira.g.position) < 36) ? "🎒 Aperte B para pegar a carteira" : "",
+    this.ui.alerta(w.emPerigo === "gas" ? "☣ GÁS TÓXICO — saia!" : w.emPerigo === "poca" ? "☣ Poça tóxica — suba!" : w.avisoGas ? "⚠ INSETICIDA a caminho!" : w.humanoPerto ? `🩸 Aperte E para picar ${w.humanoPerto.nome}` : this.eggMsg ? this.eggMsg : (w.livroPerdido && !w.livroPerdido.entregue && !w.livroPerdido.carregando && j.pos.distanceToSquared(w.livroPerdido.g.position) < 36) ? "📘 Aperte B para pegar o livro perdido" : (w.livroPerdido && w.livroPerdido.carregando && w.livroPerdido.shelf && j.pos.distanceToSquared(w.livroPerdido.shelf.position) < 49) ? "📚 Aperte B para devolver o livro à estante" : (w.carteira && w.carteira.visivel && j.pos.distanceToSquared(w.carteira.g.position) < 36) ? "🎒 Aperte B para pegar a carteira" : "",
       w.emPerigo ? "#8dff6a" : w.avisoGas ? "#ffd84d" : this.eggMsg ? "#ff8ad8" : "#ff6b8a");
     this.ui.perigo("rgba(120,255,80,.7)", w.emPerigo ? 0.35 : 0);
     this.audio.zumbir(clamp(j.vel.length() / (S.velMax * 2), 0, 1), j.corre);
@@ -3331,7 +4370,23 @@ class GameManager {
     // A música do Caminhão de som só toca com a skin equipada, jogo rodando, sem menu aberto e com a aba visível
     this.audio.tocarMusicaCarreta(this.jogando && !this.menuAberto && !document.hidden && this.estado.skin === "carreta", this.estado.skin === "carreta");
     this.jogador.animar(dt, this.t, this.jogando);
-    this.jogador.modelo.tick(this.t, dt); this.jogador.camera3p(dt); this.ui.atualizar(dt);
+    this.jogador.modelo.tick(this.t, dt, this.estado.skin === "fantasma" && this.buff.invis > 0); this.jogador.camera3p(dt); this.ui.atualizar(dt);
+    if (this.modoGrafico === 'ultra') {
+      // O mosquito mantem seus detalhes neon, mas nao ilumina o ambiente como um vaga-lume.
+      this.jogador.modelo.luzSkin.intensity = Math.min(this.jogador.modelo.luzSkin.intensity, 0.10);
+      // Fonte acompanha o jogador de forma suave; objetos que projetam
+      // sombras sao filtrados em intervalos para economizar CPU/GPU.
+      const p = this.jogador.pos;
+      const x = Math.round(p.x * 16) / 16, z = Math.round(p.z * 16) / 16;
+      this.luzUltra.position.set(x - 12, CFG.YMAX + 22, z - 12);
+      this.luzUltra.target.position.set(x, CFG.YMIN + 1.2, z);
+      this.luzUltra.target.updateMatrixWorld();
+      this._sombraT -= dt;
+      if (this._sombraT <= 0) {
+        this._sombraT = 0.38;
+        this.mundo.atualizarSombras(p, true);
+      }
+    }
     this._timerDecor -= dt;
     if (this._timerDecor <= 0 && this.jogando) {
       this._timerDecor = this.modoGrafico === 'leve' ? 0.7 : 1.2;
@@ -3341,7 +4396,15 @@ class GameManager {
     const agora = performance.now();
     if (limiteFPS && this._ultimoRender && agora - this._ultimoRender < 1000 / limiteFPS - 1.5) return;
     this._ultimoRender = agora;
-    this.render.render(this.cena, this.camera);
+    if (this.modoGrafico === 'ultra' && this.ultraFX) {
+      try { this.ultraFX.render(this.cena, this.camera, this.t); }
+      catch (err) {
+        console.warn('[MOSQUITO ULTRA] Desativando efeito por incompatibilidade:', err);
+        this.ultraFX.dispose(); this.ultraFX = null;
+        this.render.setRenderTarget(null);
+        this.render.render(this.cena, this.camera);
+      }
+    } else this.render.render(this.cena, this.camera);
     this._frames++;
     if (!this._fpsStamp) this._fpsStamp = agora;
     if (agora - this._fpsStamp >= 1000) {
@@ -3352,6 +4415,6 @@ class GameManager {
   }
 }
 
-console.info("[MOSQUITO EVOLUTION V7] Gráficos: desempenho / equilibrado / qualidade; V6 preservada.");
+console.info("[MOSQUITO EVOLUTION V15B] Encadernado conectado · Articulações e cintura corrigidas · Livro na cantina");
 new GameManager();
 })();
