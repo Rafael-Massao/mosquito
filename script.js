@@ -32,7 +32,7 @@ const CFG = {
     jogador:    { nome: "Craque da quadra",   corpo: 0xff7a1a, abd: 0x1a1a1a, brilho: 0xff7a1a, ei: 0.3,  dica: "Faça uma cesta: atravesse um aro do ginásio de cima para baixo" },
     fantasma:   { nome: "Fantasma", neblina: true,           corpo: 0xdff4ff, abd: 0xbfe6ff, brilho: 0x88ccff, ei: 0.6, alfa: 0.35, asa: 0xffffff, dica: "Encare seu reflexo no espelho do banheiro" },
     vampiro:    { nome: "Conde Drácula",      corpo: 0x14000a, abd: 0x8b0000, brilho: 0xff0033, ei: 0.7,  dica: "Pique 10 humanos" },
-    mosquito:   { nome: "Mosquitão da rua",   corpo: 0x8a8f2a, abd: 0x6b7220, brilho: 0xc9d13a, ei: 0.2,  dica: "Encare o Mosquitão da rua: a estátua sobre o palco do auditório" },
+    mosquito:   { nome: "Mosquitão da rua",   corpo: 0x5a7a22, abd: 0x42591a, perna: 0x2b3416, brilho: 0xb8ff4d, asa: 0xcfe98c, ei: 0.35, rua: true, dica: "Encare o Mosquitão da rua: a estátua sobre o palco do auditório" },
     carreta:    { nome: "Caminhão de som",    corpo: 0x15151f, abd: 0x1b1b2b, perna: 0x0a0a12, brilho: 0xff44cc, ei: 1.0, asa: 0xffd9f5, rig: true, dica: "Fique parado 3 s diante do telão do auditório (a moldura muda de cor)" },
     eletrizado: { nome: "Eletrizado",         corpo: 0x1a2030, abd: 0x24304a, perna: 0x0e1220, brilho: 0x4fd0ff, ei: 0.8, asa: 0xcfefff, metal: true, raios: true, fumaca: true, dica: "No laboratório há uma tomada ligada ao projeto de eletricidade. Encoste nela" },
     pintado:    { nome: "Meio pintado",       corpo: 0x1c1c22, abd: 0x2a1a20, perna: 0x0b0b0e, brilho: 0xd01020, ei: 0.15, meia: 0xd01020, goticulas: true, dica: "Na sala de artes alguém derrubou tinta vermelha. Encoste na poça" },
@@ -107,6 +107,7 @@ const CFG = {
   // SALAS: [nome, x0, x1, z0, z1] — usadas em "salas visitadas" e na conquista Explorador
   SALAS: [["Corredor", -118, 118, -8, 8], ["Artes", -118, -70, -100, -8], ["Sala 1", -70, -28, -100, -8], ["Sala 2", -28, 14, -100, -8], ["Biblioteca", 14, 42, -100, -8], ["Laboratório", 42, 71, -100, -8],
     ["Enfermaria", 71, 118, -100, -8], ["Cantina", -118, -10, 8, 100], ["Ginásio", -10, 45, 8, 100], ["Banheiro", 45, 71, 8, 100], ["Auditório", 71, 118, 8, 100]],
+  UP_MAX: 30,
   UPS: { asas: { base: 12, nome: "Asas" }, tromba: { base: 15, nome: "Tromba" }, estomago: { base: 20, nome: "Estômago" }, corpo: { base: 18, nome: "Corpo" } },
 };
 // Atributos de cada skin (multiplicadores; def = redução de dano; gas = dano de gás/poças; cura = vida por picada)
@@ -160,7 +161,20 @@ const HABS = {
   radioativo: { nome: "Aura Radioativa", ico: "☢️", cd: 20, dur: 8, desc: "Por 8 s nenhum humano consegue te dar tapa.", usar(g) { g.buff.radio = 8; g.mundo.emitir(g.jogador.pos, 0x39ff14, 30, 6); } },
   jogador:    { nome: "Arrancada", ico: "🏀", cd: 14, dur: 4, desc: "Por 4 s velocidade +70% e stamina infinita.", usar(g) { g.buff.vel = 4; g.buff.stamInf = 4; } },
   fantasma:   { nome: "Invisibilidade", ico: "👻", cd: 18, dur: 6, desc: "Por 6 s os humanos não te veem: picar não os irrita.", usar(g) { g.buff.invis = 6; g.mundo.emitir(g.jogador.pos, 0xbfe6ff, 24, 3, "fumaca"); } },
-  vampiro:    { nome: "Frenesi", ico: "🧛", cd: 28, dur: 8, desc: "Por 8 s: sangue em dobro e +30 de vida por picada. Cada humano só pode ser picado uma vez por Frenesi.", usar(g) { g.buff.frenesi = 8; g.alvosFrenesi = new Set(); g.ui.flash("rgba(200,0,40,.5)"); } },
+  vampiro:    { nome: "Frenesi", ico: "🧛", cd: 28, dur: 8, desc: "Por 8 s: sangue em dobro e +30 de vida por picada. Um humano pode levar a segunda picada após 3 s, mas apenas uma repetição por Frenesi.", usar(g) {
+    g.finalizarFrenesi();
+    g.alvosFrenesi = new Map(); // por humano: contador de picadas feitas na ativação
+    // Quem já foi picado antes da ativação também recebe a chance da segunda picada,
+    // respeitando 3 segundos desde a última picada (nunca imediatamente).
+    for (const h of g.mundo.humanos) {
+      if (h.pronto > 0 && Number.isFinite(h.ultimaPicada)) {
+        g.alvosFrenesi.set(h, { qtd: 1, ultima: h.ultimaPicada });
+        h.pronto = Math.min(h.pronto, Math.max(0, 3 - (g.t - h.ultimaPicada)));
+      }
+    }
+    g.buff.frenesi = 8;
+    g.ui.flash("rgba(200,0,40,.5)");
+  } },
   mosquito:   { nome: "Chamado do Enxame", ico: "🪰", cd: 30, dur: 0, desc: "Faz surgir 12 gotas de sangue ao seu redor.", usar(g) { g.mundo.gotasPerto(g.jogador.pos, 12); } },
   carreta:    { nome: "Grave Ensurdecedor", ico: "🔊", cd: 20, dur: 6, desc: "Humanos num raio de 22 dançam por 6 s (sem tapas) e rendem +50% por picada.", usar(g) { g.atordoar(22, 6); g.audio.tom(70, 30, 0.7, "sawtooth", 0.5); g.jogador.shake = 1; g.mundo.emitir(g.jogador.pos, 0xff44cc, 30, 7); } },
   eletrizado: { nome: "Descarga", ico: "⚡", cd: 18, dur: 0, desc: "Coleta na hora as gotas num raio de 14 e paralisa humanos próximos por 4 s.", usar(g) { g.mundo.coletarRaio(g.jogador.pos, 14, g); g.atordoar(10, 4); g.ui.flash("rgba(120,200,255,.6)"); g.mundo.emitir(g.jogador.pos, 0x9fe0ff, 40, 8); } },
@@ -174,6 +188,16 @@ const $ = (id) => document.getElementById(id);
 const { clamp } = THREE.MathUtils;
 const amort = (k, dt) => 1 - Math.exp(-k * dt);   // amortecimento independente de FPS
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const GRAF_KEY = 'mosquito-evolution-graficos-v1';
+const GRAFICOS = Object.freeze({
+  leve: { nome: 'Desempenho', resolucao: 0.7, particulas: 0.35, maxParticulas: 80, alcanceDecor: 34, distancia: 135, fps: 30, aneis: 1 },
+  medio: { nome: 'Equilibrado', resolucao: 1, particulas: 0.7, maxParticulas: 160, alcanceDecor: 75, distancia: 230, fps: 60, aneis: 2 },
+  alto: { nome: 'Qualidade', resolucao: 1.7, particulas: 1, maxParticulas: 260, alcanceDecor: Infinity, distancia: 500, fps: 0, aneis: 2 }
+});
+function lerGraficos() {
+  try { const modo = localStorage.getItem(GRAF_KEY); return GRAFICOS[modo] ? modo : 'medio'; }
+  catch (_) { return 'medio'; }
+}
 const COR_PIXEL_PADRAO = "#8d86fc";  // cor original, preservada ao escolher "Original"
 const corPixelValida = (valor) => typeof valor === "string" && /^#[0-9a-fA-F]{6}$/.test(valor);
 const COR_PIXEL_OPCOES = [
@@ -193,14 +217,14 @@ class GameState {
     this.conq = []; this.salas = []; this.carteiras = 0; this.mantis = []; this.habs = [];
     try {
       const s = JSON.parse(localStorage.getItem(CFG.SAVE));
-      if (s && s.nv) { this.sangue = +s.sangue || 0; for (const k in this.nv) this.nv[k] = +s.nv[k] || 0; }
+      if (s && s.nv) { this.sangue = +s.sangue || 0; for (const k in this.nv) this.nv[k] = clamp(Math.floor(Number(s.nv[k]) || 0), 0, CFG.UP_MAX); }
       if (s) { this.auraTusk = s.auraTusk !== false; this.pixelCor = corPixelValida(s.pixelCor) ? s.pixelCor.toLowerCase() : COR_PIXEL_PADRAO; const mig = (k) => (k === "arcoiris" ? "pixel" : k); this.skins = Array.isArray(s.skins) ? s.skins.map(mig).filter((k) => CFG.SKINS[k]) : []; this.skin = CFG.SKINS[mig(s.skin)] ? mig(s.skin) : null; this.picadas = +s.picadas || 0; this.conq = Array.isArray(s.conq) ? s.conq.filter((id) => CFG.CONQ.some((c) => c.id === id)) : []; this.salas = Array.isArray(s.salas) ? s.salas : []; this.carteiras = +s.carteiras || 0; this.habs = Array.isArray(s.habs) ? s.habs : []; this.mantis = Array.isArray(s.mantis) ? s.mantis.filter((i) => ["cabeca", "foices", "torax", "abdomen"].includes(i)) : []; }
     } catch (e) { /* sem save */ }
   }
   salvar() { try { localStorage.setItem(CFG.SAVE, JSON.stringify({ sangue: this.sangue, nv: this.nv, skins: this.skins, skin: this.skin, picadas: this.picadas, conq: this.conq, salas: this.salas, carteiras: this.carteiras, mantis: this.mantis, habs: this.habs, auraTusk: this.auraTusk, pixelCor: this.pixelCor })); } catch (e) {} }
   get total() { return this.nv.asas + this.nv.tromba + this.nv.estomago + this.nv.corpo; }
   get estagio() { let e = CFG.ESTAGIOS[0]; for (const x of CFG.ESTAGIOS) if (this.total >= x.min) e = x; return e; }
-  custo(k) { return Math.floor(CFG.UPS[k].base * Math.pow(CFG.CRESCE, this.nv[k])); }
+  custo(k) { return this.nv[k] >= CFG.UP_MAX ? Infinity : Math.floor(CFG.UPS[k].base * Math.pow(CFG.CRESCE, this.nv[k])); }
   get attr() {   // atributos da skin equipada (o Tusk muda a cada Ato); guardado em cache
     const k = this.skin + "|" + this.mantis.length; if (this._ak === k) return this._a;
     const sk = this.skin && CFG.SKINS[this.skin], extra = sk && (sk.tusk ? CFG.TUSK[Math.max(0, this.mantis.length - 1)].attr : sk.attr);
@@ -308,6 +332,7 @@ class AudioSystem {
 // ------------------------------------------------------------
 class UIManager {
   constructor() {
+    this.graficoAtual = lerGraficos();
     this.legado(); this.css(); this.montarHud(); this.montarMenu();
     const mk = (id, css) => { let e = $(id); if (!e) { e = document.createElement("div"); e.id = id; e.style.cssText = css; document.body.appendChild(e); } return e; };
     this.alertaEl = mk("hud-alerta", "position:fixed;top:17%;left:50%;transform:translateX(-50%);font:800 1.3rem Syne,system-ui,sans-serif;color:#ffd84d;text-shadow:0 2px 12px #000;pointer-events:none;opacity:0;transition:opacity .2s;z-index:6;text-align:center;max-width:90vw");
@@ -351,8 +376,16 @@ kbd{font:700 .7rem Figtree,sans-serif;border:1px solid rgba(255,255,255,.25);bor
 .hx-ups{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:10px;pointer-events:auto}
 .hx-up{position:relative;overflow:hidden;width:136px;padding:10px 12px;border-radius:14px;background:rgba(14,12,24,.85);border:1px solid rgba(255,255,255,.12);color:#eef2f8;cursor:pointer;display:grid;gap:4px;text-align:left;font-family:inherit;opacity:.78}
 .hx-up kbd{position:absolute;top:8px;right:8px}.hx-up-ico{font-size:1.3rem}.hx-up-nome{font:800 .88rem Syne,sans-serif}.hx-up-custo{font-size:.78rem;color:#c9d0de}
-.hx-up.pode{opacity:1;border-color:#ff4d6d;box-shadow:0 0 18px rgba(232,41,75,.4)}.hx-up-fill{position:absolute;left:0;bottom:0;height:3px;background:#ff4d6d;width:0}
-.hx-pips{display:flex;gap:2px;flex-wrap:wrap}.hx-pips i{width:7px;height:7px;border-radius:2px;background:rgba(255,255,255,.14)}.hx-pips i.on{background:#ffd84d}
+.hx-up.pode{opacity:1;border-color:#ff4d6d;box-shadow:0 0 18px rgba(232,41,75,.4)}.hx-up.maximo{opacity:.83;border-color:#ffd84d;cursor:default}.hx-up.maximo .hx-up-custo{color:#ffd84d}.hx-up-fill{position:absolute;left:0;bottom:0;height:3px;background:#ff4d6d;width:0}
+/* Sempre dez quadradinhos, preenchendo em tres etapas de dez niveis. */
+.hx-pips{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:3px;width:100%;margin-top:2px}
+.hx-pips i{display:block;min-width:0;height:9px;border-radius:2px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.07);box-sizing:border-box}
+.hx-pips i.on{background:#ffab58;box-shadow:0 0 5px rgba(255,171,88,.45)}
+.hx-pips.etapa-2 i.on{background:#5ee1ff;box-shadow:0 0 5px rgba(94,225,255,.5)}
+.hx-pips.etapa-3 i.on{background:#c98aff;box-shadow:0 0 6px rgba(201,138,255,.65)}
+.hx-up-nivel{font:700 .72rem Figtree,sans-serif;color:#dce4f5;text-align:center;letter-spacing:.015em}
+.hx-up-nivel strong{font-weight:800;color:#fff}
+.hx-up.maximo .hx-up-nivel strong{color:#ffd84d}
 .hx-sala{position:absolute;right:16px;bottom:16px;text-align:right;padding:10px 14px}.hx-sala b{font:800 .95rem Syne,sans-serif;display:block}.hx-sala small{color:#98a0af;font-size:.68rem}
 #hx-toast{position:absolute;left:50%;top:68%;transform:translateX(-50%);font:700 1.05rem Syne,sans-serif;color:#ffd0d8;background:rgba(14,12,24,.8);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:7px 18px;opacity:0;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #hx-toast.mostra{animation:hxsobe 1.6s ease-out forwards}@keyframes hxsobe{0%{opacity:0;transform:translate(-50%,10px)}12%{opacity:1}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-26px)}}
@@ -362,14 +395,12 @@ kbd{font:700 .7rem Figtree,sans-serif;border:1px solid rgba(255,255,255,.25);bor
 #hx-menu{position:fixed;inset:0;z-index:12;display:grid;place-items:center;overflow:auto;font-family:Figtree,system-ui,sans-serif;color:#eef2f8;background:radial-gradient(ellipse at 20% 10%,rgba(232,41,75,.28),transparent 55%),radial-gradient(ellipse at 90% 90%,rgba(90,60,200,.25),transparent 55%),#080610}
 .hxm-fundo{position:absolute;inset:0;pointer-events:none;overflow:hidden}.hxm-fundo i{position:absolute;font-style:normal;opacity:.12;animation:hxvoa linear infinite}
 @keyframes hxvoa{from{transform:translate(-10vw,0) rotate(0)}to{transform:translate(110vw,-30vh) rotate(40deg)}}
-.hxm-painel{position:relative;width:min(940px,94vw);margin:18px;padding:30px 34px;border-radius:22px;background:rgba(18,14,32,.88);border:1px solid rgba(232,41,75,.35);box-shadow:0 20px 70px rgba(0,0,0,.6)}
-.hxm-painel h1{margin:0;font:800 clamp(2.4rem,7vw,4rem)/1 Syne,sans-serif;color:#ff4d6d}.hxm-painel header p{margin:6px 0 22px;color:#98a0af}
-.hxm-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:26px}@media(max-width:760px){.hxm-grid{grid-template-columns:1fr}.hx-status{min-width:0;left:8px;top:8px}.hx-barras{width:200px;right:8px;top:8px}.hx-ups{gap:6px}.hx-up{width:92px;padding:8px}.hx-sala{display:none}}
+.hxm-painel{position:relative;width:min(880px,92vw);margin:12px;padding:24px 28px 20px;border-radius:20px;background:rgba(18,14,32,.9);border:1px solid rgba(232,41,75,.35);box-shadow:0 18px 60px rgba(0,0,0,.58)}
+.hxm-painel h1{margin:0;font:800 clamp(2.3rem,6.4vw,3.8rem)/1 Syne,sans-serif;color:#ff4d6d}.hxm-painel header p{margin:6px 0 18px;color:#98a0af}
+.hxm-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:22px;align-items:start}@media(max-width:760px){.hxm-grid{grid-template-columns:1fr}.hx-status{min-width:0;left:8px;top:8px}.hx-barras{width:200px;right:8px;top:8px}.hx-ups{gap:6px}.hx-up{width:92px;padding:8px}.hx-sala{display:none}}
 .hx-btn{width:100%;padding:15px;border-radius:12px;border:0;font:800 1.15rem Syne,sans-serif;cursor:pointer;color:#fff;background:#e8294b;transition:transform .15s,background .15s}.hx-btn:hover{background:#ff3d5f;transform:translateY(-2px)}
 .hxm-atalhos{display:flex;gap:8px;margin:10px 0 16px}.hxm-atalhos button{flex:1;padding:11px;border-radius:11px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#eef2f8;font:700 .9rem Figtree,sans-serif;cursor:pointer}.hxm-atalhos button:hover{background:rgba(255,255,255,.12)}
-.hxm-res{display:grid;grid-template-columns:1fr 1fr;gap:8px}.hxm-res div{background:rgba(255,255,255,.05);border-radius:10px;padding:9px 12px}.hxm-res b{display:block;font:800 1.05rem Syne,sans-serif}.hxm-res small{color:#98a0af;font-size:.72rem}
-.hxm-col h3{margin:0 0 10px;font:800 .95rem Syne,sans-serif;color:#ffd84d}.hxm-ctrl{display:grid;grid-template-columns:auto 1fr;gap:7px 12px;font-size:.84rem;align-items:center}.hxm-ctrl span{color:#b6bdcb}
-.hxm-save{margin:12px 0 0;color:#7f8798;font-size:.78rem;min-height:1em}
+.hxm-res{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}.hxm-res div{background:rgba(255,255,255,.05);border-radius:12px;padding:10px 13px;min-height:74px;display:flex;flex-direction:column;justify-content:space-between}.hxm-res b{display:block;font:800 1.05rem Syne,sans-serif;line-height:1.05}.hxm-res small{color:#98a0af;font-size:.72rem}.hxm-col h3{margin:0 0 10px;font:800 .95rem Syne,sans-serif;color:#ffd84d}.hxm-ctrl{display:grid;grid-template-columns:auto 1fr;gap:7px 12px;font-size:.84rem;align-items:center}.hxm-ctrl span{color:#b6bdcb}.hxm-save{margin:12px 2px 0;color:#7f8798;font-size:.78rem;min-height:1em}.hxm-bottom{margin-top:14px}@media(max-width:760px){.hxm-res{grid-template-columns:1fr 1fr}}@media(max-width:520px){.hxm-res{grid-template-columns:1fr}}
 .sk-wrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px}@media(max-width:820px){.sk-wrap{grid-template-columns:1fr}}
 .sk-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px;align-content:start}
 .sk-card{--c:#8a93a6;position:relative;display:grid;gap:5px;justify-items:center;text-align:center;padding:14px 8px;border-radius:14px;background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.1);color:#eef2f8;cursor:pointer;font-family:inherit}
@@ -387,13 +418,20 @@ kbd{font:700 .7rem Figtree,sans-serif;border:1px solid rgba(255,255,255,.25);bor
 .sk-pixel-custom input{border:0;background:transparent;padding:0;width:45px;height:36px;cursor:pointer}
 .sk-pixel-custom output{font:800 .75rem monospace;color:#ffe8a0}
 .sk-eq{margin-top:6px;padding:11px;border:0;border-radius:11px;font:800 .9rem Syne,sans-serif;cursor:pointer;background:#ffd84d;color:#0e0c18}.sk-eq:disabled{background:rgba(255,255,255,.1);color:#98a0af;cursor:default}
+.hxm-graficos{margin-top:14px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.04)}
+.hxm-graficos b{font:800 .85rem Syne,sans-serif;color:#ffd84d}
+.hxm-graf-botoes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:9px}
+.hxm-graf-botoes button{padding:10px 5px;border-radius:8px;font:700 .72rem Figtree,sans-serif;cursor:pointer;color:#dbe3ee;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.18)}
+.hxm-graf-botoes button.ativo{background:#ffd84d;color:#14101e;border-color:#ffd84d;box-shadow:0 0 10px rgba(255,216,77,.25)}
+.hxm-graficos small{display:block;font-size:.7rem;color:#a8b0bd;line-height:1.4;margin-top:9px}
+#hx-fps{position:absolute;right:16px;top:110px;font:700 .75rem monospace;color:#d5ffe4;text-shadow:0 2px 7px #000;opacity:.85}
 `;
     document.head.appendChild(s);
   }
   montarHud() {
     const h = document.createElement("div"); h.id = "hx";
     const UP = { asas: ["🪽", "+0,5 de velocidade por nível"], tromba: ["💉", "+0,15 de alcance de coleta por nível"], estomago: ["🩸", "+2 de sangue por gota por nível"], corpo: ["🛡️", "+15 de stamina e +12 de vida por nível"] };
-    const ups = Object.keys(CFG.UPS).map((k, i) => `<button class="hx-up" data-up="${k}" title="${UP[k][1]}"><kbd>${i + 1}</kbd><span class="hx-up-ico">${UP[k][0]}</span><span class="hx-up-nome">${CFG.UPS[k].nome}</span><span class="hx-pips" data-pips="${k}"></span><span class="hx-up-custo">🩸 <b data-custo="${k}">0</b></span><i class="hx-up-fill" data-fill="${k}"></i></button>`).join("");
+    const ups = Object.keys(CFG.UPS).map((k, i) => `<button class="hx-up" data-up="${k}" title="${UP[k][1]}"><kbd>${i + 1}</kbd><span class="hx-up-ico">${UP[k][0]}</span><span class="hx-up-nome">${CFG.UPS[k].nome}</span><span class="hx-pips" data-pips="${k}"></span><span class="hx-up-nivel" data-nivel-up="${k}">Nível <strong>0</strong>/30</span><span class="hx-up-custo">🩸 <b data-custo="${k}">0</b></span><i class="hx-up-fill" data-fill="${k}"></i></button>`).join("");
     h.innerHTML = `
 <div class="hx-card hx-status"><div class="hx-skin" id="hx-skin-ico">🦟</div><div class="hx-info"><b id="hx-estagio">Larva voadora</b><small>Nível <span id="hx-nivel">0</span> · <span id="hx-skin-nome">Sem skin</span></small><div class="hx-prog"><i id="hx-prog"></i></div><small id="hx-prox"></small></div><div class="hx-sangue"><span id="hx-sangue">0</span><small>sangue</small></div></div>
 <div class="hx-combo" id="hx-combo" hidden><b id="hx-combo-n">×1</b><span id="hx-combo-txt">combo</span><div class="hx-prog"><i id="hx-combo-f"></i></div></div>
@@ -401,6 +439,7 @@ kbd{font:700 .7rem Figtree,sans-serif;border:1px solid rgba(255,255,255,.25);bor
 <div class="hx-card hx-hab" id="hx-hab"><div class="hx-hab-ring" id="hx-hab-ring"><span class="hx-hab-ico" id="hx-hab-ico">💨</span></div><div><b id="hx-hab-nome">Impulso</b><small><kbd>R</kbd> <span id="hx-hab-cd">pronta!</span></small></div></div>
 <div class="hx-ups">${ups}</div>
 <div class="hx-card hx-sala"><b id="hx-sala">Corredor</b><small>E picar · R poder · K skins · C conquistas · H dica</small></div>
+<div id="hx-fps" hidden></div>
 <div id="hx-toast"></div><div id="hx-evo"><b>Evolução</b><span id="hx-evo-txt"></span></div>`;
     document.body.appendChild(h); this.hx = h;
     const q = (id) => h.querySelector("#" + id);
@@ -414,8 +453,11 @@ kbd{font:700 .7rem Figtree,sans-serif;border:1px solid rgba(255,255,255,.25);bor
     const ctrl = [["W A S D", "mover"], ["Mouse", "olhar"], ["Espaço / Ctrl", "subir / descer"], ["Shift", "sprint"], ["1 2 3 4", "evoluir"], ["E", "picar um humano"], ["R", "habilidade da skin"], ["K / C", "skins / conquistas"], ["F", "arrombar armário"], ["Q", "responder o quadro"], ["B", "devolver carteira"], ["H · M · =", "dica · som · tour"]]
       .map(([a, b]) => `<kbd>${a}</kbd><span>${b}</span>`).join("");
     m.innerHTML = `<div class="hxm-fundo">${voa}</div><section class="hxm-painel"><header><h1 id="hx-menu-titulo">MOSQUITO</h1><p>Evolução noturna · escola assombrada de humanos</p></header>
-<div class="hxm-grid"><div class="hxm-col"><button class="hx-btn" id="hx-btn-jogar">Jogar</button><div class="hxm-atalhos"><button id="hx-btn-skins">🎨 Skins <kbd>K</kbd></button><button id="hx-btn-conq">🏆 Conquistas <kbd>C</kbd></button></div><div class="hxm-res" id="hx-resumo"></div><p class="hxm-save" id="hx-save"></p></div>
-<div class="hxm-col"><h3>Controles</h3><div class="hxm-ctrl">${ctrl}</div></div></div></section>`;
+<div class="hxm-grid"><div class="hxm-col"><button class="hx-btn" id="hx-btn-jogar">Jogar</button><div class="hxm-atalhos"><button id="hx-btn-skins">🎨 Skins <kbd>K</kbd></button><button id="hx-btn-conq">🏆 Conquistas <kbd>C</kbd></button></div>
+<div class="hxm-graficos"><b>⚙️ Modo gráfico</b><div class="hxm-graf-botoes">
+<button type="button" data-modo-grafico="leve">🚀 Leve</button><button type="button" data-modo-grafico="medio">⚖️ Normal</button><button type="button" data-modo-grafico="alto">✨ Alto</button></div>
+<small id="hx-graf-desc">Escolha o desempenho ideal para o seu PC.</small></div></div>
+<div class="hxm-col"><h3>Controles</h3><div class="hxm-ctrl">${ctrl}</div></div></div><div class="hxm-bottom"><div class="hxm-res" id="hx-resumo"></div><p class="hxm-save" id="hx-save"></p></div></section>`;
     document.body.appendChild(m); this.menuEl = m;
   }
   _w(el, pct) { const v = Math.round(clamp(pct, 0, 100)); if (this.cache[el.id || el] !== v) { this.cache[el.id || el] = v; el.style.width = v + "%"; } }
@@ -429,8 +471,20 @@ kbd{font:700 .7rem Figtree,sans-serif;border:1px solid rgba(255,255,255,.25);bor
     e.skinNome.textContent = S.skin ? (S.skin === "tusk" ? `Tusk · Ato ${Math.max(1, S.mantis.length)}` : CFG.SKINS[S.skin].nome) : "Sem skin";
     for (const k in CFG.UPS) {
       const bt = this.hx.querySelector(`[data-up="${k}"]`), ct = bt.querySelector(`[data-custo="${k}"]`), pips = bt.querySelector(`[data-pips="${k}"]`), fill = bt.querySelector(`[data-fill="${k}"]`), c = S.custo(k);
-      ct.textContent = c.toLocaleString("pt-BR"); bt.classList.toggle("pode", S.sangue >= c); fill.style.width = Math.min(100, (S.sangue / c) * 100) + "%";
-      const chave = k + S.nv[k]; if (this.cache["p" + k] !== chave) { this.cache["p" + k] = chave; pips.innerHTML = Array.from({ length: 12 }, (_, i) => `<i class="${i < S.nv[k] ? "on" : ""}"></i>`).join("") + (S.nv[k] > 12 ? ` <small>nv ${S.nv[k]}</small>` : ""); }
+      const nv = S.nv[k], maximo = nv >= CFG.UP_MAX;
+      ct.textContent = maximo ? "MÁXIMO" : c.toLocaleString("pt-BR");
+      bt.classList.toggle("pode", !maximo && S.sangue >= c);
+      bt.classList.toggle("maximo", maximo); bt.disabled = maximo;
+      fill.style.width = maximo ? "100%" : Math.min(100, (S.sangue / c) * 100) + "%";
+      const chave = k + nv;
+      if (this.cache["p" + k] !== chave) {
+        this.cache["p" + k] = chave;
+        const etapa = nv <= 10 ? 1 : nv <= 20 ? 2 : 3;
+        const preenchidos = nv === 0 ? 0 : ((nv - 1) % 10) + 1;
+        pips.className = "hx-pips etapa-" + etapa;
+        pips.innerHTML = Array.from({ length: 10 }, (_, i) => `<i class="${i < preenchidos ? "on" : ""}"></i>`).join("");
+        bt.querySelector(`[data-nivel-up="${k}"]`).innerHTML = `Nível <strong>${nv}</strong>/${CFG.UP_MAX}`;
+      }
     }
   }
   barras(stamina, staminaMax, vida, vidaMax) {
@@ -574,7 +628,7 @@ ${sel === "tusk" && liberada ? `<button id="sk-aura-tusk" type="button" aria-pre
     if (this.pv) return this.pv;
     const canvas = document.createElement("canvas"); let r = null;
     try { r = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true }); } catch (e) { return (this.pv = { erro: true, canvas }); }
-    r.setPixelRatio(Math.min(devicePixelRatio, 2)); r.setClearColor(0x000000, 0);
+    r.setPixelRatio(Math.min(devicePixelRatio || 1, GRAFICOS[this.graficoAtual].resolucao)); r.setClearColor(0x000000, 0);
     const cena = new THREE.Scene(), cam = new THREE.PerspectiveCamera(32, 1, 0.1, 100), raiz = new THREE.Group();
     cena.add(new THREE.AmbientLight(0xbfc8ff, 0.9)); const d = new THREE.DirectionalLight(0xffffff, 1.1); d.position.set(3, 5, 4); cena.add(d);
     const d2 = new THREE.DirectionalLight(0xff9ab0, 0.5); d2.position.set(-4, 1, -3); cena.add(d2); cena.add(raiz);
@@ -605,7 +659,9 @@ ${sel === "tusk" && liberada ? `<button id="sk-aura-tusk" type="button" aria-pre
       if (m) { pv.raiz.rotation.y += dt * 0.7; const b = Math.sin(pv.t * 40) * 0.55; m.asas[0].rotation.z = b; m.asas[1].rotation.z = -b; m.mosquito.position.y = Math.sin(pv.t * 2) * 0.08; m.mosquito.scale.setScalar(m.escala); m.tick(pv.t, dt); }
       const c = pv.canvas, w = c.clientWidth, h = c.clientHeight;
       if (w && h && c.width !== Math.round(w * pv.r.getPixelRatio())) { pv.r.setSize(w, h, false); pv.cam.aspect = w / h; pv.cam.updateProjectionMatrix(); }
-      pv.r.render(pv.cena, pv.cam);
+      if (this.graficoAtual !== 'leve' || !pv.ultimoDesenho || agora - pv.ultimoDesenho >= 45) {
+        pv.r.render(pv.cena, pv.cam); pv.ultimoDesenho = agora;
+      }
     };
     pv.raf = requestAnimationFrame(f);
   }
@@ -647,16 +703,33 @@ ${sel === "tusk" && liberada ? `<button id="sk-aura-tusk" type="button" aria-pre
 
   // ---- Menu inicial e de pausa ----
   atalhos(aoSkins, aoConq) { $("hx-btn-skins").addEventListener("click", aoSkins); $("hx-btn-conq").addEventListener("click", aoConq); }
+  exibirGraficos(modo) {
+    this.graficoAtual = modo;
+    const descricoes = {
+      leve: 'Para PCs fracos: menos pixels, partículas e decoração distante; limite de 30 FPS.',
+      medio: 'Equilíbrio entre visual e desempenho; limite de 60 FPS.',
+      alto: 'Melhor imagem e efeitos completos; FPS livre.'
+    };
+    this.menuEl.querySelectorAll('[data-modo-grafico]').forEach(b => {
+      const ativo = b.dataset.modoGrafico === modo;
+      b.classList.toggle('ativo', ativo); b.setAttribute('aria-pressed', String(ativo));
+    });
+    const e = $('hx-graf-desc'); if (e) e.textContent = descricoes[modo];
+  }
   menu(titulo, botao) { this.menuEl.hidden = false; $("hx-menu-titulo").textContent = titulo; $("hx-btn-jogar").textContent = botao; if (this.ultimoS) this.saveInfo(this.ultimoS); }
   esconderMenu() { this.menuEl.hidden = true; }
   saveInfo(S) {
     const R = (b, s) => `<div><b>${b}</b><small>${s}</small></div>`;
-    $("hx-resumo").innerHTML = R(S.estagio.nome, "estágio atual") + R(Math.floor(S.sangue).toLocaleString("pt-BR"), "sangue") + R(`${S.skins.length}/${Object.keys(CFG.SKINS).length}`, "skins") + R(`${S.conq.length}/${CFG.CONQ.length}`, "conquistas") + R(`${S.salas.length}/${CFG.SALAS.length}`, "salas visitadas") + R(S.picadas, "picadas");
+    $("hx-resumo").innerHTML = R(S.estagio.nome, `estágio atual · nível ${S.total}`) + R(Math.floor(S.sangue).toLocaleString("pt-BR"), "sangue") + R(`${S.skins.length}/${Object.keys(CFG.SKINS).length}`, "skins") + R(`${S.conq.length}/${CFG.CONQ.length}`, "conquistas") + R(`${S.salas.length}/${CFG.SALAS.length}`, "salas visitadas") + R(S.picadas, "picadas");
     $("hx-save").textContent = S.total > 0 ? "Progresso salvo automaticamente neste navegador." : "Nova partida: evolua com as teclas 1 a 4 e explore a escola.";
   }
   ligar(aoEvoluir, aoJogar) {
     this.hx.querySelectorAll("[data-up]").forEach((b) => b.addEventListener("click", () => aoEvoluir(b.dataset.up)));
     $("hx-btn-jogar").addEventListener("click", aoJogar);
+    this.menuEl.querySelectorAll('[data-modo-grafico]').forEach((b) => b.addEventListener('click', () => {
+      if (this.aoMudarGraficos) this.aoMudarGraficos(b.dataset.modoGrafico);
+    }));
+    this.exibirGraficos(this.graficoAtual);
   }
 }
 
@@ -1060,6 +1133,27 @@ for (let i = 0; i < asas.length; i++) {
   const rotor = rBox(asa, 0.15, 0.012, 0.035, roboCiano, 0.61, 0.033, 0.015);
   roboRotores.push(rotor);
 }
+// Mosquitão da rua: visual mais bruto, com carapaça dorsal, mandíbulas,
+// ombros mais largos e espinhos no abdômen, para não parecer só uma recoloração.
+const ruaG = new THREE.Group(), ruaA = new THREE.Group(); ruaG.visible = ruaA.visible = false;
+corpoG.add(ruaG); abdomenCorpo.add(ruaA);
+const matRuaClara = mat(0x90b534, { roughness: 0.62 }), matRuaEscura = mat(0x3e4f16, { roughness: 0.7 }), matRuaOsso = mat(0xdad2a8, { roughness: 0.45 });
+ruaG.add(elipsoide(0.2, 1.35, 0.95, 1.55, matRuaEscura, 0, 0.03, -0.03));
+ruaG.add(elipsoide(0.15, 1.25, 0.78, 1.18, matRuaClara, 0, 0.11, -0.05));
+for (let i = 0; i < 5; i++) { const z = -0.23 + i * 0.11; const sp = new THREE.Mesh(new THREE.ConeGeometry(0.028 + i * 0.002, 0.16 + i * 0.01, 6), matRuaClara); sp.position.set(0, 0.22 + i * 0.01, z); sp.rotation.x = -0.18; ruaG.add(sp); }
+for (const l of [1, -1]) {
+  ruaG.add(elipsoide(0.085, 1.4, 0.8, 1.2, matRuaEscura, l * 0.23, 0.06, -0.01));
+  ruaG.add(elipsoide(0.06, 1.25, 0.62, 0.82, matRuaClara, l * 0.29, 0.14, -0.02));
+  const presa = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.2, 6), matRuaOsso); presa.position.set(l * 0.085, -0.085, -0.36); presa.rotation.set(Math.PI * 0.92, 0, -l * 0.36); ruaG.add(presa);
+  const chifre = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.18, 6), matRuaClara); chifre.position.set(l * 0.12, 0.18, -0.21); chifre.rotation.z = -l * 0.65; ruaG.add(chifre);
+}
+ruaG.add(elipsoide(0.055, 1.0, 0.7, 0.55, matRuaEscura, 0, -0.06, -0.26));
+for (let i = 0; i < 6; i++) {
+  const z = 0.05 + i * 0.16, w = 0.17 - i * 0.012;
+  ruaA.add(elipsoide(w, 1.1, 0.82, 0.8, i % 2 ? matRuaClara : matRuaEscura, 0, -0.01 - i * 0.005, z));
+  if (i < 5) { const an = new THREE.Mesh(new THREE.TorusGeometry(w * 0.88, 0.013, 6, 16), matRuaOsso); an.position.set(0, -0.01 - i * 0.005, z + 0.045); ruaA.add(an); }
+  if (i >= 1 && i <= 4) for (const l of [1, -1]) { const esp = new THREE.Mesh(new THREE.ConeGeometry(0.015, 0.12, 5), matRuaClara); esp.position.set(l * (w * 0.9), -0.01 - i * 0.005, z); esp.rotation.z = l > 0 ? -Math.PI / 2 : Math.PI / 2; ruaA.add(esp); }
+}
 const texRobo = (base, texto) => {   // placas metálicas com circuito ciano (e "8000" no abdômen)
   const c = document.createElement("canvas"); c.width = 128; c.height = 64; const g = c.getContext("2d");
   g.fillStyle = hexCss(base); g.fillRect(0, 0, 128, 64); g.strokeStyle = "rgba(20,30,50,.55)"; g.lineWidth = 1;
@@ -1335,6 +1429,13 @@ function aplicarEvolucaoVisual() {
   if (sk && sk.faixas) { matAbd.map = cacheTex.faixas = cacheTex.faixas || texFaixas(); matAbd.color.setHex(0xffffff); }
   rigG.visible = !!(sk && sk.rig); raiosG.visible = !!(sk && sk.raios);
   cadG.visible = cadC.visible = !!(sk && sk.cadeado);
+  ruaG.visible = ruaA.visible = !!(sk && sk.rua);
+  if (sk && sk.rua) {
+    matCorpo.roughness = 0.72; matAbd.roughness = 0.68; matPerna.roughness = 0.74;
+    matCorpo.metalness = matAbd.metalness = 0.02;
+    matAsa.color.setHex(sk.asa || 0xcfe98c); matAsa.opacity = 0.58; matAsa.transparent = true;
+    matBordaAsa.color.setHex(0x9cd73d);
+  }
   { const ato = sk && sk.tusk ? Math.max(1, S.mantis.length) : 0;   // Tusk: cada Ato mostra o seu próprio visual; o Ato 4 ganha a órbita dourada
     tA.forEach((t, i) => { t.c.visible = t.a.visible = ato === i + 1; }); orbG.visible = ato >= 4 && S.auraTusk !== false; olhos.forEach((o) => { o.visible = ato < 2; }); }
   roboG.visible = roboAbdG.visible = roboBico.visible = robo;
@@ -1439,6 +1540,9 @@ class Pool {
 class WorldManager {
   constructor(cena, audio) {
     this.cena = cena; this.audio = audio;
+    this.decoracoesPerformance = []; this.timerDecor = 0; this.ultimoAlcanceDecor = Infinity;
+    this.qualidadeParticulas = 1; this.limiteParticulas = 260; this.anelsPorHabilidade = 2;
+    this.alcanceHumanos = Infinity; this.alcanceGotas = Infinity;
     this.col = [];                  // { mesh, box } estáticos
     this.perto = [];                // buffer reutilizável de malhas próximas
     this.raycaster = new THREE.Raycaster();
@@ -1458,7 +1562,30 @@ class WorldManager {
   }
 
   deco(mesh, x, y, z, ry = 0) {   // decoração sem colisão
-    mesh.position.set(x, y, z); mesh.rotation.y = ry; this.cena.add(mesh); mesh.updateMatrix(); mesh.matrixAutoUpdate = false; return mesh;
+    mesh.position.set(x, y, z); mesh.rotation.y = ry; this.cena.add(mesh); mesh.updateMatrix(); mesh.matrixAutoUpdate = false;
+    if (mesh.geometry) {
+      if (!mesh.geometry.boundingSphere) mesh.geometry.computeBoundingSphere();
+      const r = mesh.geometry.boundingSphere ? mesh.geometry.boundingSphere.radius : Infinity;
+      if (r <= 4.5) this.decoracoesPerformance.push(mesh);
+    }
+    return mesh;
+  }
+  atualizarDecoracoes(pos, alcance, forcar = false) {
+    if (alcance === Infinity) {
+      if (this.ultimoAlcanceDecor !== Infinity || forcar) for (const e of this.decoracoesPerformance) e.visible = true;
+    } else {
+      const lim = alcance * alcance;
+      for (const e of this.decoracoesPerformance) {
+        const dx = e.position.x - pos.x, dy = (e.position.y - pos.y) * 0.45, dz = e.position.z - pos.z;
+        e.visible = dx * dx + dy * dy + dz * dz <= lim;
+      }
+    }
+    // Desenhar apenas NPCs próximos não interfere em movimento, detecção ou picadas.
+    const rh = this.alcanceHumanos * this.alcanceHumanos;
+    if (this.humanos) for (const h of this.humanos) {
+      h.g.visible = rh === Infinity || h.g.position.distanceToSquared(pos) < rh;
+    }
+    this.ultimoAlcanceDecor = alcance;
   }
 
   // ESCOLA COMPLETA (140×100): corredor central, 2 salas, biblioteca, laboratório, cantina, ginásio e banheiro
@@ -1603,10 +1730,41 @@ class WorldManager {
 
 
     // Salas de aula: quadro no fundo, mesa do professor logo à frente e 15 carteiras em 5 fileiras
+    // Carteira escolar com tampo, gaveta, estrutura tubular e cadeira independente.
+    // Tudo é posicionado na mesma referência local (x,z); sem peças suspensas.
     const carteira = (x, z) => {
-      caixa(5.4, 0.35, 3.1, m.tampo, x, F + 3.05, z);
-      for (const l of [-1, 1]) caixa(0.3, 2.9, 2.8, m.metal, x + l * 2.3, F + 1.45, z);
-      caixa(3.3, 0.35, 2.7, m.cad, x, F + 1.9, z + 3.15); caixa(3.3, 2.5, 0.35, m.cad, x, F + 3.15, z + 4.35); caixa(2.2, 1.7, 2.2, m.metal, x, F + 0.85, z + 3.15);
+      const metal = M(0x505967, 0.33, { metalness: 0.67 });
+      const escuro = M(0x252f40, 0.5, { metalness: 0.32 });
+      const madeira = M(0xc18a57, 0.64);
+      const madeiraBorda = M(0x82532f, 0.68);
+      const plastico = M(0x385d80, 0.56);
+      const parafuso = M(0xbfc6d2, 0.24, { metalness: 0.85 });
+      // Mesa na metade frontal do conjunto; superfície 3D arredondada nos cantos.
+      const t = new THREE.Mesh(new THREE.BoxGeometry(5.25, 0.32, 2.9), madeira);
+      this.fixo(t, x, F + 3.05, z - 0.15);
+      dbox(5.25, 0.11, 0.14, madeiraBorda, x, F + 2.87, z + 1.22);
+      dbox(5.25, 0.11, 0.14, madeiraBorda, x, F + 2.87, z - 1.52);
+      // Quatro pés reais: sempre conectados ao tampo.
+      for (const l of [-1, 1]) for (const fz of [-1.16, 1.0]) {
+        caixa(0.25, 2.86, 0.25, metal, x + l * 2.30, F + 1.43, z + fz);
+        dbox(0.36, 0.13, 0.36, escuro, x + l * 2.30, F + 0.065, z + fz);
+        dbox(0.13, 0.045, 0.13, parafuso, x + l * 2.30, F + 3.25, z + fz);
+      }
+      // Gaveta/porta-livros abaixo do tampo, presa por laterais e uma travessa.
+      dbox(4.25, 0.14, 2.2, metal, x, F + 2.25, z - 0.15);
+      for (const l of [-1, 1]) dbox(0.15, 0.58, 2.2, metal, x + l * 2.05, F + 2.52, z - 0.15);
+      dbox(4.0, 0.37, 0.12, madeiraBorda, x, F + 2.52, z - 1.23);
+      // Cadeira: assento, quatro pés, encosto e dois suportes de conexão.
+      const cz = z + 3.17;
+      caixa(3.3, 0.27, 2.35, plastico, x, F + 1.98, cz);
+      for (const l of [-1, 1]) for (const dz of [-0.82, 0.82]) {
+        caixa(0.22, 1.90, 0.22, metal, x + l * 1.37, F + 0.95, cz + dz);
+        dbox(0.31, 0.10, 0.31, escuro, x + l * 1.37, F + 0.05, cz + dz);
+      }
+      // Prolongamento traseiro até o encosto (sem buraco entre as peças).
+      for (const l of [-1, 1]) caixa(0.22, 2.52, 0.22, metal, x + l * 1.37, F + 3.13, cz + 0.82);
+      caixa(3.24, 1.55, 0.28, plastico, x, F + 3.56, cz + 0.82);
+      dbox(3.05, 0.08, 0.13, madeira, x, F + 4.33, cz + 0.70);
     };
     const sala = (cx, q) => {
       dbox(29, 9.2, 0.25, m.mad, cx, F + 8, -MZ + 0.45); caixa(28, 8.2, 0.3, q, cx, F + 8, -MZ + 0.75); caixa(26, 0.35, 0.7, m.mad, cx, F + 3.4, -MZ + 1.1);
@@ -1743,14 +1901,57 @@ class WorldManager {
     }
     // Arquibancada no fundo do ginásio, após as duas quadras.
     for (let i = 0; i < 4; i++) caixa(38, 1.8 * (i + 1), 2.4, m.mad, 17.5, F + 0.9 * (i + 1), 89 + i * 2.4);
-    // Quadra de vôlei: marcações e rede entre postes.
-    chao(35, 25, M(0x276b83, 0.7), 17.5, 65);
-    const linhaV = M(0xffffff, 0.6);
-    for (const z of [52.5, 77.5, 60, 70]) caixa(35, 0.035, 0.18, linhaV, 17.5, F + 0.095, z);
-    for (const x of [0, 35]) caixa(0.18, 0.035, 25, linhaV, x, F + 0.095, 65);
-    for (const x of [-1, 36]) cil(0.16, 0.16, 7, m.metal, x, F + 3.5, 65);
-    const rede = new THREE.Mesh(new THREE.PlaneGeometry(35, 5.5), M(0xe8f4ff, 0.7, { transparent:true, opacity:0.35, side:THREE.DoubleSide, wireframe:true }));
-    rede.position.set(17.5, F + 5, 65); this.cena.add(rede);
+    // QUADRA DE VÔLEI V3 — os lados LONGOS estão em Z=52.5 e Z=77.5.
+    // A rede liga os PONTOS MÉDIOS desses dois lados: X=17.5, Z=52.5..77.5.
+    // Isso separa o comprimento X=0..35 em duas metades iguais de 17.5.
+    chao(35, 25, M(0x22a6ce, 0.7), 17.5, 65);
+    const linhaV = M(0xf7ffff, 0.6);
+    // Contorno do retângulo: os dois lados grandes são os segmentos com 35 no eixo X.
+    for (const z of [52.5, 77.5]) caixa(35, 0.035, 0.18, linhaV, 17.5, F + 0.105, z);
+    for (const x of [0, 35]) caixa(0.18, 0.035, 25, linhaV, x, F + 0.105, 65);
+    // Linhas centrais e de ataque paralelas à rede, todas no eixo Z.
+    for (const x of [8.75, 17.5, 26.25])
+      caixa(x === 17.5 ? 0.2 : 0.13, 0.035, 25, linhaV, x, F + 0.107, 65);
+
+    const REDE_X = 17.5, Z_NORTE = 52.5, Z_SUL = 77.5;
+    const Z_MIN = Z_NORTE - 0.14, Z_MAX = Z_SUL + 0.14;
+    const REDE_INF = F + 1.9, REDE_SUP = F + 4.85;
+    const POSTE_Z_MIN = Z_NORTE - 0.65, POSTE_Z_MAX = Z_SUL + 0.65;
+    const matPoste = M(0xb1c5d8, 0.31, { metalness: 0.78 });
+    const matFaixa = M(0xffffff, 0.48);
+    // Dois postes nas metades dos lados mais compridos do retângulo.
+    for (const zPoste of [POSTE_Z_MIN, POSTE_Z_MAX]) {
+      cil(0.14, 0.17, 5.85, matPoste, REDE_X, F + 2.925, zPoste);
+      dbox(0.58, 0.16, 0.58, m.metal, REDE_X, F + 0.08, zPoste);
+      // Pontas de apoio ligam apenas a faixa superior aos postes.
+      const pontos = [REDE_X, REDE_SUP, zPoste < 65 ? Z_MIN : Z_MAX,
+                      REDE_X, REDE_SUP, zPoste];
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(pontos, 3));
+      this.cena.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0xf3f6ff })));
+    }
+    // REDE VERTICAL EM X CONSTANTE — SEM rotação, SEM coordenada Y/Z trocada.
+    // Todas as linhas de malha vivem no plano X=17.5, em paralelo aos lados curtos.
+    const geometriaRede = new THREE.BufferGeometry(), verticesRede = [];
+    const PASSO_Z = 0.68, PASSO_Y = 0.48;
+    for (let z = Z_MIN; z < Z_MAX + 0.0001; z += PASSO_Z)
+      verticesRede.push(REDE_X, REDE_INF, Math.min(z, Z_MAX), REDE_X, REDE_SUP, Math.min(z, Z_MAX));
+    verticesRede.push(REDE_X, REDE_INF, Z_MAX, REDE_X, REDE_SUP, Z_MAX);
+    for (let y = REDE_INF; y < REDE_SUP + 0.0001; y += PASSO_Y)
+      verticesRede.push(REDE_X, Math.min(y, REDE_SUP), Z_MIN, REDE_X, Math.min(y, REDE_SUP), Z_MAX);
+    verticesRede.push(REDE_X, REDE_SUP, Z_MIN, REDE_X, REDE_SUP, Z_MAX);
+    geometriaRede.setAttribute('position', new THREE.Float32BufferAttribute(verticesRede, 3));
+    this.cena.add(new THREE.LineSegments(geometriaRede, new THREE.LineBasicMaterial({
+      color: 0xe9f2ff, transparent: true, opacity: 0.88, depthWrite: false
+    })));
+    // Moldura desenhada no mesmo plano da malha e dos postes.
+    const tamanhoRede = Z_MAX - Z_MIN;
+    for (const y of [REDE_INF, REDE_SUP])
+      dbox(0.13, y === REDE_SUP ? 0.18 : 0.12, tamanhoRede + 0.12,
+        matFaixa, REDE_X, y, (Z_MIN + Z_MAX) / 2);
+    for (const z of [Z_MIN, Z_MAX])
+      dbox(0.13, REDE_SUP - REDE_INF + 0.12, 0.12,
+        matFaixa, REDE_X, (REDE_SUP + REDE_INF) / 2, z);
     // Bebedouro e suporte de bolas na lateral do ginásio.
     caixa(2.5, 4.5, 2, m.metal, 40, F + 2.25, 81);
     cil(1.0, 1.0, 0.35, m.porc, 40, F + 4.7, 81);
@@ -1826,27 +2027,51 @@ class WorldManager {
 
 
     // MOSQUITÃO DA RUA: estátua-gigante de enfeite no fundo do auditório (easter egg)
-    { const M2 = M(0x4a5a3a, 0.85), mm = new THREE.Group(); mm.position.set(111, F + 2.8, 93);
-      this.cena.add(mm); caixa(3, 0.8, 3, m.mad, 111, F + 2.4, 93);
-      // "Cápsula" feita à mão: o Three.js r128 não tem CapsuleGeometry
-      const pernaEst = (raiz, mt, x, y, z, rx, ry, rz, raio, comp) => {
-        const g2 = new THREE.Group(); g2.position.set(x, y, z); g2.rotation.set(rx, ry, rz); raiz.add(g2);
-        g2.add(new THREE.Mesh(new THREE.CylinderGeometry(raio, raio * 0.9, comp, 10), mt));
-        for (const s of [1, -1]) { const p = new THREE.Mesh(new THREE.SphereGeometry(raio, 10, 8), mt); p.position.y = s * comp / 2; g2.add(p); }
-        return g2;
+    { const M2 = M(0x5a6f3c, 0.88), M3 = M(0x8aad41, 0.82), OL = M(0x220000, 0.2, { emissive: 0xff2244, emissiveIntensity: 0.85 }), mm = new THREE.Group();
+      mm.position.set(111, F + 2.8, 93); this.cena.add(mm); caixa(3.4, 0.9, 3.4, m.mad, 111, F + 2.45, 93);
+      const parte = (geo, mt, x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1, raiz = mm) => { const o = new THREE.Mesh(geo, mt); o.position.set(x, y, z); o.rotation.set(rx, ry, rz); o.scale.set(sx, sy, sz); raiz.add(o); return o; };
+      // Geometria local: 'tubo' pertence a construirMosquito() e não existe em WorldManager.
+      const haste = (a, b, raio, mt, raiz = mm) => {
+        const vetor = new THREE.Vector3().subVectors(b, a), comprimento = vetor.length();
+        if (comprimento < 0.0001) return null;
+        const o = new THREE.Mesh(new THREE.CylinderGeometry(raio, raio * 0.88, comprimento, 8), mt);
+        o.position.copy(a).addScaledVector(vetor, 0.5);
+        o.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), vetor.normalize());
+        raiz.add(o); return o;
       };
-      const parte = (geo, mt, x, y, z, rx = 0, ry = 0, rz = 0) => { const o = new THREE.Mesh(geo, mt); o.position.set(x, y, z); o.rotation.set(rx, ry, rz); mm.add(o); return o; };
-      parte(new THREE.SphereGeometry(2.6, 20, 14), M2, 0, 6, 0).scale.set(1, 0.85, 1.6);
-      parte(new THREE.SphereGeometry(1.7, 18, 12), M2, 0, 6.2, -3.4).scale.set(1, 0.95, 0.9);
-      parte(new THREE.TorusGeometry(1.2, 0.22, 8, 20), M2, 0, 7.4, -3.5).rotation.x = Math.PI / 2;
-      for (const l of [1, -1]) { pernaEst(mm, M2, l * 1.5, 4.6, 3.6, -1.1, 0, l * 0.5, 0.16, 5.5);
-        pernaEst(mm, M2, l * 2.2, 4.2, -3.5, 1.1, 0, -l * 0.4, 0.14, 6.2);
-        parte(new THREE.SphereGeometry(0.5, 12, 10), M(0x220000, 0.2, { emissive: 0xff2244, emissiveIntensity: 0.8 }), l * 0.7, 5.9, -4.7);
-        parte(new THREE.CylinderGeometry(0.05, 0.02, 8, 6), M2, l * 0.5, 9, -4.2, 1.4, 0, l * 0.25); }
-      const trompa = parte(new THREE.CylinderGeometry(0.22, 0.05, 7, 8), M2, 0, 4.2, -8.4, Math.PI / 2.1);
-      // Estátua de enfeite no canto do auditório (~3 unidades de altura).
-      mm.scale.setScalar(0.1);
-      this.mosquito = { g: mm, olhos: [1, -1].map((l) => mm.children.find((c) => c.geometry && c.geometry.type === "SphereGeometry" && c.position.z < -4)), trompa, centro: V(111, F + 2.8 + 1.0, 93) };
+      const thorax = parte(new THREE.SphereGeometry(1.55, 20, 14), M2, 0, 6.2, 0, 0, 0, 0, 1.2, 0.95, 1.45);
+      const head = parte(new THREE.SphereGeometry(1.05, 18, 12), M2, 0, 6.45, -2.35, 0, 0, 0, 1.0, 0.88, 0.92);
+      parte(new THREE.CylinderGeometry(0.36, 0.48, 0.8, 10), M2, 0, 6.35, -1.2, Math.PI / 2, 0, 0);
+      const abdomen = new THREE.Group(); abdomen.position.set(0, 5.95, 1.55); mm.add(abdomen);
+      for (let i = 0; i < 6; i++) { const r = 1.18 - i * 0.12; const seg = parte(new THREE.SphereGeometry(r, 18, 12), i % 2 ? M3 : M2, 0, -i * 0.06, i * 0.92, 0, 0, 0, 1.0, 0.82, 1.08, abdomen); if (i < 5) { const aro = parte(new THREE.TorusGeometry(r * 0.82, 0.08, 6, 18), M3, 0, -i * 0.06, i * 0.92 - 0.36, Math.PI / 2, 0, 0, 1, 1, 1, abdomen); } }
+      const ferrao = parte(new THREE.ConeGeometry(0.18, 0.85, 8), M2, 0, -0.22, 5.72, Math.PI / 2, 0, 0, 1, 1, 1, abdomen);
+      const wingShape = new THREE.Shape(); wingShape.moveTo(0, 0); wingShape.quadraticCurveTo(1.1, 0.28, 2.3, 0.05); wingShape.quadraticCurveTo(2.55, -0.02, 2.8, -0.18); wingShape.quadraticCurveTo(1.9, -0.28, 0.55, -0.22); wingShape.quadraticCurveTo(0.08, -0.1, 0, 0); wingShape.closePath();
+      for (const l of [1, -1]) {
+        const baseX = l * 0.75;
+        for (const [oy, oz, jx, jy, jz, px, py, pz, p2x, p2y, p2z] of [[-0.05, -0.75, 0.95, -0.55, -0.55, 2.1, -1.55, -1.35, 2.95, -2.15, -2.35], [-0.08, 0.0, 1.12, -0.65, 0.0, 2.42, -1.82, 0.0, 3.22, -2.35, 0.0], [-0.03, 0.75, 1.0, -0.48, 0.48, 2.22, -1.42, 1.2, 2.98, -2.02, 2.08]]) {
+          haste(V(baseX, 5.75 + oy, oz), V(l * jx, jy + 5.75, jz), 0.11, M2);
+          haste(V(l * jx, jy + 5.75, jz), V(l * px, py + 5.75, pz), 0.075, M2);
+          haste(V(l * px, py + 5.75, pz), V(l * p2x, p2y + 5.75, p2z), 0.04, M2);
+          parte(new THREE.SphereGeometry(0.17, 10, 8), M3, l * jx, jy + 5.75, jz);
+          parte(new THREE.SphereGeometry(0.12, 10, 8), M3, l * p2x, p2y + 5.75, p2z, 0, 0, 0, 1, 1, 1.5);
+        }
+        const wing = parte(new THREE.ShapeGeometry(wingShape), new THREE.MeshStandardMaterial({ color: 0xc7d7a8, roughness: 0.4, transparent: true, opacity: 0.55, side: THREE.DoubleSide }), baseX, 7.0, -0.15, -Math.PI / 2, 0, 0, l, 1.0, 1.0);
+        wing.position.x = baseX; wing.position.y = 7.0; wing.position.z = -0.15;
+        const nerv = haste(V(baseX, 6.95, -0.1), V(l * 2.45, 6.96, -0.08), 0.04, M3);
+        const nerv2 = haste(V(l * 0.95, 6.95, -0.08), V(l * 2.12, 7.12, 0.11), 0.03, M3);
+        const nerv3 = haste(V(l * 0.85, 6.94, -0.08), V(l * 1.98, 6.76, -0.22), 0.03, M3);
+      }
+      const olhos = [];
+      for (const l of [1, -1]) {
+        olhos.push(parte(new THREE.SphereGeometry(0.32, 12, 10), OL, l * 0.52, 6.42, -3.08));
+        haste(V(l * 0.18, 7.0, -2.55), V(l * 0.52, 8.25, -3.25), 0.05, M2);
+        haste(V(l * 0.52, 8.25, -3.25), V(l * 0.82, 9.1, -3.85), 0.03, M3);
+      }
+      const trompa = parte(new THREE.CylinderGeometry(0.2, 0.055, 3.3, 8), M2, 0, 5.82, -4.72, Math.PI / 2.05);
+      parte(new THREE.CylinderGeometry(0.075, 0.02, 1.1, 6), M3, 0, 5.22, -6.18, Math.PI / 2.08);
+      for (let i = 0; i < 5; i++) { const esp = parte(new THREE.ConeGeometry(0.12 - i * 0.008, 0.58, 6), M3, 0, 7.55 + i * 0.1, -0.95 + i * 0.45); esp.rotation.x = -0.12; }
+      mm.scale.setScalar(0.18);
+      this.mosquito = { g: mm, olhos, trompa, centro: V(111, F + 2.8 + 1.25, 93) };
     }
     // Lâmpadas do teto nas salas
     for (const [x, z] of [[-94, -54], [-49, -54], [-7, -54], [28, -54], [56, -54], [94, -54], [17, 54], [58, 54], [94, 50], [94, 15]]) dbox(14, 0.3, 1.6, B(0xeaf6ff), x, YMAX - 0.15, z);
@@ -2028,15 +2253,86 @@ class WorldManager {
 
   // ---- Carteira perdida no corredor (B perto dela devolve e rende sangue; até 3 vezes) ----
   criarCarteira() {
-    const g = new THREE.Group(), M = (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.6 });
-    const corpo = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.3, 0.9), M(0x6b3a1a)), botao = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.34, 0.2), M(0xffd84d));
-    const halo = new THREE.Mesh(new THREE.TorusGeometry(1.1, 0.06, 6, 24), new THREE.MeshBasicMaterial({ color: 0xffd84d, transparent: true, opacity: 0.6 }));
-    halo.rotation.x = Math.PI / 2; halo.position.y = 0.1; botao.position.set(0.5, 0.02, 0); g.add(corpo, botao, halo); this.cena.add(g);
+    // CARTEIRA PERDIDA V3: carteira de couro ABERTA em "V", parecendo um livro.
+    // Nenhum bloco fechado no centro; cada aba gira pelo próprio pivô da dobradiça.
+    const g = new THREE.Group();
+    const couro = new THREE.MeshStandardMaterial({ color: 0x63352a, roughness: 0.9 });
+    const couroFriso = new THREE.MeshStandardMaterial({ color: 0xb87a52, roughness: 0.83 });
+    const forro = new THREE.MeshStandardMaterial({ color: 0x241d20, roughness: 0.96 });
+    const costura = new THREE.MeshStandardMaterial({ color: 0xe4c299, roughness: 0.9 });
+    const metal = new THREE.MeshStandardMaterial({ color: 0xced7dd, metalness: 0.8, roughness: 0.3 });
+    const ciano = new THREE.MeshStandardMaterial({ color: 0x35a8dc, roughness: 0.55 });
+    const rosa = new THREE.MeshStandardMaterial({ color: 0xe46c76, roughness: 0.64 });
+    const verde = new THREE.MeshStandardMaterial({ color: 0xa5d78b, roughness: 0.84 });
+    const creme = new THREE.MeshStandardMaterial({ color: 0xf4deab, roughness: 0.92 });
+    const escuro = new THREE.MeshStandardMaterial({ color: 0x31494f, roughness: 0.8 });
+    const caixa = (pai, w, h, d, mt, x, y, z) => {
+      const malha = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mt);
+      malha.position.set(x, y, z); pai.add(malha); return malha;
+    };
+    const asa = (lado) => {
+      const piv = new THREE.Group();
+      // Cada metade sobe nas pontas, mas permanece conectada na dobradiça.
+      piv.position.set(0, 0.15, 0);
+      piv.rotation.z = lado * 0.43;
+      g.add(piv);
+      const cx = lado * 0.70;
+      caixa(piv, 1.41, 0.075, 1.46, couro, cx, 0, 0);
+      caixa(piv, 1.31, 0.018, 1.35, forro, cx, 0.048, 0);
+      // Contorno de costura nas bordas interiores da aba.
+      for (const ox of [-0.63, 0.63])
+        caixa(piv, 0.015, 0.014, 1.33, costura, cx + ox, 0.065, 0);
+      for (const oz of [-0.65, 0.65])
+        caixa(piv, 1.27, 0.014, 0.015, costura, cx, 0.065, oz);
+      // Bolso grande de couro claro. As peças continuam sobre a superfície da aba.
+      caixa(piv, 1.06, 0.035, 0.58, couroFriso, cx, 0.092, 0.3);
+      if (lado < 0) {
+        // Três notas escapando do bolso, com faixa escura e denominação.
+        for (let i = 0; i < 3; i++) {
+          const z = -0.33 + i * 0.14;
+          caixa(piv, 1.00 - i * 0.08, 0.02, 0.32, i === 1 ? creme : verde, cx, 0.12 + i * 0.024, z);
+        }
+        caixa(piv, 0.17, 0.018, 0.10, escuro, cx - 0.28, 0.183, -0.07);
+        caixa(piv, 0.17, 0.018, 0.10, escuro, cx + 0.28, 0.183, -0.07);
+      } else {
+        // Três cartões parcialmente encaixados nos porta-cartões da aba direita.
+        caixa(piv, 1.02, 0.027, 0.43, rosa, cx, 0.132, 0.17);
+        caixa(piv, 1.04, 0.027, 0.43, ciano, cx, 0.159, -0.10);
+        caixa(piv, 0.85, 0.028, 0.28, creme, cx, 0.19, -0.29);
+        // Chip e faixas dos cartões tornam os materiais reconhecíveis à distância.
+        caixa(piv, 0.18, 0.012, 0.13, metal, cx - 0.32, 0.212, -0.26);
+        caixa(piv, 0.36, 0.013, 0.035, escuro, cx + 0.14, 0.213, -0.33);
+      }
+      return piv;
+    };
+    const esquerda = asa(-1), direita = asa(1);
+    // Dobradiça em couro enrolado ligando as duas abas sem buracos na junção.
+    const dobra = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.45, 12), couroFriso);
+    dobra.rotation.x = Math.PI / 2; dobra.position.set(0, 0.13, 0); g.add(dobra);
+    const costuraDobra = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.048, 1.49, 12), couro);
+    costuraDobra.rotation.x = Math.PI / 2; costuraDobra.position.set(0, 0.2, 0); g.add(costuraDobra);
+    // Aba de fecho curta presa na lateral da carteira e botão de pressão redondo.
+    const fecho = caixa(direita, 0.28, 0.06, 0.40, couroFriso, 1.31, 0.1, 0.52);
+    fecho.rotation.y = 0.15;
+    const botao = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.025, 16), metal);
+    botao.position.set(1.33, 0.16, 0.52); direita.add(botao);
+    // Carteira de BOLSO: reduzida a aproximadamente 1 unidade de largura,
+    // mais rasa que um livro (sem alterar o raio de coleta pela tecla B).
+    g.scale.set(0.35, 0.40, 0.31);
+    // Mostra a dobra, os cartões e as notas à câmera com ângulo oblíquo.
+    g.rotation.y = 0.35;
+    // O halo continua sendo indicador de coleta, não parte da carteira.
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(1.95, 0.065, 6, 48),
+      new THREE.MeshBasicMaterial({ color: 0xffd84d, transparent: true, opacity: 0.62 }));
+    halo.rotation.x = Math.PI / 2;
+    halo.position.y = 0.055;
+    g.add(halo);
+    this.cena.add(g);
     this.carteira = { g, halo, visivel: false, spots: [[-20, 3], [35, -3], [-55, 2], [75, 2], [100, -2], [-95, -2]] };
   }
   posicionarCarteira(S) {
     const c = this.carteira; c.visivel = S.carteiras < 3; c.g.visible = c.visivel;
-    if (c.visivel) { const [x, z] = c.spots[(Math.random() * c.spots.length) | 0]; c.g.position.set(x, CFG.YMIN + 0.2, z); }
+    if (c.visivel) { const [x, z] = c.spots[(Math.random() * c.spots.length) | 0]; c.g.position.set(x, CFG.YMIN + 0.035, z); }
   }
 
   atualizarHumanos(dt, jogo) {
@@ -2069,10 +2365,12 @@ class WorldManager {
         h.cab.rotation.y = Math.sin(jogo.t * 0.7 + h.passo * 0.1) * 0.3;
         g.position.y = F + h.yo + Math.abs(Math.cos(h.passo)) * 0.08;
       }
-      h.marca.visible = h.pronto <= 0; h.marca.rotation.z += dt * 2; h.marca.position.y = 6.75 + Math.sin(jogo.t * 3 + h.passo) * 0.1;
+      const jaPicadasFrenesi = jogo.buff.frenesi > 0 ? (jogo.alvosFrenesi.get(h)?.qtd || 0) : 0;
+      h.marca.visible = h.pronto <= 0 && jaPicadasFrenesi < 2;
+      h.marca.rotation.z += dt * 2; h.marca.position.y = 6.75 + Math.sin(jogo.t * 3 + h.passo) * 0.1;
       h.alvo.set(g.position.x, F + 5.65 + h.yo, g.position.z);
       const d2 = h.alvo.distanceToSquared(p);
-      if (h.pronto <= 0 && !(jogo.buff.frenesi > 0 && jogo.alvosFrenesi.has(h)) && d2 < melhor) { melhor = d2; this.humanoPerto = h; }
+      if (h.pronto <= 0 && jaPicadasFrenesi < 2 && d2 < melhor) { melhor = d2; this.humanoPerto = h; }
     }
   }
 
@@ -2110,8 +2408,9 @@ class WorldManager {
       p.visible = false; p.userData = { v: V(0, 0, 0), vida: 0, g: 4, dec: 1.4, mode: 0 }; this.cena.add(p); return p;
     }, 260);
   }
-  emitir(pos, cor, n = 12, forca = 3, tipo = "") {   // tipo: "" faíscas · "fumaca" sobe e cresce · "espuma" cai devagar
-    for (let i = 0; i < n; i++) {
+  emitir(pos, cor, n = 12, forca = 3, tipo = "") {   // partículas visuais; não muda recompensas, dano ou cooldown
+    const quantidade = Math.max(0, Math.ceil(n * this.qualidadeParticulas));
+    for (let i = 0; i < quantidade && this.ativasP.length < this.limiteParticulas; i++) {
       const p = this.parts.pegar(); if (!p) return; const u = p.userData;
       p.position.copy(pos); p.material.color.setHex(cor); p.material.opacity = 1; p.visible = true;
       u.mode = tipo === "fumaca" ? 1 : tipo === "espuma" ? 2 : 0; u.g = u.mode === 1 ? -1.4 : u.mode === 2 ? 1.2 : 4; u.dec = u.mode === 1 ? 0.7 : u.mode === 2 ? 0.9 : 1.4;
@@ -2126,7 +2425,7 @@ class WorldManager {
     const g = new THREE.Group();
     const material = new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: 0.85,
       depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
-    const aro = new THREE.Mesh(new THREE.TorusGeometry(1, 0.045, 7, 48), material);
+    const aro = new THREE.Mesh(new THREE.TorusGeometry(1, 0.045, 5, this.qualidadeParticulas < 0.5 ? 20 : this.qualidadeParticulas < 1 ? 32 : 48), material);
     aro.rotation.x = inclinacao || Math.PI / 2;
     g.position.copy(pos); g.add(aro); this.cena.add(g);
     this.efeitosHabilidade.push({ g, vida: tempo, max: tempo, raio, aro });
@@ -2134,7 +2433,7 @@ class WorldManager {
   }
   fxHabilidade(id, jogo) {
     const p = jogo.jogador.pos, e = (cor, n=18, f=5, tipo='') => this.emitir(p, cor, n, f, tipo);
-    const an = (cor, raio=5, dur=0.8) => { this.ondaHabilidade(p, cor, raio, dur); this.ondaHabilidade(p, cor, raio * 0.7, dur * 1.2, Math.PI / 3); };
+    const an = (cor, raio=5, dur=0.8) => { this.ondaHabilidade(p, cor, raio, dur); if (this.anelsPorHabilidade > 1) this.ondaHabilidade(p, cor, raio * 0.7, dur * 1.2, Math.PI / 3); };
     switch (id) {
       case 'padrao': e(0xf3ffff, 20, 8, 'espuma'); an(0xffffff, 4, 0.45); break;
       case 'pixel': e(0x33ff66, 32, 7); an(0x33ff66, 4, 0.45); break;
@@ -2276,6 +2575,8 @@ class WorldManager {
     const rc0 = S.raioColeta * jogo.fatorColeta(), r2 = rc0 * rc0;   // scanner aumenta o alcance
     for (let i = this.ativas.length - 1; i >= 0; i--) {
       const g = this.ativas[i], u = g.userData, d2 = g.position.distanceToSquared(p);
+      // O objeto segue ativo e coletável mesmo quando sua representação 3D distante é ocultada.
+      g.visible = d2 <= this.alcanceGotas * this.alcanceGotas;
       if (d2 < 1600) { u.fase += dt; u.nucleo.position.y = Math.sin(u.fase * 2) * 0.08; u.halo.scale.setScalar((1 + Math.sin(u.fase * 3) * 0.12) * (jogo.buff.scan > 0 ? 3 : 1)); }
       if (d2 < r2) {
         this.ativas[i] = this.ativas[this.ativas.length - 1]; this.ativas.pop();
@@ -2433,14 +2734,20 @@ class GameManager {
     this.estado = new GameState(); this.audio = new AudioSystem(); this.ui = new UIManager();
     this.cena = new THREE.Scene(); this.cena.background = new THREE.Color(0x0e0c18); this.cena.fog = new THREE.Fog(0x0e0c18, 60, 170);
     this.camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 500);
-    this.render = new THREE.WebGLRenderer({ antialias: true });
-    this.render.setSize(innerWidth, innerHeight); this.render.setPixelRatio(Math.min(devicePixelRatio, 2));
+    this.modoGrafico = lerGraficos();
+    this.render = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'default' });
+    this.render.setPixelRatio(Math.min(devicePixelRatio || 1, GRAFICOS[this.modoGrafico].resolucao));
+    this.render.setSize(innerWidth, innerHeight);
     $("webgl-container").appendChild(this.render.domElement);
     this.mundo = new WorldManager(this.cena, this.audio);
     this.jogador = new PlayerController(this.cena, this.camera, this.estado, this.mundo);
     this.jogador.pos.set(0, 2, 0);
+    this._ultimoRender = 0; this._ultimoFPS = 0; this._frames = 0; this._fpsStamp = 0;
+    this._timerDecor = 0;
+    this.ui.aoMudarGraficos = (modo) => this.aplicarGraficos(modo);
+    this.aplicarGraficos(this.modoGrafico, false);
     this.teclas = {}; this.jogando = false; this.travado = false; this.arrastando = false;
-    this.combo = 0; this.comboT = 0; this.boost = 0; this.t = 0; this.salvarT = 0; this.relogio = new THREE.Clock(); this.alvosFrenesi = new Set();
+    this.combo = 0; this.comboT = 0; this.boost = 0; this.t = 0; this.salvarT = 0; this.relogio = new THREE.Clock(); this.alvosFrenesi = new Map();
     this.egg = { tanque: 0, espelho: 0, tela: 0, yAnt: 0, dica: 0, tour: false, fala: false, morte: 0, vida: 0 };
     this.menuAberto = false; this.aba = "skins"; this.eggMsg = "";
     this.buff = { sangue: 0, tempo: 0, radio: 0, vel: 0, stamInf: 0, invis: 0, frenesi: 0, gas: 0, scan: 0, pesado: 0 }; this.hab = { cd: 0, cdTotal: 1, ativo: 0 }; this.escalaTempo = 1; this.zona = null; this.kills = { tapasRecebidos: 0, gas: 0 }; this.tmpEgg = V(0, 0, 0); this.buf = ""; this.letras = "";
@@ -2448,6 +2755,40 @@ class GameManager {
     this.ui.atalhos(() => this.abrirColecao("skins"), () => this.abrirColecao("conq")); this.mundo.posicionarCarteira(this.estado); this.mundo.iniciarPontos(this.estado);
     this.jogador.modelo.aplicar(); this.jogador.zoomV = this.jogador.modelo.zoom; this.ui.hud(this.estado); this.ui.saveInfo(this.estado); this.ui.habilidade(this.estado.skin, 0, 1, 0);
     this.laco();
+  }
+
+  aplicarGraficos(modo, salvar = true) {
+    if (!GRAFICOS[modo]) return;
+    this.modoGrafico = modo;
+    const opt = GRAFICOS[modo];
+    this.render.setPixelRatio(Math.min(devicePixelRatio || 1, opt.resolucao));
+    this.render.setSize(innerWidth, innerHeight, false);
+    this.camera.far = opt.distancia; this.camera.updateProjectionMatrix();
+    this.cena.fog.near = modo === 'leve' ? 38 : modo === 'medio' ? 55 : 60;
+    this.cena.fog.far = modo === 'leve' ? 132 : modo === 'medio' ? 200 : 170;
+    this.mundo.qualidadeParticulas = opt.particulas;
+    this.mundo.limiteParticulas = opt.maxParticulas;
+    this.mundo.anelsPorHabilidade = opt.aneis;
+    this.mundo.alcanceHumanos = modo === 'leve' ? 52 : modo === 'medio' ? 105 : Infinity;
+    this.mundo.alcanceGotas = modo === 'leve' ? 60 : modo === 'medio' ? 130 : Infinity;
+    this._timerDecor = 0;
+    this.mundo.atualizarDecoracoes(this.jogador.pos, opt.alcanceDecor, true);
+    // Luzes de puzzles e o corredor continuam. No modo leve, dispensamos as demais luzes pontuais.
+    if (!this._luzesOpcionais) this._luzesOpcionais = this.cena.children.filter(l =>
+      l.isPointLight && l !== this.mundo.luz && l !== this.mundo.luzTomada && l !== this.mundo.luzGalao);
+    for (const luz of this._luzesOpcionais) luz.visible = modo !== 'leve';
+    if (this.ui.pv && this.ui.pv.r) {
+      this.ui.pv.r.setPixelRatio(Math.min(devicePixelRatio || 1, opt.resolucao));
+      const can = this.ui.pv.canvas;
+      if (can.clientWidth && can.clientHeight) this.ui.pv.r.setSize(can.clientWidth, can.clientHeight, false);
+    }
+    this.ui.exibirGraficos(modo);
+    const fps = $('hx-fps'); if (fps) fps.hidden = modo === 'alto';
+    if (salvar) {
+      try { localStorage.setItem(GRAF_KEY, modo); } catch (_) { /* modo em memória */ }
+      this.ui.toast('⚙️ Gráficos: ' + opt.nome);
+    }
+    this._ultimoRender = 0;
   }
 
   ligar() {
@@ -2570,7 +2911,7 @@ class GameManager {
   }
   atualizarHab(dt) {   // recargas, duração dos efeitos, poça de cura e stamina infinita
     for (const k in this.buff) if (this.buff[k] > 0) this.buff[k] = Math.max(0, this.buff[k] - dt);
-    if (this.buff.frenesi <= 0 && this.alvosFrenesi.size) this.alvosFrenesi.clear();
+    if (this.buff.frenesi <= 0 && this.alvosFrenesi.size) this.finalizarFrenesi();
     this.hab.cd = Math.max(0, this.hab.cd - dt); this.hab.ativo = Math.max(0, this.hab.ativo - dt);
     this.escalaTempo = this.buff.tempo > 0 ? 0.08 : 1;
     const j = this.jogador, S = this.estado;
@@ -2598,20 +2939,39 @@ class GameManager {
     return true;
   }
 
+  // Restaura a recarga normal de quem recebeu apenas a primeira picada do Frenesi.
+  // Assim o bônus de 3 segundos não permanece após a habilidade ou troca de skin.
+  finalizarFrenesi() {
+    for (const [h, dados] of this.alvosFrenesi) {
+      if (dados.qtd === 1 && Number.isFinite(h.ultimaPicada)) {
+        h.pronto = Math.max(h.pronto, Math.max(0, 18 - (this.t - h.ultimaPicada)));
+      }
+    }
+    this.alvosFrenesi.clear();
+  }
+
   picar() {
-    const h = this.mundo.humanoPerto; if (!this.jogando || this.menuAberto || !h) return;
-    if (h.pronto > 0 || (this.buff.frenesi > 0 && this.alvosFrenesi.has(h))) return; // humano em recuperacao ou ja usado neste Frenesi
+    const h = this.mundo.humanoPerto;
+    if (!this.jogando || this.menuAberto || !h) return;
+    const frenesiAtivo = this.buff.frenesi > 0;
+    const feitas = frenesiAtivo ? (this.alvosFrenesi.get(h)?.qtd || 0) : 0;
+    // A primeira picada libera outra após 3s. A segunda é a última nesta ativação.
+    if (h.pronto > 0 || (frenesiAtivo && feitas >= 2)) return;
     const S = this.estado;
-    if (this.buff.frenesi > 0) this.alvosFrenesi.add(h);
-    this.combo = this.comboT > 0 ? Math.min(this.combo + 1, 5) : 1; this.comboT = CFG.COMBO_T * this.estado.attr.combo;
+    if (frenesiAtivo) this.alvosFrenesi.set(h, { qtd: feitas + 1, ultima: this.t });
+    h.ultimaPicada = this.t;
+    this.combo = this.comboT > 0 ? Math.min(this.combo + 1, 5) : 1;
+    this.comboT = CFG.COMBO_T * S.attr.combo;
     const ganho = Math.round((25 + S.valorGota * 6) * this.combo * this.multSangue() * (h.atord > 0 ? 1.5 : 1));
     S.sangue += ganho; S.picadas++;
     // Frenesi substitui, e nao soma, a cura passiva da skin.
-    const cura = this.buff.frenesi > 0 ? 30 : S.attr.cura;
+    const cura = frenesiAtivo ? 30 : S.attr.cura;
     if (cura) this.jogador.vida = Math.min(S.vidaMax, this.jogador.vida + cura);
-    h.pronto = 18; h.raiva = this.buff.invis > 0 ? 0 : 4; h.tapa = 0.6;
+    h.pronto = frenesiAtivo && feitas === 0 ? 3 : 18;
+    h.raiva = this.buff.invis > 0 ? 0 : 4; h.tapa = 0.6;
     this.mundo.emitir(h.alvo, 0xff1744, 26, 4); this.audio.picada(); this.ui.flash("rgba(255,23,68,.35)");
-    this.ui.toast(`🩸 Picou ${h.nome}! +${ganho} sangue — fuja do tapa!`); this.ui.hud(S); this.salvarT = 3;
+    const texto = frenesiAtivo && feitas === 0 ? " · segundo ataque em 3s" : frenesiAtivo ? " · 2/2 neste Frenesi" : " — fuja do tapa!";
+    this.ui.toast(`🩸 Picou ${h.nome}! +${ganho} sangue${texto}`); this.ui.hud(S); this.salvarT = 3;
     if (S.picadas >= 10) this.desbloquear("vampiro");
   }
   tapa(h) {
@@ -2658,8 +3018,8 @@ class GameManager {
   }
   ajustarLimites() { const S = this.estado, j = this.jogador; j.vida = Math.min(j.vida, S.vidaMax); j.stamina = Math.min(j.stamina, S.staminaMax); }   // bônus de skin podem diminuir os máximos
   limparPoderAnterior() {
+    this.finalizarFrenesi();
     for (const k in this.buff) this.buff[k] = 0;
-    this.alvosFrenesi.clear();
     this.jogador.escudo = 0; this.zona = null; this.hab.ativo = 0;
     this.escalaTempo = 1;
   }
@@ -2926,6 +3286,8 @@ class GameManager {
   evoluir(k) {
     if (!this.jogando || this.menuAberto) return;
     const S = this.estado;
+    if (!CFG.UPS[k]) return;
+    if (S.nv[k] >= CFG.UP_MAX) { this.ui.toast(`${CFG.UPS[k].nome}: nível máximo ${CFG.UP_MAX}!`); return; }
     if (S.sangue < S.custo(k)) { this.ui.toast("Sangue insuficiente"); return; }
     const antes = S.estagio;
     S.sangue -= S.custo(k); S.nv[k]++;
@@ -2970,9 +3332,26 @@ class GameManager {
     this.audio.tocarMusicaCarreta(this.jogando && !this.menuAberto && !document.hidden && this.estado.skin === "carreta", this.estado.skin === "carreta");
     this.jogador.animar(dt, this.t, this.jogando);
     this.jogador.modelo.tick(this.t, dt); this.jogador.camera3p(dt); this.ui.atualizar(dt);
+    this._timerDecor -= dt;
+    if (this._timerDecor <= 0 && this.jogando) {
+      this._timerDecor = this.modoGrafico === 'leve' ? 0.7 : 1.2;
+      this.mundo.atualizarDecoracoes(this.jogador.pos, GRAFICOS[this.modoGrafico].alcanceDecor);
+    }
+    const limiteFPS = GRAFICOS[this.modoGrafico].fps;
+    const agora = performance.now();
+    if (limiteFPS && this._ultimoRender && agora - this._ultimoRender < 1000 / limiteFPS - 1.5) return;
+    this._ultimoRender = agora;
     this.render.render(this.cena, this.camera);
+    this._frames++;
+    if (!this._fpsStamp) this._fpsStamp = agora;
+    if (agora - this._fpsStamp >= 1000) {
+      const fps = $('hx-fps');
+      if (fps && !fps.hidden) fps.textContent = `${Math.round(this._frames * 1000 / (agora - this._fpsStamp))} FPS · ${GRAFICOS[this.modoGrafico].nome}`;
+      this._fpsStamp = agora; this._frames = 0;
+    }
   }
 }
 
+console.info("[MOSQUITO EVOLUTION V7] Gráficos: desempenho / equilibrado / qualidade; V6 preservada.");
 new GameManager();
 })();
