@@ -585,7 +585,7 @@ ${sel === "tusk" && liberada ? `<button id="sk-aura-tusk" type="button" aria-pre
     const pv = this.previewIniciar(); if (pv.erro) return;
     if (pv.modelo) { pv.raiz.remove(pv.modelo.mosquito); pv.modelo.mosquito.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) [].concat(o.material).forEach((m) => m.dispose()); }); pv.modelo = null; }
     const pe = Object.create(S); pe.skin = id; pe.mantis = id === "tusk" ? ["cabeca", "foices", "torax", "abdomen"].slice(0, Math.max(1, ato)) : S.mantis;   // estado só de preview: não altera o jogo
-    const m = construirMosquito(pe); m.aplicar(); pv.modelo = m; pv.raiz.add(m.mosquito); m.mosquito.position.set(0, 0, 0); m.mosquito.rotation.set(0.25, 0, 0);
+    const m = construirMosquito(pe); m.aplicar(); pv.modelo = m; pv.raiz.add(m.mosquito); m.mosquito.position.set(0, 0, 0); m.mosquito.rotation.set(0.25, id === "mosquito8000" ? Math.PI : 0, 0);
     if (bloqueada) m.mosquito.traverse((o) => { if (o.isLine) o.visible = false; });
     pv.cena.overrideMaterial = bloqueada ? new THREE.MeshBasicMaterial({ color: 0x0b0a14 }) : null;   // skin trancada aparece só como silhueta
     const z = m.zoom; pv.cam.position.set(0, 0.8 * z, 5.6 * Math.pow(z, 0.85)); pv.cam.lookAt(0, -0.2, 0);
@@ -943,13 +943,123 @@ tA.forEach((t) => { t.c.visible = t.a.visible = false; corpoG.add(t.c); abdomenC
 const orbG = new THREE.Group(); orbG.visible = false; mosquito.add(orbG);   // Ato 4: unhas e anéis dourados girando ("rotação infinita")
 for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2, n = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.24, 8), matUnha); n.position.set(Math.cos(a) * 0.95, 0.1 * Math.sin(i * 2), Math.sin(a) * 0.95); n.rotation.set(Math.PI / 2, 0, -a); orbG.add(n); }
 const aneis = []; for (const rx of [0.4, -0.4]) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.012, 6, 48), mat(0xffd24a, { emissive: 0xffc233, emissiveIntensity: 1 })); r.rotation.x = Math.PI / 2 + rx; orbG.add(r); aneis.push(r); }   // "rotação infinita"
-const roboG = new THREE.Group(); roboG.visible = false; corpoG.add(roboG);
-const matVisor = new THREE.MeshBasicMaterial({ color: 0x00e5ff }), matAco2 = mat(0x6c7890, { metalness: 0.85, roughness: 0.3 });
-{ const v = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.12), matVisor); v.position.set(0, 0.04, -0.34); roboG.add(v);
-  const an = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.22, 6), matAco2); an.position.set(0.07, 0.2, -0.24); roboG.add(an);
-  for (const l of [1, -1]) { const pl = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.2, 0.38), matAco2); pl.position.set(l * 0.18, 0.06, 0.05); roboG.add(pl); } }
-const antenaLed = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff3366 })); antenaLed.position.set(0.07, 0.32, -0.24); roboG.add(antenaLed);
-const jatos = []; for (const l of [1, -1]) { const j = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.3, 8), new THREE.MeshBasicMaterial({ color: 0xff8a2a })); j.rotation.x = Math.PI / 2; j.position.set(l * 0.13, -0.1, 0.62); roboG.add(j); jatos.push(j); }
+// ============================================================
+// MOSQUITO 8000 V2 — robô independente, sem sobreposição do
+// mosquito biológico. Cabeça, tórax, asas, patas, abdômen e bico
+// compartilham articulações/pivôs e escalam junto aos upgrades.
+// ============================================================
+const roboG = new THREE.Group(); roboG.visible = false; mosquito.add(roboG);
+const roboAbdG = new THREE.Group(); roboAbdG.visible = false; abdomen.add(roboAbdG);
+const roboBico = new THREE.Group(); roboBico.visible = false; mosquito.add(roboBico);
+const roboAsas = [], roboMotores = [], roboLeds = [], roboRotores = [], roboArticulacoes = [];
+const roboMetal = mat(0x92a7bb, { metalness: 0.85, roughness: 0.28 });
+const roboTitanio = mat(0xd2e1e8, { metalness: 0.8, roughness: 0.22 });
+const roboEscuro = mat(0x1a2434, { metalness: 0.72, roughness: 0.33 });
+const roboJunta = mat(0x46586c, { metalness: 0.82, roughness: 0.3 });
+const roboCiano = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
+const roboVermelho = new THREE.MeshBasicMaterial({ color: 0xff4177 });
+const roboAsaMetal = mat(0x6a8399, { metalness: 0.8, roughness: 0.26, side: THREE.DoubleSide });
+const roboAsaVidro = new THREE.MeshBasicMaterial({ color: 0x43d7f6, transparent: true, opacity: 0.32, depthWrite: false, side: THREE.DoubleSide });
+const roboFogo = new THREE.MeshBasicMaterial({ color: 0x21e6ff, transparent: true, opacity: 0.8, depthWrite: false });
+function rBox(par, w, h, d, material, x, y, z) {
+  const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+  o.position.set(x, y, z); par.add(o); return o;
+}
+function rBola(par, raio, material, x, y, z, detalhes = 1) {
+  const o = new THREE.Mesh(new THREE.IcosahedronGeometry(raio, detalhes), material);
+  o.position.set(x, y, z); par.add(o); return o;
+}
+function rBarra(par, a, b, raio, material) { const o = tubo(a, b, raio, material); par.add(o); return o; }
+// Tórax compacto e simétrico, todo em coordenadas locais do corpo.
+rBola(roboG, 0.19, roboEscuro, 0, 0.01, 0.06, 1).scale.set(0.91, 0.83, 1.48);
+rBox(roboG, 0.29, 0.13, 0.38, roboMetal, 0, 0.045, 0.06);
+rBox(roboG, 0.21, 0.035, 0.3, roboTitanio, 0, 0.123, 0.045);
+// Manga rígida até o primeiro segmento abdominal: sem espaço vazio ao evoluir.
+rBox(roboG, 0.135, 0.12, 0.24, roboJunta, 0, -0.005, 0.25);
+rBox(roboG, 0.052, 0.042, 0.28, roboCiano, 0, 0.148, 0.044);
+for (const lado of [-1, 1]) {
+  rBox(roboG, 0.072, 0.13, 0.31, roboEscuro, lado * 0.16, 0.04, 0.055);
+  rBox(roboG, 0.045, 0.028, 0.17, roboCiano, lado * 0.19, 0.119, 0.058);
+  rBola(roboG, 0.045, roboJunta, lado * 0.15, 0.0, 0.01, 1);
+}
+// Cabeça fixada a um pescoço metálico (sem sensores soltos).
+rBarra(roboG, V(0, 0.028, -0.17), V(0, 0.035, -0.33), 0.052, roboJunta);
+const roboCabeca = new THREE.Group(); roboCabeca.position.set(0, 0.037, -0.35); roboG.add(roboCabeca);
+rBola(roboCabeca, 0.135, roboTitanio, 0, 0, 0, 1).scale.set(1.05, 0.86, 0.93);
+rBox(roboCabeca, 0.2, 0.067, 0.032, roboEscuro, 0, 0.017, -0.13);
+rBox(roboCabeca, 0.157, 0.024, 0.008, roboCiano, 0, 0.032, -0.151);
+for (const l of [-1, 1]) {
+  rBola(roboCabeca, 0.018, roboCiano, l * 0.085, -0.016, -0.13, 1);
+  rBarra(roboCabeca, V(l * 0.06, 0.1, -0.03), V(l * 0.12, 0.23, -0.075), 0.012, roboJunta);
+  rBarra(roboCabeca, V(l * 0.12, 0.23, -0.075), V(l * 0.16, 0.31, -0.11), 0.008, roboMetal);
+  const sensor = rBola(roboCabeca, 0.032, l > 0 ? roboVermelho : roboCiano, l * 0.16, 0.31, -0.11, 1);
+  roboLeds.push(sensor);
+}
+// Ferrão telescópico nasce na frente do rosto. Seu pivô acompanha
+// o crescimento do corpo e o comprimento acompanha a tromba.
+rBox(roboBico, 0.074, 0.064, 0.13, roboEscuro, 0, 0, -0.04);
+rBarra(roboBico, V(0, 0, -0.06), V(0, 0, -0.52), 0.024, roboTitanio);
+rBarra(roboBico, V(0, 0, -0.15), V(0, 0, -0.47), 0.009, roboCiano);
+const rPonta = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.17, 8), roboTitanio);
+rPonta.rotation.x = -Math.PI / 2; rPonta.position.z = -0.58; roboBico.add(rPonta);
+// Seis pernas com anca, duas barras e joelho: nenhum trecho nasce no ar.
+for (const lado of [-1, 1]) {
+  for (let i = 0; i < 3; i++) {
+    const z = -0.135 + 0.14 * i;
+    const origem = V(lado * 0.145, -0.045, z);
+    const joelho = V(lado * (0.34 + 0.04 * i), -0.135 - 0.025 * i, z + (i - 1) * 0.12);
+    const ponta = V(lado * (0.55 + 0.07 * i), -0.34, z + (i - 1) * 0.27);
+    rBola(roboG, 0.039, roboJunta, origem.x, origem.y, origem.z, 1);
+    rBarra(roboG, origem, joelho, 0.025, roboMetal);
+    rBola(roboG, 0.033, roboCiano, joelho.x, joelho.y, joelho.z, 1);
+    rBarra(roboG, joelho, ponta, 0.015, roboEscuro);
+    rBola(roboG, 0.017, roboTitanio, ponta.x, ponta.y, ponta.z, 1);
+    const g = new THREE.Group(); g.position.copy(ponta); roboG.add(g); roboArticulacoes.push(g);
+    rBarra(g, V(0, 0, 0), V(lado * 0.065, -0.045, (i - 1) * 0.11), 0.012, roboJunta);
+  }
+}
+// Abdômen único, modular e encaixado no fim do tórax. Não recebe
+// acessórios circulares soltos: os dois propulsores estão embutidos.
+rBox(roboAbdG, 0.17, 0.14, 0.32, roboEscuro, 0, -0.01, 0.09);
+for (let i = 0; i < 5; i++) {
+  const z = 0.19 + i * 0.17;
+  const w = 0.26 - i * 0.027, h = 0.2 - i * 0.018;
+  rBox(roboAbdG, w, h, 0.21, i % 2 === 0 ? roboMetal : roboTitanio, 0, -i * 0.009, z);
+  rBox(roboAbdG, w * 0.81, 0.013, 0.12, roboCiano, 0, h * 0.51 - i * 0.009, z);
+  for (const lado of [-1, 1]) rBox(roboAbdG, 0.025, h * 0.55, 0.14, roboEscuro, lado * (w * 0.52), -i * 0.009, z);
+}
+const propulsorZ = 1.01;
+for (const lado of [-1, 1]) {
+  const x = lado * 0.065;
+  const fix = rBox(roboAbdG, 0.09, 0.105, 0.17, roboEscuro, x, -0.025, 0.91);
+  const tuboMotor = new THREE.Mesh(new THREE.CylinderGeometry(0.047, 0.064, 0.14, 10), roboJunta);
+  tuboMotor.rotation.x = Math.PI / 2; tuboMotor.position.set(x, -0.025, propulsorZ); roboAbdG.add(tuboMotor);
+  const aro = new THREE.Mesh(new THREE.TorusGeometry(0.049, 0.01, 6, 12), roboCiano);
+  aro.position.set(x, -0.025, propulsorZ + 0.078); roboAbdG.add(aro);
+  const chama = new THREE.Mesh(new THREE.ConeGeometry(0.039, 0.17, 8), roboFogo);
+  chama.rotation.x = Math.PI / 2; chama.position.set(x, -0.025, propulsorZ + 0.15); roboAbdG.add(chama);
+  roboMotores.push(chama);
+}
+// Asas rígidas de drone: só existem dentro dos pivôs originais,
+// portanto herdam o mesmo bater de asas e os upgrades.
+for (let i = 0; i < asas.length; i++) {
+  const lado = asas[i].userData.lado;
+  const asa = new THREE.Group(); asa.visible = false; asa.scale.x = lado;
+  asas[i].add(asa); roboAsas.push(asa);
+  const p = new THREE.Shape();
+  p.moveTo(0, 0.005); p.lineTo(0.15, -0.12); p.lineTo(0.48, -0.18);
+  p.lineTo(1.05, -0.065); p.lineTo(1.17, 0.02); p.lineTo(0.83, 0.13);
+  p.lineTo(0.34, 0.16); p.lineTo(0.075, 0.065); p.closePath();
+  const geo = new THREE.ShapeGeometry(p);
+  const placa = new THREE.Mesh(geo, roboAsaMetal); placa.rotation.x = -Math.PI / 2; asa.add(placa);
+  const vidro = new THREE.Mesh(geo, roboAsaVidro); vidro.rotation.x = -Math.PI / 2; vidro.position.y = 0.012; vidro.scale.set(0.9, 0.78, 1); vidro.position.x = 0.07; asa.add(vidro);
+  const borda = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: 0x00dfff }));
+  borda.rotation.x = -Math.PI / 2; borda.position.y = 0.017; asa.add(borda);
+  rBarra(asa, V(0, 0.02, 0.00), V(0.94, 0.02, 0.015), 0.018, roboJunta);
+  rBarra(asa, V(0.29, 0.023, -0.08), V(0.74, 0.023, -0.1), 0.009, roboCiano);
+  const rotor = rBox(asa, 0.15, 0.012, 0.035, roboCiano, 0.61, 0.033, 0.015);
+  roboRotores.push(rotor);
+}
 const texRobo = (base, texto) => {   // placas metálicas com circuito ciano (e "8000" no abdômen)
   const c = document.createElement("canvas"); c.width = 128; c.height = 64; const g = c.getContext("2d");
   g.fillStyle = hexCss(base); g.fillRect(0, 0, 128, 64); g.strokeStyle = "rgba(20,30,50,.55)"; g.lineWidth = 1;
@@ -1176,8 +1286,13 @@ function aplicarEvolucaoVisual() {
   luzCorpo.color.setHex(est.cor); luzCorpo.intensity = Math.min(n * 0.12, 1.6) + Math.max(0, idx - 9) * 0.4;
 
   // SKIN (easter egg): sobrescreve cores e materiais, sem mudar tamanhos
-  matCorpo.transparent = matAbd.transparent = matPerna.transparent = false; matCorpo.opacity = matAbd.opacity = matPerna.opacity = 1;
-  matCorpo.metalness = 0; matCorpo.roughness = 0.5; matPerna.color.setHex(0x0b0b0e);
+  matCorpo.transparent = matAbd.transparent = matPerna.transparent = false;
+  matCorpo.opacity = matAbd.opacity = matPerna.opacity = 1;
+  // Asas semitransparentes nas skins normais: não herdar aspecto sólido do robô.
+  matAsa.transparent = true; matAsa.opacity = Math.min(0.65, 0.4 + a * 0.03);
+  matCorpo.metalness = matAbd.metalness = 0; matCorpo.roughness = matAbd.roughness = 0.5;
+  matPerna.metalness = 0; matPerna.roughness = 0.55; matPerna.color.setHex(0x0b0b0e);
+  matAsa.metalness = 0; matAsa.roughness = 0.2;
   if (!S.skin) matCorpo.color.setHex(0x1c1c22);
   const sk0 = S.skin && CFG.SKINS[S.skin], sk = sk0 && sk0.tusk ? { ...sk0, ...CFG.TUSK[Math.max(0, S.mantis.length - 1)].visual } : sk0;   // Tusk: visual muda a cada Ato
   if (sk) {
@@ -1192,16 +1307,17 @@ function aplicarEvolucaoVisual() {
   }
   // SKIN PIXEL: troca TODA a silhueta do mosquito por cubos 3D.
   // As outras skins seguem com a geometria original, sem modificação.
-  const px = !!(sk && sk.pixel);
-  corpoG.visible = !px;
-  abdomenCorpo.visible = !px;
+  const px = !!(sk && sk.pixel), robo = !!(sk && sk.robo);
+  corpoG.visible = !(px || robo);
+  abdomenCorpo.visible = !(px || robo);
   hasteGrupo.visible = !px;
+  trompa.visible = !robo;
   pxCorpo.visible = px;
   if (px) aplicarCorPixel();
   pxAbdomen.visible = px;
   pxTromba.visible = px;
   for (let i = 0; i < asas.length; i++) {
-    asas[i].children[0].visible = !px; // asa curva original
+    asas[i].children[0].visible = !(px || robo); // asa normal não aparece no robô/voxel
     pxAsas[i].visible = px;          // asa com degraus de pixels
   }
   pxCorpo.scale.setScalar(cs);
@@ -1221,8 +1337,18 @@ function aplicarEvolucaoVisual() {
   cadG.visible = cadC.visible = !!(sk && sk.cadeado);
   { const ato = sk && sk.tusk ? Math.max(1, S.mantis.length) : 0;   // Tusk: cada Ato mostra o seu próprio visual; o Ato 4 ganha a órbita dourada
     tA.forEach((t, i) => { t.c.visible = t.a.visible = ato === i + 1; }); orbG.visible = ato >= 4 && S.auraTusk !== false; olhos.forEach((o) => { o.visible = ato < 2; }); }
-  roboG.visible = !!(sk && sk.robo);
-  if (sk && sk.robo) { matCorpo.map = cacheTex.roboC = cacheTex.roboC || texRobo(sk.corpo, ""); matAbd.map = cacheTex.roboA = cacheTex.roboA || texRobo(sk.abd, "8000"); matCorpo.color.setHex(0xffffff); matAbd.color.setHex(0xffffff); matCorpo.roughness = 0.3; }
+  roboG.visible = roboAbdG.visible = roboBico.visible = robo;
+  roboAsas.forEach((g) => { g.visible = robo; });
+  if (robo) {
+    roboG.scale.setScalar(cs);
+    const larguraAbdRobo = Math.max(abx, 0.72 * cs);
+    roboAbdG.scale.set(larguraAbdRobo, larguraAbdRobo, abz);
+    roboBico.position.set(0, 0.028 * cs, -0.48 * cs);
+    roboBico.scale.set(1 + (e - 1) * 0.18, 1 + (e - 1) * 0.18, c);
+    // A parte metálica possui seu próprio modelo, sem a malha orgânica sob ele.
+    luzCorpo.color.setHex(0x00e5ff);
+    luzCorpo.intensity = Math.max(luzCorpo.intensity, 1.1);
+  }
   matCorpo.needsUpdate = matAbd.needsUpdate = true;
 
   zoom = medir(cs, comp, c, abz) / RAIO_BASE;
@@ -1263,7 +1389,19 @@ function tickSkin(t) {
   const sk = S.skin && CFG.SKINS[S.skin];
   if (sk && sk.alfa) { const o = sk.alfa + 0.1 * Math.sin(t * 3); matCorpo.opacity = matAbd.opacity = matPerna.opacity = o; }   // fantasma oscila
   if (sk && sk.tusk && orbG.visible) { orbG.rotation.y += dt * 3.2; aneis[0].rotation.z += dt * 2; aneis[1].rotation.z -= dt * 2.6; }
-  if (sk && sk.robo) { const f = 0.8 + Math.random() * 0.6; for (const j of jatos) j.scale.set(1, f, 1); antenaLed.visible = Math.sin(t * 7) > 0; }
+  if (sk && sk.robo) {
+    const pulso = 0.5 + 0.5 * Math.sin(t * 7.0);
+    for (let i = 0; i < roboMotores.length; i++) {
+      const chama = roboMotores[i];
+      chama.scale.y = 0.7 + 0.28 * pulso + 0.12 * Math.sin(t * 17 + i);
+      chama.material.opacity = 0.58 + 0.24 * pulso;
+    }
+    roboRotores.forEach((r, i) => { r.rotation.y = Math.sin(t * 25 + i * Math.PI) * 0.35; });
+    roboLeds.forEach((led, i) => { led.scale.setScalar(0.95 + 0.08 * (0.5 + 0.5 * Math.sin(t * 7 + i))); });
+    // As articulações flexionam pouco, sem soltar os membros.
+    roboArticulacoes.forEach((g, i) => { g.rotation.z = Math.sin(t * 6 + i * 1.1) * 0.12; });
+    luzCorpo.intensity = 1.0 + 0.55 * pulso;
+  }
   if (S.skin === "pixel") {
     for (let i = 0; i < pxPernas.length; i++) {
       pxPernas[i].rotation.x = Math.sin(t * 6 + i * 1.5) * 0.075;
