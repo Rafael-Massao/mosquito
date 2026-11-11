@@ -196,6 +196,14 @@ const $ = (id) => document.getElementById(id);
 const { clamp } = THREE.MathUtils;
 const amort = (k, dt) => 1 - Math.exp(-k * dt);   // amortecimento independente de FPS
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const CONTROLES_KEY = "mosquito-evolution-controles-v1";
+function lerControles() {
+  try {
+    const modo = localStorage.getItem(CONTROLES_KEY);
+    if (modo === "mobile" || modo === "desktop") return modo;
+  } catch (_) { /* armazenamento indisponível: detectar o dispositivo */ }
+  return matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0 ? "mobile" : "desktop";
+}
 const GRAF_KEY = 'mosquito-evolution-graficos-v1';
 const GRAFICOS = Object.freeze({
   leve: { nome: 'Desempenho', resolucao: 0.7, particulas: 0.35, maxParticulas: 80, alcanceDecor: 34, distancia: 135, fps: 30, aneis: 1 },
@@ -204,8 +212,8 @@ const GRAFICOS = Object.freeze({
   ultra: { nome: 'Ultra · shaders V11', resolucao: 1.65, particulas: 1.2, maxParticulas: 330, alcanceDecor: Infinity, distancia: 500, fps: 0, aneis: 3 }
 });
 function lerGraficos() {
-  try { const modo = localStorage.getItem(GRAF_KEY); return GRAFICOS[modo] ? modo : 'medio'; }
-  catch (_) { return 'medio'; }
+  try { const modo = localStorage.getItem(GRAF_KEY); return GRAFICOS[modo] ? modo : (lerControles() === 'mobile' ? 'leve' : 'medio'); }
+  catch (_) { return lerControles() === 'mobile' ? 'leve' : 'medio'; }
 }
 const COR_PIXEL_PADRAO = "#8d86fc";  // cor original, preservada ao escolher "Original"
 const corPixelValida = (valor) => typeof valor === "string" && /^#[0-9a-fA-F]{6}$/.test(valor);
@@ -462,11 +470,26 @@ kbd{font:700 .7rem Figtree,sans-serif;border:1px solid rgba(255,255,255,.25);bor
     const ctrl = [["W A S D", "mover"], ["Mouse", "olhar"], ["Espaço / Ctrl", "subir / descer"], ["Shift", "sprint"], ["1 2 3 4", "evoluir"], ["E", "picar um humano"], ["R", "habilidade da skin"], ["K / C", "skins / conquistas"], ["F", "arrombar armário"], ["Q", "responder o quadro"], ["B", "carteira / livro"], ["H · M · =", "dica · som · tour"]]
       .map(([a, b]) => `<kbd>${a}</kbd><span>${b}</span>`).join("");
     m.innerHTML = `<div class="hxm-fundo">${voa}</div><section class="hxm-painel"><header><h1 id="hx-menu-titulo">MOSQUITO</h1><p>Evolução noturna · escola assombrada de humanos</p></header>
-<div class="hxm-grid"><div class="hxm-col"><button class="hx-btn" id="hx-btn-jogar">Jogar</button><div class="hxm-atalhos"><button id="hx-btn-skins">🎨 Skins <kbd>K</kbd></button><button id="hx-btn-conq">🏆 Conquistas <kbd>C</kbd></button></div>
+<div class="hxm-grid"><div class="hxm-col">
+<fieldset class="hxm-dispositivo"><legend>Como você quer jogar?</legend><div>
+<button type="button" data-controle="desktop" aria-pressed="false">💻 Computador</button>
+<button type="button" data-controle="mobile" aria-pressed="false">📱 Celular / toque</button>
+</div><small id="hx-controle-desc"></small></fieldset>
+<button class="hx-btn" id="hx-btn-jogar">Jogar</button><div class="hxm-atalhos"><button id="hx-btn-skins">🎨 Skins <kbd>K</kbd></button><button id="hx-btn-conq">🏆 Conquistas <kbd>C</kbd></button></div>
 <div class="hxm-graficos"><b>⚙️ Modo gráfico</b><div class="hxm-graf-botoes">
 <button type="button" data-modo-grafico="leve">🚀 Leve</button><button type="button" data-modo-grafico="medio">⚖️ Normal</button><button type="button" data-modo-grafico="alto">✨ Alto</button><button type="button" data-modo-grafico="ultra">💎 Ultra</button></div>
-<small id="hx-graf-desc">Escolha o desempenho ideal para o seu PC.</small></div></div>
-<div class="hxm-col"><h3>Controles</h3><div class="hxm-ctrl">${ctrl}</div></div></div><div class="hxm-bottom"><div class="hxm-res" id="hx-resumo"></div><p class="hxm-save" id="hx-save"></p></div></section>`;
+<small id="hx-graf-desc">Escolha o desempenho ideal para o seu dispositivo.</small></div></div>
+<div class="hxm-col"><h3>Controles</h3><div class="hxm-ctrl" id="hx-controles-pc">${ctrl}</div>
+<div class="hxm-ctrl" id="hx-controles-mobile" hidden>
+<b>Direcional</b><span>mover com o polegar esquerdo</span>
+<b>Arrastar</b><span>olhar pelo cenário</span>
+<b>↑ / ↓</b><span>segurar para subir / descer</span>
+<b>Sprint</b><span>segurar para acelerar</span>
+<b>Picar / Poder</b><span>atacar / usar habilidade</span>
+<b>Pegar</b><span>pegar ou devolver objetos</span>
+<b>Evoluções</b><span>tocar nos quatro cartões</span>
+<b>••• / Ⅱ</b><span>mais ações / pausar</span>
+</div></div></div><div class="hxm-bottom"><div class="hxm-res" id="hx-resumo"></div><p class="hxm-save" id="hx-save"></p></div></section>`;
     document.body.appendChild(m); this.menuEl = m;
   }
   _w(el, pct) { const v = Math.round(clamp(pct, 0, 100)); if (this.cache[el.id || el] !== v) { this.cache[el.id || el] = v; el.style.width = v + "%"; } }
@@ -517,7 +540,7 @@ kbd{font:700 .7rem Figtree,sans-serif;border:1px solid rgba(255,255,255,.25);bor
     e.habRing.style.setProperty("--p", pronto ? 100 : ((cdTotal - cd) / Math.max(1, cdTotal)) * 100);
   }
   sala(nome) { if (this._sl !== nome) { this._sl = nome; this.e.sala.textContent = nome; } }
-  alerta(txt, cor = "#ffd84d") { const ch = txt + cor; if (this._al === ch) return; this._al = ch; this.alertaEl.textContent = txt || ""; this.alertaEl.style.color = cor; this.alertaEl.style.opacity = txt ? 1 : 0; }
+  alerta(txt, cor = "#ffd84d") { txt = this.textoControle(txt); const ch = txt + cor; if (this._al === ch) return; this._al = ch; this.alertaEl.textContent = txt || ""; this.alertaEl.style.color = cor; this.alertaEl.style.opacity = txt ? 1 : 0; }
   flash(cor) { this.vinheta.style.boxShadow = `inset 0 0 160px 50px ${cor}`; this.flashV = 1; this._pc = null; }
   perigo(cor, v) { if (v > 0 && this._pc !== cor) { this._pc = cor; this.vinheta.style.boxShadow = `inset 0 0 160px 40px ${cor}`; } this.base = v; }
   atualizar(dt) {
@@ -525,7 +548,7 @@ kbd{font:700 .7rem Figtree,sans-serif;border:1px solid rgba(255,255,255,.25);bor
     this.vinheta.style.opacity = Math.max(this.flashV, this.base).toFixed(2);
   }
   retrigger(el, c) { el.classList.remove(c); void el.offsetWidth; el.classList.add(c); }
-  toast(txt) { const t = this.e.toast; t.textContent = txt; this.retrigger(t, "mostra"); }
+  toast(txt) { const t = this.e.toast; t.textContent = this.textoControle(txt); this.retrigger(t, "mostra"); }
   evolucao(nome) { this.e.evoTxt.textContent = nome; this.retrigger(this.e.evo, "mostra"); }
 
   // ---- Menu de coleção: abas Skins (K) e Conquistas (C) ----
@@ -681,20 +704,25 @@ ${sel === "tusk" && liberada ? `<button id="sk-aura-tusk" type="button" aria-pre
     if (!this.perg) {
       const e = document.createElement("div"); e.id = "hud-pergunta";
       e.style.cssText = "position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(6,4,14,.85);z-index:21;font-family:Syne,Figtree,system-ui,sans-serif";
-      e.innerHTML = '<div style="width:min(460px,92vw);background:#123524;border:6px solid #8a5a2e;border-radius:12px;padding:24px;color:#f4f1e6;text-align:center"><b style="font:800 1rem Syne,sans-serif;color:#ffd84d"></b><div style="font:800 2.6rem Syne,sans-serif;margin:14px 0"></div><input autocomplete="off" style="width:60%;font:800 1.6rem Syne,sans-serif;text-align:center;border-radius:8px;border:2px solid #e8e0c8;background:#0c2418;color:#fff;padding:6px"><p style="min-height:1.4em;margin:12px 0 4px;font:700 .85rem Figtree,sans-serif"></p><small style="color:#a9c9b6">Enter responde · Esc fecha</small></div>';
+      e.innerHTML = '<div style="width:min(460px,92vw);background:#123524;border:6px solid #8a5a2e;border-radius:12px;padding:24px;color:#f4f1e6;text-align:center"><b style="font:800 1rem Syne,sans-serif;color:#ffd84d"></b><div style="font:800 2.6rem Syne,sans-serif;margin:14px 0"></div><input autocomplete="off" style="width:60%;font:800 1.6rem Syne,sans-serif;text-align:center;border-radius:8px;border:2px solid #e8e0c8;background:#0c2418;color:#fff;padding:6px"><p style="min-height:1.4em;margin:12px 0 4px;font:700 .85rem Figtree,sans-serif"></p><small style="color:#a9c9b6">Digite sua resposta</small><div class="hx-pergunta-acoes"><button type="button" data-pergunta="responder">Responder</button><button type="button" data-pergunta="fechar">Voltar</button></div></div>';
       document.body.appendChild(e); this.perg = e;
     }
     const c = this.perg.children[0].children, inp = c[2], fb = c[3];
     c[0].textContent = titulo; c[1].textContent = enunciado; inp.value = ""; fb.textContent = ""; this.perg.style.display = "flex"; document.exitPointerLock?.();
+    const responder = () => {
+      const r = aoResponder(inp.value); fb.textContent = r.msg; fb.style.color = r.fechar ? "#7dff9a" : "#ff9a9a";
+      clearTimeout(this.perguntaT);
+      if (r.fechar) this.perguntaT = setTimeout(aoFechar, 1400); else inp.select();
+    };
     inp.onkeydown = (ev) => {
       if (ev.key === "Escape") { aoFechar(); return; }
-      if (ev.key !== "Enter") return;
-      const r = aoResponder(inp.value); fb.textContent = r.msg; fb.style.color = r.fechar ? "#7dff9a" : "#ff9a9a";
-      if (r.fechar) setTimeout(aoFechar, 1400); else inp.select();
+      if (ev.key === "Enter") { ev.preventDefault(); responder(); }
     };
+    this.perg.querySelector('[data-pergunta="responder"]').onclick = responder;
+    this.perg.querySelector('[data-pergunta="fechar"]').onclick = aoFechar;
     document.exitPointerLock?.(); setTimeout(() => inp.focus(), 30);
   }
-  fecharPergunta() { if (this.perg) this.perg.style.display = "none"; }
+  fecharPergunta() { clearTimeout(this.perguntaT); if (this.perg) this.perg.style.display = "none"; }
 
   // ---- Caixa de diálogo grande (tour da escola) ----
   dialogo(titulo, texto, rodape, ms) {
@@ -715,7 +743,7 @@ ${sel === "tusk" && liberada ? `<button id="sk-aura-tusk" type="button" aria-pre
   exibirGraficos(modo) {
     this.graficoAtual = modo;
     const descricoes = {
-      leve: 'Para PCs fracos: menos pixels, partículas e decoração distante; limite de 30 FPS.',
+      leve: 'Para celulares e PCs fracos: menos pixels, partículas e decoração distante; limite de 30 FPS.',
       medio: 'Equilíbrio entre visual e desempenho; limite de 60 FPS.',
       alto: 'Melhor imagem e efeitos completos; FPS livre.',
       ultra: 'Ultra natural: sombras reais, materiais mais definidos, luz equilibrada e bloom discreto.'
@@ -728,16 +756,40 @@ ${sel === "tusk" && liberada ? `<button id="sk-aura-tusk" type="button" aria-pre
   }
   menu(titulo, botao) { this.menuEl.hidden = false; $("hx-menu-titulo").textContent = titulo; $("hx-btn-jogar").textContent = botao; if (this.ultimoS) this.saveInfo(this.ultimoS); }
   esconderMenu() { this.menuEl.hidden = true; }
+  exibirControles(modo) {
+    this.controleAtual = modo;
+    const mobile = modo === "mobile";
+    document.body.classList.toggle("hx-mobile", mobile);
+    this.menuEl.querySelectorAll("[data-controle]").forEach(b => {
+      b.setAttribute("aria-pressed", String(b.dataset.controle === modo));
+    });
+    $("hx-controles-pc").hidden = mobile; $("hx-controles-mobile").hidden = !mobile;
+    $("hx-controle-desc").textContent = mobile
+      ? "Controles na tela. Vire o celular de lado para ampliar a visão."
+      : "Jogue com mouse e teclado.";
+    if (this.ultimoS) this.saveInfo(this.ultimoS);
+  }
+  textoControle(txt) {
+    if (this.controleAtual !== "mobile" || !txt) return txt;
+    return txt.replace(/Aperte E/g, "Toque em Picar").replace(/Aperte B/g, "Toque em Pegar")
+      .replace(/segure F/gi, "segure Arrombar em •••").replace(/tecla Q/g, "botão Quadro em •••")
+      .replace(/tecla B/g, "botão Pegar").replace(/tecla R/g, "botão Poder")
+      .replace(/tecla E/g, "botão Picar").replace(/menu K/g, "menu Skins em •••")
+      .replace(/K abre o menu de skins/g, "••• abre o menu de skins").replace(/\(B\)/g, "(Pegar)");
+  }
   saveInfo(S) {
     const R = (b, s) => `<div><b>${b}</b><small>${s}</small></div>`;
     $("hx-resumo").innerHTML = R(S.estagio.nome, `estágio atual · nível ${S.total}`) + R(Math.floor(S.sangue).toLocaleString("pt-BR"), "sangue") + R(`${S.skins.length}/${Object.keys(CFG.SKINS).length}`, "skins") + R(`${S.conq.length}/${CFG.CONQ.length}`, "conquistas") + R(`${S.salas.length}/${CFG.SALAS.length}`, "salas visitadas") + R(S.picadas, "picadas");
-    $("hx-save").textContent = S.total > 0 ? "Progresso salvo automaticamente neste navegador." : "Nova partida: evolua com as teclas 1 a 4 e explore a escola.";
+    $("hx-save").textContent = S.total > 0 ? "Progresso salvo automaticamente neste navegador." : (this.controleAtual === "mobile" ? "Nova partida: toque nos cartões para evoluir e explore a escola." : "Nova partida: evolua com as teclas 1 a 4 e explore a escola.");
   }
   ligar(aoEvoluir, aoJogar) {
     this.hx.querySelectorAll("[data-up]").forEach((b) => b.addEventListener("click", () => aoEvoluir(b.dataset.up)));
     $("hx-btn-jogar").addEventListener("click", aoJogar);
     this.menuEl.querySelectorAll('[data-modo-grafico]').forEach((b) => b.addEventListener('click', () => {
       if (this.aoMudarGraficos) this.aoMudarGraficos(b.dataset.modoGrafico);
+    }));
+    this.menuEl.querySelectorAll("[data-controle]").forEach(b => b.addEventListener("click", () => {
+      if (this.aoMudarControles) this.aoMudarControles(b.dataset.controle);
     }));
     this.exibirGraficos(this.graficoAtual);
   }
@@ -3386,17 +3438,19 @@ class PlayerController {
     this.invul = 2.5; this.foco.copy(this.pos);
   }
 
-  update(dt, k) {
+  update(dt, k, toque) {
     const S = this.estado;
     this.eul.set(this.pitch, this.yaw, 0, "YXZ");
     this.frente.set(0, 0, -1).applyEuler(this.eul); this.dir.set(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
     const a = this.alvo.set(0, 0, 0);
     if (k.w || k.arrowup) a.add(this.frente); if (k.s || k.arrowdown) a.sub(this.frente);
     if (k.d || k.arrowright) a.add(this.dir); if (k.a || k.arrowleft) a.sub(this.dir);
-    if (k[" "]) a.y += 1; if (k.control) a.y -= 1;
-    const mov = a.lengthSq() > 0; if (mov) a.normalize();
+    const tk = toque ? toque.teclas : {};
+    if (toque) { a.addScaledVector(this.frente, toque.eixos.y); a.addScaledVector(this.dir, toque.eixos.x); }
+    if (k[" "] || tk[" "]) a.y += 1; if (k.control || tk.control) a.y -= 1;
+    const mov = a.lengthSq() > 0; if (a.lengthSq() > 1) a.normalize();
 
-    this.corre = !!k.shift && this.stamina > 5 && mov;
+    this.corre = !!(k.shift || tk.shift) && this.stamina > 5 && mov;
     this.stamina = clamp(this.stamina + (this.corre ? -35 : S.regenStamina) * dt, 0, S.staminaMax);
     a.multiplyScalar(S.velMax * (this.corre ? 2 : 1) * this.fator);
     this.vel.lerp(a, amort(mov ? 9 : 5, dt));
@@ -3670,8 +3724,127 @@ class UltraPostFX {
 // ------------------------------------------------------------
 // GAME MANAGER: orquestra tudo
 // ------------------------------------------------------------
+// Controles independentes por ponteiro: mover, olhar e segurar ações ao mesmo tempo.
+class TouchControls {
+  constructor(game) {
+    this.game = game; this.eixos = { x: 0, y: 0 }; this.teclas = {};
+    this.ponteiros = new Map(); this.movimento = null; this.olhar = null;
+    const el = document.createElement("div"); el.id = "hx-touch"; el.hidden = true;
+    el.innerHTML = `
+<div class="mt-toolbar">
+  <button type="button" id="mt-more" aria-label="Mais ações" aria-expanded="false" aria-controls="mt-panel">•••</button>
+  <button type="button" id="mt-pause" aria-label="Pausar jogo"><span class="mt-pause-icon" aria-hidden="true"></span></button>
+</div>
+<div id="mt-panel" hidden aria-label="Mais ações">
+  <button type="button" data-action="skins">🎨 Skins</button>
+  <button type="button" data-action="conq">🏆 Conquistas</button>
+  <button type="button" data-action="dica">💡 Dica</button>
+  <button type="button" data-action="som">♫ Som</button>
+  <button type="button" data-action="quadro">📝 Quadro</button>
+  <button type="button" data-action="tour">🗺 Tour</button>
+  <button type="button" data-hold="f" class="mt-lock">🔓 Arrombar · segure perto do armário</button>
+</div>
+<div id="mt-stick" aria-label="Direcional de movimento"><span id="mt-thumb"></span><small>MOVER</small></div>
+<p id="mt-look-hint">Arraste no cenário para olhar</p>
+<div class="mt-actions" aria-label="Ações do jogo">
+  <button type="button" data-hold=" " aria-label="Subir, segure"><span>↑</span>Subir</button>
+  <button type="button" data-action="picar" class="mt-bite"><span>🩸</span>Picar</button>
+  <button type="button" data-action="poder"><span>✦</span>Poder</button>
+  <button type="button" data-hold="control" aria-label="Descer, segure"><span>↓</span>Descer</button>
+  <button type="button" data-hold="shift" aria-label="Sprint, segure"><span>»</span>Sprint</button>
+  <button type="button" data-action="pegar" aria-label="Pegar ou devolver carteira ou livro"><span>✋</span>Pegar</button>
+</div>`;
+    document.body.appendChild(el); this.el = el;
+    this.stick = $("mt-stick"); this.thumb = $("mt-thumb"); this.panel = $("mt-panel");
+    $("mt-pause").addEventListener("click", () => game.pausar());
+    $("mt-more").addEventListener("click", () => {
+      if (!this.ativo()) return;
+      this.panel.hidden = !this.panel.hidden;
+      $("mt-more").setAttribute("aria-expanded", String(!this.panel.hidden));
+    });
+    const acoes = {
+      picar: () => game.picar(), poder: () => game.usarHabilidade(),
+      pegar: () => game.interagirComPerdidos(), quadro: () => game.abrirPergunta(),
+      skins: () => game.abrirColecao("skins"), conq: () => game.abrirColecao("conq"),
+      dica: () => game.dica(), tour: () => game.tour(),
+      som: () => game.ui.toast(game.audio.alternarMudo() ? "Som desligado" : "Som ligado")
+    };
+    el.querySelectorAll("[data-action]").forEach(b => b.addEventListener("click", () => {
+      if (this.ativo()) acoes[b.dataset.action]();
+    }));
+    this.stick.addEventListener("pointerdown", e => {
+      if (!this.ativo() || this.movimento !== null || e.button > 0) return;
+      e.preventDefault(); this.movimento = e.pointerId;
+      this.capturar(e, this.stick, "mover"); this.mover(e);
+    });
+    this.stick.addEventListener("pointermove", e => {
+      if (e.pointerId === this.movimento && this.ativo()) { e.preventDefault(); this.mover(e); }
+    });
+    el.querySelectorAll("[data-hold]").forEach(b => b.addEventListener("pointerdown", e => {
+      if (!this.ativo() || e.button > 0) return;
+      e.preventDefault(); this.capturar(e, b, b.dataset.hold);
+      this.teclas[b.dataset.hold] = true; b.classList.add("pressed");
+    }));
+    const cv = game.render.domElement;
+    cv.addEventListener("pointerdown", e => {
+      if (!this.ativo() || this.olhar !== null || e.button > 0) return;
+      e.preventDefault(); this.olhar = e.pointerId;
+      this.ultimoX = e.clientX; this.ultimoY = e.clientY;
+      this.capturar(e, cv, "olhar"); $("mt-look-hint").hidden = true;
+    });
+    cv.addEventListener("pointermove", e => {
+      if (e.pointerId !== this.olhar || !this.ativo()) return;
+      e.preventDefault();
+      game.jogador.mirar((e.clientX - this.ultimoX) * 1.8, (e.clientY - this.ultimoY) * 1.8);
+      this.ultimoX = e.clientX; this.ultimoY = e.clientY;
+    });
+    [this.stick, cv, ...el.querySelectorAll("[data-hold]")].forEach(b => {
+      b.addEventListener("lostpointercapture", e => this.soltar(e.pointerId));
+    });
+    addEventListener("pointerup", e => this.soltar(e.pointerId));
+    addEventListener("pointercancel", e => this.soltar(e.pointerId));
+    el.addEventListener("contextmenu", e => e.preventDefault());
+    cv.addEventListener("contextmenu", e => { if (this.ativo()) e.preventDefault(); });
+  }
+  ativo() { return this.game.modoControle === "mobile" && this.game.jogando && !this.game.menuAberto; }
+  capturar(e, el, tipo) {
+    this.ponteiros.set(e.pointerId, { el, tipo });
+    el.setPointerCapture?.(e.pointerId);
+  }
+  mover(e) {
+    const r = this.stick.getBoundingClientRect(), raio = r.width * 0.32;
+    let x = (e.clientX - r.left - r.width / 2) / raio;
+    let y = (e.clientY - r.top - r.height / 2) / raio;
+    const tamanho = Math.hypot(x, y);
+    if (tamanho > 1) { x /= tamanho; y /= tamanho; }
+    // Zona morta evita deriva; a distância do centro regula a velocidade.
+    const intensidade = Math.max(0, (Math.min(1, tamanho) - 0.12) / 0.88);
+    this.eixos.x = tamanho ? x / Math.min(1, tamanho) * intensidade : 0;
+    this.eixos.y = tamanho ? -y / Math.min(1, tamanho) * intensidade : 0;
+    this.thumb.style.transform = `translate(${x * raio}px, ${y * raio}px)`;
+  }
+  soltar(id) {
+    const p = this.ponteiros.get(id); if (!p) return;
+    this.ponteiros.delete(id);
+    if (id === this.movimento) { this.movimento = null; this.eixos.x = this.eixos.y = 0; this.thumb.style.transform = ""; }
+    if (id === this.olhar) this.olhar = null;
+    if (![...this.ponteiros.values()].some(outro => outro.tipo === p.tipo)) this.teclas[p.tipo] = false;
+    if (![...this.ponteiros.values()].some(outro => outro.el === p.el)) p.el.classList.remove("pressed");
+    if (p.el.hasPointerCapture?.(id)) p.el.releasePointerCapture(id);
+  }
+  limpar() {
+    for (const id of [...this.ponteiros.keys()]) this.soltar(id);
+    this.eixos.x = this.eixos.y = 0;
+    for (const k in this.teclas) this.teclas[k] = false;
+    this.panel.hidden = true; $("mt-more").setAttribute("aria-expanded", "false");
+  }
+  atualizar() { this.el.hidden = !this.ativo(); }
+}
+
+
 class GameManager {
   constructor() {
+    this.modoControle = lerControles();
     this.estado = new GameState(); this.audio = new AudioSystem(); this.ui = new UIManager();
     this.cena = new THREE.Scene(); this.cena.background = new THREE.Color(0x0e0c18); this.cena.fog = new THREE.Fog(0x0e0c18, 60, 170);
     this.camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 500);
@@ -3712,6 +3885,9 @@ class GameManager {
     this.egg = { tanque: 0, espelho: 0, tela: 0, yAnt: 0, dica: 0, tour: false, fala: false, morte: 0, vida: 0 };
     this.menuAberto = false; this.aba = "skins"; this.eggMsg = "";
     this.buff = { sangue: 0, tempo: 0, radio: 0, vel: 0, stamInf: 0, invis: 0, frenesi: 0, gas: 0, scan: 0, pesado: 0 }; this.hab = { cd: 0, cdTotal: 1, ativo: 0 }; this.escalaTempo = 1; this.zona = null; this.kills = { tapasRecebidos: 0, gas: 0 }; this.tmpEgg = V(0, 0, 0); this.buf = ""; this.letras = "";
+    this.toque = new TouchControls(this);
+    this.ui.aoMudarControles = modo => this.aplicarControles(modo);
+    this.aplicarControles(this.modoControle, false);
     this.ligar();
     this.ui.atalhos(() => this.abrirColecao("skins"), () => this.abrirColecao("conq")); this.mundo.posicionarCarteira(this.estado); this.mundo.iniciarPontos(this.estado);
     // Migração do easter egg da V13C: jogador que já devolveu o livro
@@ -3822,7 +3998,10 @@ class GameManager {
       const k = e.key.toLowerCase(); T[k] = true;
       if ([" ", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k) && !this.menuAberto) e.preventDefault();
       if (e.repeat) return;
-      if (k === "escape" && this.menuAberto) { this.fecharColecao(); return; }
+      if (k === "escape") {
+        if (this.menuAberto) this.fecharColecao(); else if (this.jogando) this.pausar();
+        return;
+      }
       if (k === "k") { this.abrirColecao("skins"); return; }
       if (k === "c") { this.abrirColecao("conq"); return; }
       if (this.menuAberto) return;
@@ -3874,30 +4053,67 @@ class GameManager {
       if (k === "b" && this.jogando && !this.buf.endsWith("|arrowright|b")) this.interagirComPerdidos();
       if (k === "m") this.ui.toast(this.audio.alternarMudo() ? "Som desligado" : "Som ligado");
     });
-    document.addEventListener("visibilitychange", () => { if (document.hidden) this.audio.pausarMusica(); });
-    addEventListener("blur", () => this.audio.pausarMusica());
+    document.addEventListener("visibilitychange", () => { if (document.hidden) this.pausar(); });
+    addEventListener("blur", () => this.pausar());
     addEventListener("keyup", (e) => { T[e.key.toLowerCase()] = false; });
     addEventListener("blur", () => { for (const k in T) T[k] = false; });
-    addEventListener("mousemove", (e) => { if (this.jogando && (this.travado || this.arrastando)) this.jogador.mirar(e.movementX, e.movementY); });
-    cv.addEventListener("mousedown", () => { if (this.jogando && !this.travado) this.arrastando = true; });
+    addEventListener("mousemove", (e) => { if (this.modoControle !== "mobile" && this.jogando && !this.menuAberto && (this.travado || this.arrastando)) this.jogador.mirar(e.movementX, e.movementY); });
+    cv.addEventListener("mousedown", () => { if (this.modoControle !== "mobile" && this.jogando && !this.menuAberto && !this.travado) this.arrastando = true; });
     addEventListener("mouseup", () => { this.arrastando = false; });
     this.ui.ligar((k) => { this.audio.clique(); this.evoluir(k); }, () => this.iniciar());
     document.addEventListener("pointerlockchange", () => {
       this.travado = document.pointerLockElement === cv;
-      if (!this.travado && this.jogando && !this.menuAberto) { this.jogando = false; this.audio.silenciar(); this.ui.menu("Pausado", "Continuar"); }
+      if (this.modoControle !== "mobile" && !this.travado && this.jogando && !this.menuAberto) this.pausar();
     });
-    document.addEventListener("pointerlockerror", () => { this.jogando = true; this.ui.esconderMenu(); });
+    document.addEventListener("pointerlockerror", () => {
+      if (this.jogando && !this.menuAberto && this.modoControle !== "mobile") this.ui.toast("Arraste o mouse no cenário para olhar.");
+    });
     addEventListener("resize", () => {
+      this.limparEntrada();
       this.camera.aspect = innerWidth / innerHeight; this.camera.updateProjectionMatrix(); this.render.setSize(innerWidth, innerHeight);
       if (this.ultraFX) this.ultraFX.ajustarTamanho();
     });
   }
 
+  aplicarControles(modo, salvar = true) {
+    if (modo !== "mobile" && modo !== "desktop") return;
+    this.limparEntrada(); this.modoControle = modo;
+    this.ui.exibirControles(modo); this.toque.atualizar();
+    if (modo === "mobile" && document.pointerLockElement) document.exitPointerLock?.();
+    if (salvar) {
+      try { localStorage.setItem(CONTROLES_KEY, modo); } catch (_) { /* opção mantida em memória */ }
+      // Respeitar a qualidade escolhida anteriormente pelo jogador.
+      try { if (modo === "mobile" && !localStorage.getItem(GRAF_KEY)) this.aplicarGraficos("leve", false); } catch (_) { /* sem armazenamento */ }
+    }
+  }
+  limparEntrada() {
+    for (const k in this.teclas) this.teclas[k] = false;
+    this.arrastando = false;
+    if (this.toque) this.toque.limpar();
+  }
+  pausar() {
+    this.limparEntrada(); this.audio.silenciar(); this.audio.pausarMusica();
+    if (!this.jogando) return;
+    this.jogando = false; this.estado.salvar(); this.toque.atualizar();
+    this.ui.menu("Pausado", "Continuar");
+    if (document.pointerLockElement) document.exitPointerLock?.();
+  }
+  travarMouse() {
+    if (this.modoControle === "mobile") return;
+    try {
+      const pedido = this.render.domElement.requestPointerLock?.();
+      if (pedido && pedido.catch) pedido.catch(() => {}); // arraste continua disponível
+    } catch (_) { /* navegador sem suporte: olhar por arraste */ }
+  }
   iniciar() {
+    this.limparEntrada();
     this.jogando = true; this.ui.esconderMenu(); this.audio.iniciar(); this.audio.clique();
-    this.render.domElement.requestPointerLock?.();
+    this.toque.atualizar(); this.travarMouse();
     this.ganhar("primeiro");
-    if (!this.dicaInicial) { this.dicaInicial = true; this.ui.toast("E pica · R habilidade · K skins · C conquistas · H dica · = tour"); }
+    if (!this.dicaInicial) {
+      this.dicaInicial = true;
+      this.ui.toast(this.modoControle === "mobile" ? "Direcional para voar · arraste para olhar · ••• para mais ações" : "E pica · R habilidade · K skins · C conquistas · H dica · = tour");
+    }
   }
 
   coletar(g) {
@@ -4035,12 +4251,14 @@ class GameManager {
   abrirColecao(aba, trocar = false) {
     if (!trocar && this.menuAberto && this.aba === aba) { this.fecharColecao(); return; }
     if (!this.menuAberto) this.audio.clique();
-    this.aba = aba; this.menuAberto = true; this.audio.silenciar();
+    this.limparEntrada();
+    this.aba = aba; this.menuAberto = true; this.audio.silenciar(); this.toque.atualizar();
     this.ui.abrirColecao(this.estado, aba, this.apiColecao());
   }
   fecharColecao() {
     this.ui.fecharColecao(); this.ui.fecharPergunta(); this.menuAberto = false; this.audio.clique();
-    if (this.jogando) this.render.domElement.requestPointerLock?.();
+    this.limparEntrada(); this.toque.atualizar();
+    if (this.jogando) this.travarMouse();
   }
   ajustarLimites() { const S = this.estado, j = this.jogador; j.vida = Math.min(j.vida, S.vidaMax); j.stamina = Math.min(j.stamina, S.staminaMax); }   // bônus de skin podem diminuir os máximos
   limparPoderAnterior() {
@@ -4116,7 +4334,7 @@ class GameManager {
   checarArmario(dt) {
     const A = this.mundo.armario; if (!A || A.aberto) return;
     const perto = this.jogador.pos.distanceToSquared(A.pos) < 5.5 * 5.5;
-    if (perto && this.teclas.f) {
+    if (perto && (this.teclas.f || this.toque.teclas.f)) {
       A.prog = Math.min(1, A.prog + dt / 3.2); this.eggMsg = `🔓 Arrombando o armário... ${Math.round(A.prog * 100)}%`;
       this.fxT2 = (this.fxT2 || 0) - dt;
       if (this.fxT2 <= 0) { this.fxT2 = 0.14; this.mundo.emitir(A.cad.position, 0xffcc55, 4, 3); this.audio.tom(260 + Math.random() * 260, 120, 0.08, "square", 0.13); this.jogador.shake = Math.max(this.jogador.shake, 0.12); }
@@ -4198,7 +4416,7 @@ class GameManager {
   abrirPergunta() {
     if (this.menuAberto || !this.jogando) return;
     if (this.jogador.pos.distanceToSquared(this.mundo.pontos.quadroMat) > 22 * 22) { this.ui.toast("Chegue perto do quadro de matemática (Sala 1)"); return; }
-    this.menuAberto = true; this.audio.silenciar();
+    this.limparEntrada(); this.menuAberto = true; this.audio.silenciar(); this.toque.atualizar();
     this.ui.pergunta("📝 Matemática — Sala 1", "2 + 2 = ?", (txt) => this.responderQuadro(txt), () => this.fecharColecao());
   }
   responderQuadro(txt) {
@@ -4244,7 +4462,9 @@ class GameManager {
   }
   mostrarConquista(c) {
     const r = CFG.RAR[c.r], e = document.createElement("div"), pos = this.pilhaConq = (this.pilhaConq || 0) + 1;
-    e.style.cssText = `position:fixed;right:22px;top:${80 + (pos - 1) * 76}px;display:flex;gap:12px;align-items:center;background:rgba(12,10,22,.95);border:1px solid ${r.cor};border-left:5px solid ${r.cor};border-radius:12px;padding:12px 16px;z-index:7;font-family:Syne,Figtree,system-ui,sans-serif;color:#eef2f8;pointer-events:none;box-shadow:0 0 22px ${r.cor}55`;
+    e.className = "hx-conquista";
+    e.style.setProperty("--conquista-indice", String(pos - 1));
+    e.style.cssText += `position:fixed;right:22px;top:${80 + (pos - 1) * 76}px;display:flex;gap:12px;align-items:center;background:rgba(12,10,22,.95);border:1px solid ${r.cor};border-left:5px solid ${r.cor};border-radius:12px;padding:12px 16px;z-index:7;font-family:Syne,Figtree,system-ui,sans-serif;color:#eef2f8;pointer-events:none;box-shadow:0 0 22px ${r.cor}55`;
     e.innerHTML = `<span style="font-size:1.6rem">${c.ico}</span><span><small style="display:block;font:800 .62rem Figtree,sans-serif;letter-spacing:.08em;color:${r.cor}">CONQUISTA · ${r.nome.toUpperCase()}</small><b style="display:block;font:800 .95rem Syne,sans-serif">${c.nome}</b><small style="font:600 .74rem Figtree,sans-serif;color:#a8b0c0">${c.desc} · +${c.premio}</small></span>`;
     document.body.appendChild(e);
     setTimeout(() => { e.style.transition = "opacity .5s"; e.style.opacity = "0"; setTimeout(() => { e.remove(); this.pilhaConq = Math.max(0, this.pilhaConq - 1); }, 600); }, 3600);
@@ -4317,6 +4537,7 @@ class GameManager {
     if (!continuo) { this.ui.flash("rgba(232,41,75,.8)"); this.audio.dano(); }
   }
   morrer() {
+    this.limparEntrada();
     const S = this.estado, perda = Math.floor(S.sangue * 0.25); S.sangue -= perda;
     this.combo = 0; this.comboT = 0; this.boost = 0; this.egg.morte++; this.egg.vida = 0; this.jogador.reaparecer();
     this.audio.dano(); this.ui.flash("rgba(232,41,75,.9)"); this.ui.toast(`Você foi pego! −${perda} sangue`); this.ui.hud(S); S.salvar();
@@ -4340,7 +4561,7 @@ class GameManager {
     const j = this.jogador, S = this.estado, w = this.mundo;
     this.atualizarHab(dt);
     j.fator = (w.emPerigo === "gas" ? 0.65 : 1) * (this.buff.vel > 0 ? 1.7 : 1) * (this.buff.pesado > 0 ? 0.45 : 1);
-    j.update(dt, this.teclas);
+    j.update(dt, this.teclas, this.modoControle === "mobile" ? this.toque : null);
     w.update(dt, this);
     this.eggMsg = ""; this.checarEggs(dt); this.fxSkin(dt);
     if (this.comboT > 0 && (this.comboT -= dt) <= 0) this.combo = 0;

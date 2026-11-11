@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0e0c18">
+<title>Mosquito Evolution</title>
+<link rel="icon" type="image/x-icon" href="icons/icon.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;800&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="webgl-container"></div>
+
+<header class="hud">
+  <div class="sangue"><span id="sangue">0</span><small>gotas de sangue</small></div>
+  <div class="estagio"><b id="estagio">Larva voadora</b><small>Nível <span id="nivel">0</span></small></div>
+  
+  <div id="combo-container" hidden>
+    <div id="combo-info">
+      <span id="combo-texto">COMBO</span>
+      <span id="combo-multiplicador">x1</span>
+    </div>
+    <div id="combo-barra-fundo">
+      <div id="combo-barra-fill"></div>
+    </div>
+  </div>
+</header>
+
+<div class="stamina" title="Energia do sprint"><i id="stamina"></i></div>
+
+
+<nav class="upgrades" aria-label="Evoluções">
+  <button class="up" data-up="asas">
+    <kbd>1</kbd>
+    <b>Asas</b>
+    <span class="desc">+ velocidade e asas maiores</span>
+    <span class="info"><em data-nv="asas">0</em> · custo <em data-custo="asas">12</em></span>
+  </button>
+
+  <button class="up" data-up="tromba">
+    <kbd>2</kbd>
+    <b>Tromba</b>
+    <span class="desc">+ alcance de coleta</span>
+    <span class="info"><em data-nv="tromba">0</em> · custo <em data-custo="tromba">15</em></span>
+  </button>
+
+  <button class="up" data-up="estomago">
+    <kbd>3</kbd>
+    <b>Estômago</b>
+    <span class="desc">+ sangue por gota e abdômen maior</span>
+    <span class="info"><em data-nv="estomago">0</em> · custo <em data-custo="estomago">20</em></span>
+  </button>
+
+  <button class="up" data-up="corpo">
+    <kbd>4</kbd>
+    <b>Corpo</b>
+    <span class="desc">+ stamina e recuperação</span>
+    <span class="info"><em data-nv="corpo">0</em> · custo <em data-custo="corpo">18</em></span>
+  </button>
+</nav>
+
+
+<div id="toast" aria-live="polite"></div>
+<div id="evo"><b>Evolução</b><span id="evo-txt"></span></div>
+
+<main id="menu">
+  <section class="painel">
+    <h1>Mosquito</h1>
+    <p class="sub">Voe pelo quarto escuro, sugue as gotas de sangue e evolua até virar o rei do enxame.</p>
+    <dl class="controles">
+      <div><dt>Mouse</dt><dd>direção do voo</dd></div>
+      <div><dt>W A S D</dt><dd>mover</dd></div>
+      <div><dt>Espaço / Ctrl</dt><dd>subir / descer</dd></div>
+      <div><dt>Shift</dt><dd>sprint</dd></div>
+      <div><dt>1 2 3 4</dt><dd>evoluir</dd></div>
+      <div><dt>Esc</dt><dd>pausar</dd></div>
+    </dl>
+    <button id="btn-jogar">Jogar</button>
+    <p class="save" id="save-info"></p>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="./script.js"></script>
+</body>
+</html>
