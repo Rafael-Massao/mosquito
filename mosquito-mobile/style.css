@@ -242,3 +242,18 @@ body.hx-mobile{overscroll-behavior:none}
  .hx-mobile #hx .hx-hab{bottom:calc(env(safe-area-inset-bottom) + 142px);padding:5px 8px}
  .hx-mobile #hx .hx-hab-ring{display:none}
 }
+
+/* Chefe: energia e aviso do golpe permanecem fora dos controles de toque. */
+.boss-hud{position:fixed;top:16px;left:50%;transform:translateX(-50%);width:min(320px,28vw);padding:10px 14px;background:rgba(22,15,29,.94);border:1px solid #ff8c28;border-radius:14px;color:#fff;z-index:7;pointer-events:none;box-shadow:0 4px 24px #0005;font-family:var(--texto)}
+.boss-hud[hidden]{display:none}
+.boss-hud>div:first-child{display:flex;justify-content:space-between;gap:8px;font-size:.8rem}
+.boss-hud b{color:#ffb15c}.boss-hp{font-variant-numeric:tabular-nums;white-space:nowrap}
+.boss-track{height:7px;background:#ffffff20;border-radius:4px;overflow:hidden;margin:7px 0}
+.boss-track i{display:block;width:100%;height:100%;background:linear-gradient(90deg,#ff701a,#ffce57);transition:width .15s}
+.boss-hud small{display:block;color:#f3e1c8;font-size:.72rem;line-height:1.3}
+.boss-hud[data-fase="cansado"]{border-color:#78e69b}.boss-hud[data-fase="cansado"] small{color:#78e69b}
+.hx-mobile .boss-hud{top:calc(env(safe-area-inset-top) + 212px);width:calc(100% - 24px);max-width:360px;padding:9px 12px}
+@media(min-aspect-ratio:11/10){.hx-mobile .boss-hud{top:auto;bottom:calc(env(safe-area-inset-bottom) + 126px);width:min(320px,48vw);padding:7px 10px}.hx-mobile .boss-hud>div:first-child{font-size:.7rem}.hx-mobile .boss-hud small{font-size:.65rem}.hx-mobile .boss-track{margin:5px 0}}
+
+body.boss-active:not(.hx-mobile) #hx .hx-combo{top:110px}
+@media(max-aspect-ratio:11/10){.hx-mobile.boss-active #hx .hx-combo{top:calc(env(safe-area-inset-top) + 292px)}}

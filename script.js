@@ -51,6 +51,8 @@ const CFG = {
     { nome: "Ato 4", visual: { corpo: 0xf4a0c4, abd: 0xf08ab4, perna: 0xf4a0c4, brilho: 0xffd24a, ei: 0.25, asa: 0xfff0b0 }, attr: { colhe: 1.6, sangue: 1.4, vel: 1.2, def: 0.1, cura: 8 } },
   ],
   CONQ: [
+    { id: "pote_caido", nome: "Experimento no chão", ico: "🧪", desc: "Derrube um frasco de uma bancada do laboratório", cat: "Exploração", r: "b", premio: 50 },
+    { id: "boss_raquete", nome: "Curto-circuito", ico: "⚡", desc: "Vença o garoto da raquete na Sala 3", cat: "Combate", r: "o", premio: 500 },
     { id: "primeiro", nome: "Primeiro voo", ico: "🦟", desc: "Comece uma partida", cat: "Progresso", r: "b", premio: 20 },
     { id: "sangue500", nome: "Meio litro", ico: "🩸", desc: "Acumule 500 de sangue", cat: "Progresso", r: "b", premio: 50 },
     { id: "sangue5000", nome: "Banco de sangue", ico: "🧛", desc: "Acumule 5.000 de sangue", cat: "Progresso", r: "p", premio: 250 },
@@ -108,7 +110,8 @@ const CFG = {
   ],
   // SALAS: [nome, x0, x1, z0, z1] — usadas em "salas visitadas" e na conquista Explorador
   SALAS: [["Corredor", -118, 118, -8, 8], ["Artes", -118, -70, -100, -8], ["Sala 1", -70, -28, -100, -8], ["Sala 2", -28, 14, -100, -8], ["Biblioteca", 14, 42, -100, -8], ["Laboratório", 42, 71, -100, -8],
-    ["Enfermaria", 71, 118, -100, -8], ["Cantina", -118, -10, 8, 100], ["Ginásio", -10, 45, 8, 100], ["Banheiro", 45, 71, 8, 100], ["Auditório", 71, 118, 8, 100]],
+    ["Enfermaria", 71, 118, -100, -8], ["Cantina", -118, -10, 8, 100], ["Ginásio", -10, 45, 8, 100], ["Banheiro", 45, 71, 8, 100], ["Auditório", 71, 118, 8, 100], ["Sala 3", 118, 158, -18, 18]],
+  ARENA: { x0: 118, x1: 158, z0: -18, z1: 18, spawnX: 144, spawnZ: 0 },
   UP_MAX: 30,
   UPS: { asas: { base: 12, nome: "Asas" }, tromba: { base: 15, nome: "Tromba" }, estomago: { base: 20, nome: "Estômago" }, corpo: { base: 18, nome: "Corpo" } },
 };
@@ -1838,6 +1841,482 @@ class Pool {
 // ------------------------------------------------------------
 // MUNDO: cenário com colisão, gotas, partículas e perigos
 // ------------------------------------------------------------
+// Física local dos frascos: passo fixo, gravidade, impulso, rotação e repouso.
+// Os 24 corpos continuam interativos em todos os modos gráficos.
+class LabPhysics {
+  constructor(world) {
+    this.world = world; this.corpos = []; this.acumulador = 0;
+    this.anterior = null; this.up = V(0, 1, 0); this.ext = V(0, 0, 0);
+    this.tmp = V(0, 0, 0); this.normal = V(0, 0, 0); this.q = new THREE.Quaternion();
+    this.segmento = new THREE.Line3(); this.proximo = V(0, 0, 0);
+    const area = new THREE.Box3(V(41, CFG.YMIN - 1, -103), V(72, CFG.YMAX, 1));
+    this.obstaculos = world.col.filter(c => c.box.intersectsBox(area)).map(c => c.box);
+    const cores = [0x66ffaa, 0xff6688, 0x66ccff, 0xffe066];
+    for (const z of [-92, -82, -50, -40, -30, -20]) for (let i = 0; i < 4; i++) {
+      const g = new THREE.Group(); g.position.set(49 + i * 4.5, CFG.YMIN + 4.75, z);
+      const vidro = new THREE.MeshStandardMaterial({color: 0xd5f6ff, transparent: true, opacity: .3, roughness: .18, depthWrite: false});
+      const casco = new THREE.Mesh(new THREE.CylinderGeometry(.5, .8, 1.4, 12), vidro); g.add(casco);
+      const liquido = new THREE.Mesh(new THREE.CylinderGeometry(.53, .69, .85, 12), new THREE.MeshStandardMaterial({color: cores[i], emissive: cores[i], emissiveIntensity: .22, roughness: .28}));
+      liquido.position.y = -.23; g.add(liquido);
+      const aro = new THREE.Mesh(new THREE.TorusGeometry(.51, .055, 6, 16), new THREE.MeshStandardMaterial({color:0xd8e5ed,metalness:.6,roughness:.3}));
+      aro.rotation.x = Math.PI / 2; aro.position.y = .7; g.add(aro);
+      for (let n = 0; n < 3; n++) {
+        const marca = new THREE.Mesh(new THREE.BoxGeometry(.23, .035, .035), new THREE.MeshBasicMaterial({color:0xf3ffff}));
+        marca.position.set(.06, -.3 + n * .26, .73 - n * .05); g.add(marca);
+      }
+      world.cena.add(g);
+      this.corpos.push({g, v:V(0,0,0), w:V(0,0,0), raio:.8, meio:.75, dormindo:true, repouso:0, contato:0, bossContato:0, caiu:false});
+    }
+  }
+  impulso(b, direcao, forca) {
+    const d = this.tmp.copy(direcao); if (d.lengthSq() < .001) d.set(0, 0, -1); d.normalize();
+    b.v.addScaledVector(d, forca); b.v.y += Math.min(3, forca * .18);
+    b.v.clampLength(0, 22); b.w.x += d.z * forca * .65; b.w.z -= d.x * forca * .65;
+    b.w.clampLength(0, 12); b.dormindo = false; b.repouso = 0;
+  }
+  extensao(b) {
+    this.up.set(0,1,0).applyQuaternion(b.g.quaternion);
+    for (const a of ['x','y','z']) {
+      const n = Math.abs(this.up[a]); this.ext[a] = b.meio * n + b.raio * Math.sqrt(Math.max(0,1-n*n));
+    }
+    return this.ext;
+  }
+  update(dt, jogo) {
+    const pos = jogo.jogador.pos;
+    if (!this.anterior) this.anterior = pos.clone();
+    // Reaparecimento/teleporte não derruba todos os frascos pelo caminho.
+    if (this.anterior.distanceToSquared(pos) > 100) this.anterior.copy(pos);
+    this.segmento.set(this.anterior, pos);
+    for (const b of this.corpos) {
+      b.contato = Math.max(0, b.contato - dt); b.bossContato = Math.max(0, b.bossContato - dt);
+      if (this.segmento.distanceSq() < 1e-10) this.proximo.copy(pos); else this.segmento.closestPointToPoint(b.g.position, true, this.proximo);
+      if (b.contato <= 0 && jogo.jogador.vel.lengthSq() > .3 && this.proximo.distanceToSquared(b.g.position) < 1.25) {
+        this.impulso(b, jogo.jogador.vel, clamp(jogo.jogador.vel.length() * 1.6, 5, 16));
+        b.contato = .3;
+        this.world.audio.tom(850, 460, .07, 'triangle', .035);
+      }
+    }
+    this.anterior.copy(pos);
+    this.acumulador += Math.min(dt, .1);
+    const passo = 1 / 120;
+    while (this.acumulador >= passo) { this.step(passo); this.acumulador -= passo; }
+    for (const b of this.corpos) {
+      if (!b.caiu && b.g.position.y < CFG.YMIN + 2) { b.caiu = true; jogo.ganhar('pote_caido'); }
+      const boss = this.world.chefe;
+      if (boss && boss.ativo && b.bossContato <= 0 && b.v.lengthSq() > 5 && b.g.position.distanceToSquared(boss.alvo) < 3.5) {
+        b.bossContato = 1; const abriu = boss.atordoar(2.6); b.v.multiplyScalar(-.3);
+        if (abriu) jogo.ui.toast('🧪 Frasco acertou o chefe! Aproveite para picar.');
+      }
+    }
+  }
+  step(dt) {
+    for (const b of this.corpos) {
+      if (b.dormindo) continue;
+      b.v.y -= 15 * dt; b.g.position.addScaledVector(b.v, dt);
+      const giro = b.w.length();
+      if (giro > .001) { this.q.setFromAxisAngle(this.tmp.copy(b.w).normalize(), giro * dt); b.g.quaternion.premultiply(this.q).normalize(); }
+      const e = this.extensao(b), p = b.g.position; let apoiado = false;
+      for (const box of this.obstaculos) {
+        if (p.x + e.x <= box.min.x || p.x - e.x >= box.max.x || p.y + e.y <= box.min.y || p.y - e.y >= box.max.y || p.z + e.z <= box.min.z || p.z - e.z >= box.max.z) continue;
+        let penetracao = Infinity, eixo = 'y', sinal = 1;
+        for (const a of ['x','y','z']) {
+          const menos = p[a] + e[a] - box.min[a], mais = box.max[a] - (p[a] - e[a]);
+          if (menos < penetracao) { penetracao = menos; eixo = a; sinal = -1; }
+          if (mais < penetracao) { penetracao = mais; eixo = a; sinal = 1; }
+        }
+        p[eixo] += sinal * (penetracao + .0001);
+        const velocidade = b.v[eixo] * sinal;
+        if (velocidade < 0) b.v[eixo] = -b.v[eixo] * (velocidade < -1.5 ? .28 : 0);
+        if (eixo === 'y' && sinal === 1) apoiado = true;
+      }
+      // Piso de segurança: também cobre a soleira da porta do laboratório.
+      if (p.y - e.y < CFG.YMIN) { p.y = CFG.YMIN + e.y; b.v.y = Math.abs(b.v.y) > 1.5 ? Math.abs(b.v.y) * .25 : 0; apoiado = true; }
+      if (apoiado) {
+        b.v.x *= Math.exp(-1.5 * dt); b.v.z *= Math.exp(-1.5 * dt);
+        // Gravidade termina o tombamento; um corpo deitado não tenta ficar em pé.
+        if (Math.abs(this.up.y) > .08 && Math.abs(this.up.y) < .97) {
+          b.w.x += this.up.z * Math.sign(this.up.y) * 6 * dt;
+          b.w.z -= this.up.x * Math.sign(this.up.y) * 6 * dt;
+        }
+        b.w.multiplyScalar(Math.exp(-4 * dt));
+      } else b.w.multiplyScalar(Math.exp(-.2 * dt));
+      b.repouso = apoiado && b.v.lengthSq() < .025 && b.w.lengthSq() < .045 ? b.repouso + dt : 0;
+      if (b.repouso > .6) { b.dormindo = true; b.v.set(0,0,0); b.w.set(0,0,0); }
+    }
+    // Contato entre frascos: volume conservador e impulso de massas iguais.
+    for (let i=0; i<this.corpos.length; i++) for (let j=i+1; j<this.corpos.length; j++) {
+      const a=this.corpos[i], b=this.corpos[j]; if (a.dormindo && b.dormindo) continue;
+      const n=this.normal.copy(b.g.position).sub(a.g.position), d=n.length(), limite=1.45;
+      if (d >= limite) continue;
+      if (d < .001) n.set(1,0,0); else n.divideScalar(d);
+      const impacto = this.tmp.copy(b.v).sub(a.v).dot(n);
+      a.g.position.addScaledVector(n,-(limite-d)*.5); b.g.position.addScaledVector(n,(limite-d)*.5);
+      if (impacto < 0) { a.v.addScaledVector(n,impacto*.6); b.v.addScaledVector(n,-impacto*.6); }
+      if (Math.abs(impacto) > .25) {
+        a.dormindo=b.dormindo=false; a.repouso=b.repouso=0;
+        b.w.x += n.z * .4; b.w.z -= n.x * .4;
+      }
+    }
+  }
+}
+
+// Chefe da Sala 3: combos telegrafados, fúria na metade da vida e queda animada.
+class RacketBoss {
+  constructor(world) {
+    this.world=world; this.origem=V(CFG.ARENA.spawnX,CFG.YMIN,CFG.ARENA.spawnZ); this.g=new THREE.Group(); this.g.position.copy(this.origem); this.g.scale.setScalar(1.18);
+    this.alvo=this.origem.clone(); this.mira=V(0,0,0); this.tmp=V(0,0,0); this.ombro=V(0,0,0);
+    this.centro=V(0,0,0); this.centroAnt=V(0,0,0); this.proximo=V(0,0,0); this.linha=new THREE.Line3();
+    this.descargas=[];this.numeroGolpe=0;this.tipoGolpe='varredura';
+    this.geoDescarga=new THREE.IcosahedronGeometry(.5,1);
+    this.matDescarga=new THREE.MeshStandardMaterial({color:0x9eefff,emissive:0x35bfff,emissiveIntensity:2,roughness:.2});
+    this.raioTiro=new THREE.Ray();this.intersecao=V(0,0,0);
+    this.vidaMax=300;this.ativo=false;this.derrotado=false;this.vida=this.vidaMax;this.fase='espera';this.timer=0;this.picadaCD=0;this.acertou=false;
+    this.caixaQueda=new THREE.Box3();this.quatQueda=new THREE.Quaternion();this.eixoY=V(0,1,0);
+    const mat=(c,o={})=>new THREE.MeshStandardMaterial({color:c,roughness:.65,...o});
+    const pele=mat(0xd89b6c), cabelo=mat(0x171214), roupa=mat(0x202127), preto=mat(0x13151b), laranja=mat(0xff790d), azul=mat(0x168aff);
+    const mesh=(geo,m,x,y,z,p=this.g)=>{const a=new THREE.Mesh(geo,m);a.position.set(x,y,z);p.add(a);return a;};
+    const box=(w,h,d,m,x,y,z,p)=>mesh(new THREE.BoxGeometry(w,h,d),m,x,y,z,p);
+    const jeans=mat(0x375b8b),jeansClaro=mat(0x4c75a3),costura=mat(0xbaa47e),sola=mat(0x34363d);
+    const capsula=(r,h,m,x,y,z,p)=>{
+      const g=new THREE.Group();g.position.set(x,y,z);p.add(g);
+      mesh(new THREE.CylinderGeometry(r,r*.9,h,14),m,0,0,0,g);
+      mesh(new THREE.SphereGeometry(r,14,10),m,0,h/2,0,g);
+      mesh(new THREE.SphereGeometry(r*.9,14,10),m,0,-h/2,0,g);return g;
+    };
+    // Mesmos quadris, joelhos, cápsulas e proporções do elenco da escola.
+    this.pernas=[-.36,.36].map(x=>{
+      const p=new THREE.Group();p.position.set(x,2.65,0);this.g.add(p);
+      capsula(.36,1,jeans,0,-.6,0,p);
+      const jo=new THREE.Group();jo.position.y=-1.25;p.add(jo);
+      capsula(.33,.95,jeans,0,-.55,0,jo);
+      mesh(new THREE.CylinderGeometry(.335,.32,.14,12),jeansClaro,0,-1.06,0,jo);
+      for(const y of [-.23,-.63])box(.42,.025,.035,jeansClaro,0,y,.32,jo).rotation.z=.1;
+      box(.025,.8,.025,costura,Math.sign(x)*.32,-.5,.06,jo);
+      box(.55,.28,.88,preto,0,-1.2,.17,jo);box(.56,.07,.9,sola,0,-1.32,.17,jo);
+      for(let i=0;i<3;i++)box(.26,.02,.04,sola,0,-1.05,.2+i*.1,jo);
+      p.userData.joelho=jo;return p;
+    });
+    mesh(new THREE.CylinderGeometry(.73,.68,.55,18),jeans,0,2.75,0).scale.z=.73;
+    mesh(new THREE.CylinderGeometry(.74,.74,.12,18),preto,0,3.03,0).scale.z=.72;
+    box(.12,.1,.04,sola,0,3.04,.54);
+    const tronco=mesh(new THREE.CylinderGeometry(.86,.71,1.75,18),roupa,0,3.95,0);tronco.scale.z=.65;tronco.name='boss-tronco';
+    mesh(new THREE.SphereGeometry(.86,18,10,0,Math.PI*2,0,Math.PI/2),roupa,0,4.82,0).scale.set(1,.32,.65);
+    mesh(new THREE.TorusGeometry(.24,.06,8,18),preto,0,4.98,0).rotation.x=Math.PI/2;
+    box(.14,.22,.025,laranja,.38,4.34,.5).rotation.z=-.15;
+    this.bracoEsq=new THREE.Group();this.bracoEsq.position.set(-.99,4.72,0);this.g.add(this.bracoEsq);
+    capsula(.22,.75,roupa,0,-.45,0,this.bracoEsq);
+    const cot=new THREE.Group();cot.position.y=-.95;cot.rotation.x=-.32;this.bracoEsq.add(cot);
+    capsula(.17,.7,pele,0,-.42,0,cot);mesh(new THREE.SphereGeometry(.18,10,8),pele,0,-.9,.02,cot).scale.set(.9,1.2,.7);
+    mesh(new THREE.CylinderGeometry(.19,.22,.35,12),pele,0,5.1,0);
+    this.cab=new THREE.Group();this.cab.position.y=5.65;this.cab.name='boss-cabeca';this.g.add(this.cab);
+    mesh(new THREE.SphereGeometry(.52,20,16),pele,0,0,0,this.cab).scale.set(.92,1.08,.98);
+    mesh(new THREE.SphereGeometry(.5,14,10),pele,0,-.3,.06,this.cab).scale.set(.78,.5,.8);
+    const branco=new THREE.MeshBasicMaterial({color:0xffffff}),olhos=new THREE.MeshBasicMaterial({color:0x16151a});
+    for(const x of [-.18,.18]){
+      mesh(new THREE.SphereGeometry(.09,10,8),branco,x,.06,.43,this.cab).scale.z=.5;
+      mesh(new THREE.SphereGeometry(.05,8,6),olhos,x,.06,.48,this.cab);
+      box(.2,.04,.05,cabelo,x,.22,.46,this.cab).rotation.z=x>0?-.15:.15;
+      mesh(new THREE.SphereGeometry(.11,10,8),pele,x*2.75,0,0,this.cab).scale.set(.45,.9,.7);
+    }
+    mesh(new THREE.ConeGeometry(.08,.22,8),pele,0,-.06,.52,this.cab).rotation.x=Math.PI/2;
+    box(.22,.04,.04,mat(0x6b332b),0,-.26,.45,this.cab);
+    // Black power cheio: copa arredondada, franja e laterais até as orelhas.
+    // A linha inferior acompanha o couro cabeludo; não há anel sob o queixo.
+    const centroAfro=V(0,.35,-.12),raiosAfro=V(.98,1.01,.8);
+    const linhaCabelo=phi=>.12+.30*Math.pow(Math.max(0,Math.cos(phi)),2)-.35*Math.max(0,-Math.cos(phi));
+    const limiteCabelo=phi=>Math.acos((linhaCabelo(phi)-centroAfro.y)/raiosAfro.y);
+    const superficie=(theta,phi)=>{
+      const ondula=1+.025*Math.sin(phi*5+theta*4)+.018*Math.cos(phi*9-theta*7);
+      const afina=1-.2*Math.pow(Math.max(0,(theta-1.25)/(limiteCabelo(phi)-1.25)),2);
+      return V(Math.sin(theta)*Math.sin(phi)*raiosAfro.x*ondula*afina,
+        Math.cos(theta)*raiosAfro.y,Math.sin(theta)*Math.cos(phi)*raiosAfro.z*ondula*afina).add(centroAfro);
+    };
+    const vertices=[],indices=[],faixas=20,volta=48;
+    for(let j=0;j<=faixas+1;j++)for(let i=0;i<=volta;i++){
+      const phi=i/volta*Math.PI*2,p=superficie(Math.min(j,faixas)/faixas*limiteCabelo(phi),phi);
+      // Miolo contínuo preenche os cachos, inclusive na raiz junto às orelhas.
+      p.sub(centroAfro).multiplyScalar(.93).add(centroAfro);
+      if(j>faixas){p.x*=.46;p.z=centroAfro.z+(p.z-centroAfro.z)*.48;p.y+=.06;}
+      vertices.push(p.x,p.y,p.z);
+      if(j>0&&i>0){const a=(j-1)*(volta+1)+i-1,b=j*(volta+1)+i-1;indices.push(a,b,a+1,a+1,b,b+1);}
+    }
+    const geoAfro=new THREE.BufferGeometry();geoAfro.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geoAfro.setIndex(indices);geoAfro.computeVertexNormals();
+    const fio=mat(0x201b1a,{roughness:1});
+    const afro=mesh(geoAfro,fio,0,0,0,this.cab);afro.name='boss-black-power';
+    const pontos=[],aleatorio=n=>{const v=Math.sin(n*127.1+311.7)*43758.5453;return v-Math.floor(v);};
+    for(let n=0;n<640;n++){
+      const y=1-2*(n+.5)/640,theta=Math.acos(y),phi=n*2.399963;
+      if(theta>limiteCabelo(phi))continue;
+      pontos.push({p:superficie(theta,phi),normal:V(Math.sin(theta)*Math.sin(phi),y,Math.sin(theta)*Math.cos(phi))});
+    }
+    // Cachos sobrepostos, com tamanhos e direções variados, quebram a borda lisa.
+    const geoMecha=new THREE.SphereGeometry(1,9,6),posMecha=geoMecha.attributes.position;
+    for(let i=0;i<posMecha.count;i++){
+      const x=posMecha.getX(i),y=posMecha.getY(i),z=posMecha.getZ(i),r=1+.09*Math.sin(x*7+y*4)*Math.cos(z*8-y*3);
+      posMecha.setXYZ(i,x*r,y*r,z*r);
+    }
+    geoMecha.computeVertexNormals();
+    const cachos=new THREE.InstancedMesh(geoMecha,fio.clone(),pontos.length),obj=new THREE.Object3D(),cor=new THREE.Color();
+    const espirais=new THREE.InstancedMesh(new THREE.TorusGeometry(.06,.022,5,10,Math.PI*1.8),fio,pontos.length*2);
+    pontos.forEach(({p,normal},n)=>{
+      const r=.105+aleatorio(n)*.035;
+      obj.position.copy(p);obj.rotation.set(aleatorio(n+1)*3,aleatorio(n+2)*3,aleatorio(n+3)*3);
+      obj.scale.set(r*(.88+aleatorio(n+4)*.3),r*(1+aleatorio(n+5)*.35),r);obj.updateMatrix();cachos.setMatrixAt(n,obj.matrix);
+      cor.setRGB(.75+aleatorio(n+6)*.35,.75+aleatorio(n+6)*.35,.75+aleatorio(n+6)*.35);cachos.setColorAt(n,cor);
+      for(let k=0;k<2;k++){
+        obj.position.copy(p).addScaledVector(normal,r*(k?.7:.88));
+        obj.quaternion.setFromUnitVectors(V(0,0,1),normal);obj.rotateZ(aleatorio(n*2+k+7)*Math.PI*2);obj.rotateY(k?.45:-.25);
+        obj.scale.setScalar(.75+aleatorio(n*2+k+9)*.45);obj.updateMatrix();espirais.setMatrixAt(n*2+k,obj.matrix);
+      }
+    });
+    cachos.name='boss-cachos';espirais.name='boss-fios';
+    cachos.frustumCulled=false;espirais.frustumCulled=false;this.cab.add(cachos,espirais);
+    // Braço direito, mão, cabo preto, aro laranja e grade metálica.
+    this.braco=new THREE.Group();this.braco.position.set(.98,4.72,0);this.g.add(this.braco);
+    mesh(new THREE.CylinderGeometry(.18,.22,1.05,14),pele,0,.5,0,this.braco);
+    mesh(new THREE.SphereGeometry(.2,12,8),pele,0,.58,0,this.braco);
+    mesh(new THREE.CylinderGeometry(.27,.25,.5,10),roupa,0,.2,0,this.braco);
+    mesh(new THREE.SphereGeometry(.24,10,8),pele,0,1.05,0,this.braco);
+    this.raquete=new THREE.Group();this.raquete.name='boss-raquete';this.braco.add(this.raquete);
+    box(.35,1.15,.32,preto,0,1.5,0,this.raquete);
+    box(.15,.26,.04,laranja,0,1.52,.18,this.raquete);
+    for(let i=0;i<4;i++)box(.37,.035,.34,mat(0x353840),0,1.15+i*.14,0,this.raquete);
+    this.cabecaRaquete=new THREE.Group();this.cabecaRaquete.position.y=3.25;this.raquete.add(this.cabecaRaquete);
+    const aro=mesh(new THREE.TorusGeometry(1.1,.13,8,32),laranja,0,0,0,this.cabecaRaquete);aro.scale.y=1.22;
+    const metal=mat(0xb8d2e1,{metalness:.8,roughness:.3});this.metalRaquete=metal;
+    for(let i=-4;i<=4;i++){
+      const t=i*.21, comprimento=2*Math.sqrt(1.04*1.04-t*t);
+      box(.026,comprimento*1.22,.035,metal,t,0,0,this.cabecaRaquete);
+      box(comprimento,.026,.035,metal,0,t*1.22,.03,this.cabecaRaquete);
+    }
+    this.plugue=box(.42,.36,.38,azul,0,.76,-.28,this.raquete);
+    for(const x of [-.12,.12])box(.055,.28,.055,metal,x,.48,-.28,this.raquete);
+    const pts=[];for(let i=0;i<9;i++){const x=-.9+i*.225;pts.push(V(x,Math.sin(i*2.8)*.33,.08));}
+    this.faísca=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x90e8ff}));this.cabecaRaquete.add(this.faísca);
+    this.aviso=new THREE.Mesh(new THREE.SphereGeometry(1.65,12,8),new THREE.MeshBasicMaterial({color:0xff7c19,wireframe:true,transparent:true,opacity:.6}));
+    this.aviso.visible=false;world.cena.add(this.g,this.aviso);
+    this.hud=document.createElement('section');this.hud.className='boss-hud';this.hud.hidden=true;
+    this.hud.setAttribute('aria-label','Chefe da Sala 3');
+    this.hud.innerHTML='<div><b>⚡ GAROTO DA RAQUETE</b><span class="boss-hp"></span></div><div class="boss-track" role="progressbar" aria-label="Energia do chefe" aria-valuemin="0"><i></i></div><small></small>';
+    document.body.appendChild(this.hud);this.hp=this.hud.querySelector('.boss-hp');this.barra=this.hud.querySelector('i');this.dicaEl=this.hud.querySelector('small');
+    this.tituloEl=this.hud.querySelector('b');this.trilha=this.hud.querySelector('[role="progressbar"]');this.trilha.setAttribute('aria-valuemax',String(this.vidaMax));
+    this.reiniciar();
+  }
+  reiniciar() {
+    if(this.derrotado)return;
+    this.ativo=false;this.vida=this.vidaMax;this.timer=0;this.fase='espera';this.picadaCD=0;this.acertou=false;
+    this.furia=false;this.resistenciaStun=0;this.golpeCombo=0;this.comboTotal=2;this.tempoDerrota=0;this.queda=null;this.solta=null;
+    this.limparDescargas();this.numeroGolpe=0;
+    this.braco.add(this.raquete);this.raquete.position.set(0,0,0);this.raquete.quaternion.identity();this.raquete.scale.setScalar(1);
+    this.g.rotation.set(0,-Math.PI/2,0);this.g.position.copy(this.origem);this.braco.rotation.set(.25,0,-.4);
+    this.bracoEsq.rotation.set(0,0,0);this.cab.rotation.set(0,0,0);
+    this.pernas.forEach(l=>{l.rotation.set(0,0,0);l.userData.joelho.rotation.set(0,0,0);});
+    this.g.updateMatrixWorld(true);this.cab.getWorldPosition(this.alvo);this.aviso.visible=false;this.hud.hidden=true;this.faísca.visible=false;
+    this.metalRaquete.emissive.setHex(0);this.plugue.material.emissive.setHex(0);this.atualizarHUD();
+    document.body.classList.remove('boss-active');
+  }
+  dentro(p){const a=CFG.ARENA;return p.x>a.x0+2&&p.x<a.x1-.5&&p.z>a.z0+.5&&p.z<a.z1-.5;}
+  visivel(jogo){
+    this.hud.hidden=!(this.ativo||this.fase==='caindo')||!jogo.jogando||jogo.menuAberto;
+    document.body.classList.toggle('boss-active',!this.hud.hidden);
+  }
+  atualizarHUD(){
+    this.hp.textContent=this.vida+'/'+this.vidaMax;this.barra.style.width=(100*this.vida/this.vidaMax)+'%';
+    this.trilha.setAttribute('aria-valuenow',String(this.vida));this.hud.dataset.fase=this.fase;
+    this.tituloEl.textContent=this.derrotado?'🏆 CHEFE VENCIDO':this.furia?'⚡ FASE 2 — FÚRIA':'⚡ GAROTO DA RAQUETE';
+    this.barra.style.background=this.furia?'linear-gradient(90deg,#ff365b,#ff841f)':'';
+    const ataque=this.tipoGolpe==='descarga'?(this.furia?'Descarga tripla!':'Descarga!'):'Varredura!';
+    this.dicaEl.textContent=this.fase==='caindo'?'Raquete desligada!':this.fase==='furia'?'🔥 Fúria! Prepare-se para combos de 3 golpes.':
+      this.fase==='preparar'?`⚠ ${this.golpeCombo}/${this.comboTotal} · ${ataque} Desvie!`:
+      this.fase==='golpear'?`⚡ Golpe ${this.golpeCombo}/${this.comboTotal}!`:
+      this.fase==='intervalo'?'⚠ O combo continua!':this.fase==='cansado'?'🩸 Vulnerável! Pique a cabeça agora.':'Desvie do combo e espere a abertura.';
+  }
+  atordoar(seg){
+    if(!this.ativo||this.derrotado||this.resistenciaStun>0||this.fase==='cansado'||this.fase==='furia'||!(seg>0))return false;
+    this.timer=Math.min(seg,this.furia?.75:1.15);this.resistenciaStun=7;this.fase='cansado';
+    this.aviso.visible=false;this.limparDescargas();this.atualizarHUD();return true;
+  }
+  picar(jogo) {
+    if(!this.ativo||this.derrotado||this.alvo.distanceTo(jogo.jogador.pos)>Math.min(3.2,jogo.estado.raioColeta+.9))return false;
+    if(this.fase!=='cansado'){jogo.ui.toast('⚡ Espere o fim do combo e pique quando ele cansar!');return true;}
+    if(this.picadaCD>0){jogo.ui.toast('Espere um instante para picar novamente.');return true;}
+    this.picadaCD=.9;this.vida=Math.max(0,this.vida-Math.min(35,20+jogo.estado.nv.tromba));
+    jogo.estado.picadas++;jogo.audio.picada();this.world.emitir(this.alvo,0xffb34d,18,4);
+    if(this.vida===0)this.vencer(jogo);
+    else if(!this.furia&&this.vida<=this.vidaMax*.5)this.entrarFuria(jogo);
+    else jogo.ui.toast('🩸 Chefe atingido! '+this.vida+'/'+this.vidaMax);
+    if(jogo.estado.picadas>=10)jogo.desbloquear('vampiro');
+    this.atualizarHUD();jogo.estado.salvar();return true;
+  }
+  entrarFuria(jogo){
+    this.furia=true;this.fase='furia';this.timer=1.2;this.resistenciaStun=7;this.aviso.visible=false;this.limparDescargas();
+    this.world.emitir(this.alvo,0xff792c,26,5);this.world.audio.tom(180,650,.6,'sawtooth',.1);
+    jogo.ui.toast('🔥 FASE 2! Combos de 3 golpes e descargas triplas!');
+  }
+  prepararGolpe(jogo){
+    const p=jogo.jogador.pos;this.g.rotation.z=0;this.g.position.y=this.origem.y;this.cab.rotation.x=0;
+    this.g.rotation.y=Math.atan2(p.x-this.g.position.x,p.z-this.g.position.z);
+    this.g.updateMatrixWorld(true);this.braco.getWorldPosition(this.ombro);
+    const alcance=this.ombro.distanceTo(p);
+    this.tipoGolpe=alcance>=2.4&&alcance<=6.2&&this.numeroGolpe++%2===0?'varredura':'descarga';
+    this.golpeCombo++;this.fase='preparar';this.timer=this.furia?.72:.9;this.travaMira=this.furia?.32:.4;
+    this.mira.copy(p);this.aviso.position.copy(this.mira);this.aviso.visible=true;
+    this.aviso.material.color.setHex(this.tipoGolpe==='varredura'?0xff7c19:this.furia?0xff4466:0x59cfff);
+    this.aviso.scale.setScalar(this.tipoGolpe==='varredura'?1:this.furia?.68:.48);
+    this.world.audio.tom(280,this.furia?1500:1100,.24,'sawtooth',.07);
+  }
+  vencer(jogo){
+    if(this.derrotado)return;
+    this.derrotado=true;this.ativo=false;this.fase='caindo';this.tempoDerrota=0;this.aviso.visible=false;this.limparDescargas();
+    const dir=this.g.position.x<139?1:-1;
+    const fim=new THREE.Quaternion().setFromAxisAngle(this.eixoY,dir>0?-Math.PI/2:Math.PI/2);
+    fim.multiply(new THREE.Quaternion().setFromAxisAngle(V(1,0,0),-Math.PI/2));
+    this.queda={pos:this.g.position.clone(),rot:this.g.quaternion.clone(),braco:this.braco.quaternion.clone(),fim,dir,impacto:false};
+    this.world.audio.tom(900,60,.55,'sawtooth',.08);
+    const primeira=!jogo.estado.conq.includes('boss_raquete');
+    jogo.ganhar('boss_raquete');jogo.ui.toast(primeira?'🏆 Raquete desligada! +500 sangue.':'🏆 Raquete desligada! Revanche vencida.');
+    this.atualizarHUD();this.visivel(jogo);
+  }
+  atualizarQueda(dt){
+    this.tempoDerrota=Math.min(2.8,this.tempoDerrota+dt);const t=this.tempoDerrota,q=this.queda;
+    const suave=v=>{v=clamp(v,0,1);return v*v*(3-2*v);},cair=suave((t-.35)/1.65);
+    this.g.position.copy(q.pos);this.g.position.z=q.pos.z+(clamp(q.pos.z,-1.5,1.5)-q.pos.z)*cair;
+    this.g.quaternion.copy(q.rot).slerp(q.fim,cair);
+    this.quatQueda.setFromEuler(new THREE.Euler(.15,0,-2.8));
+    this.braco.quaternion.copy(q.braco).slerp(this.quatQueda,suave(t/.5));
+    this.bracoEsq.rotation.set(-.55*cair,0,-.22*cair);this.cab.rotation.x=.22*Math.sin(Math.min(1,t/2)*Math.PI);
+    const dobra=Math.sin(clamp(t/2,0,1)*Math.PI);
+    this.pernas.forEach((l,i)=>{l.rotation.x=-.45*dobra+.12*cair;l.rotation.z=(i?1:-1)*.07*cair;l.userData.joelho.rotation.x=.9*dobra+.2*cair;});
+    // Apoia o corpo no chão ao longo da queda, inclusive quando já está deitado.
+    this.g.position.y=CFG.YMIN;this.g.updateMatrixWorld(true);this.caixaQueda.setFromObject(this.g);
+    this.g.position.y+=CFG.YMIN+.12-this.caixaQueda.min.y;this.g.updateMatrixWorld(true);
+    if(t>=.42&&!this.solta){
+      this.world.cena.attach(this.raquete);
+      this.solta={pos:this.raquete.position.clone(),rot:this.raquete.quaternion.clone()};
+      this.faísca.visible=false;this.metalRaquete.emissive.setHex(0);this.plugue.material.emissive.setHex(0);
+      this.world.emitir(this.raquete.position,0x90dfff,8,2);
+    }
+    if(this.solta){
+      const a=this.solta,u=t-.42,s=suave(u/.95);
+      this.raquete.position.set(a.pos.x+(clamp(a.pos.x+q.dir*1.5,122,150)-a.pos.x)*s,a.pos.y+3*u-11*u*u,a.pos.z+(clamp(a.pos.z,-2,2)-a.pos.z)*s);
+      this.quatQueda.setFromEuler(new THREE.Euler(Math.PI/2,0,-Math.PI/2));
+      this.raquete.quaternion.copy(a.rot).slerp(this.quatQueda,suave(u/.8));
+      this.raquete.updateMatrixWorld(true);this.caixaQueda.setFromObject(this.raquete);
+      if(this.caixaQueda.min.y<CFG.YMIN+.06)this.raquete.position.y+=CFG.YMIN+.06-this.caixaQueda.min.y;
+    }else this.faísca.visible=Math.floor(t*28)%2===0;
+    if(t>=1.65&&!q.impacto){q.impacto=true;this.world.emitir(V(this.g.position.x,CFG.YMIN+.3,this.g.position.z),0xc5b99f,18,2);this.world.audio.tom(95,35,.2,'triangle',.1);}
+    if(t>=2.8){this.fase='derrotado';this.faísca.visible=false;this.hud.hidden=true;document.body.classList.remove('boss-active');}
+  }
+  limparDescargas(){for(const tiro of this.descargas)this.world.cena.remove(tiro.g);this.descargas.length=0;}
+  ferir(jogo,valor,origem){
+    if(!this.ativo||this.derrotado)return false;
+    const j=jogo.jogador;
+    if(j.invul>0||j.escudo>0||jogo.buff.radio>0||jogo.buff.invis>0||jogo.estado.attr.intang)return false;
+    const antes=j.vida;jogo.dano(valor);
+    if(!this.ativo)return true;
+    if(Number.isFinite(antes)&&j.vida>=antes)return false;
+    j.invul=Math.max(j.invul,.8);j.vel.addScaledVector(this.tmp.copy(j.pos).sub(origem).normalize(),12);j.shake=.9;
+    jogo.ui.toast('⚡ Raquete elétrica! −'+Math.round(antes-j.vida||valor)+' de vida');return true;
+  }
+  disparar(){
+    this.g.updateMatrixWorld(true);this.cabecaRaquete.getWorldPosition(this.centro);
+    const direcao=this.mira.clone().sub(this.centro).normalize();
+    for(const angulo of this.furia?[-.16,0,.16]:[0]){
+      const g=new THREE.Mesh(this.geoDescarga,this.matDescarga);g.position.copy(this.centro);this.world.cena.add(g);
+      this.descargas.push({g,v:direcao.clone().applyAxisAngle(this.eixoY,angulo).multiplyScalar(this.furia?27:22),tempo:1.5,dano:this.furia?36:30});
+    }
+    this.world.audio.tom(1250,130,.18,'sawtooth',.09);
+  }
+  atualizarDescargas(dt,jogo){
+    for(let i=this.descargas.length-1;i>=0;i--){
+      const tiro=this.descargas[i],de=tiro.g.position.clone(),ate=de.clone().addScaledVector(tiro.v,dt);
+      const trecho=de.distanceTo(ate);let parede=Infinity;
+      if(trecho>1e-8){
+        this.raioTiro.set(de,this.tmp.copy(tiro.v).normalize());
+        for(const c of this.world.col){const hit=this.raioTiro.intersectBox(c.box,this.intersecao);if(hit)parede=Math.min(parede,de.distanceTo(hit));}
+      }
+      this.linha.set(de,ate);
+      if(trecho>1e-8)this.linha.closestPointToPoint(jogo.jogador.pos,true,this.proximo);else this.proximo.copy(de);
+      const raio=.55+.18*clamp(jogo.jogador.modelo?.zoom||1,1,2.5);
+      const acertou=this.proximo.distanceToSquared(jogo.jogador.pos)<raio*raio&&de.distanceTo(this.proximo)<=parede;
+      tiro.tempo-=dt;
+      if(acertou||parede<=trecho+.15||tiro.tempo<=0){
+        this.world.cena.remove(tiro.g);this.descargas.splice(i,1);
+        if(acertou){this.world.emitir(jogo.jogador.pos,0x80dfff,12,3);this.ferir(jogo,tiro.dano||30,de);if(!this.ativo)return;}
+        else if(parede<=trecho+.15)this.world.emitir(ate,0x80dfff,8,2);
+      }else{tiro.g.position.copy(ate);tiro.g.rotation.x+=dt*15;tiro.g.rotation.y+=dt*18;}
+    }
+  }
+  update(dt,jogo){
+    const p=jogo.jogador.pos;
+    this.visivel(jogo);if(!jogo.jogando||jogo.menuAberto)return;
+    if(this.derrotado){
+      if(!this.dentro(p)){this.derrotado=false;this.reiniciar();return;}
+      if(this.fase==='caindo'){this.atualizarQueda(dt);this.atualizarHUD();this.visivel(jogo);}return;
+    }
+    if(!this.dentro(p)){if(this.ativo)this.reiniciar();return;}
+    if(!this.ativo&&this.g.position.distanceToSquared(p)>784)return;
+    if(!this.ativo){this.ativo=true;this.fase='perseguir';this.timer=.55;jogo.ui.toast('⚡ Desvie do combo inteiro! Pique quando ele cansar.');}
+    this.visivel(jogo);dt*=jogo.buff.tempo>0?0:jogo.escalaTempo;if(dt<=0)return;
+    this.atualizarDescargas(dt,jogo);if(!this.ativo)return;
+    this.picadaCD=Math.max(0,this.picadaCD-dt);this.resistenciaStun=Math.max(0,this.resistenciaStun-dt);this.timer-=dt;
+    this.g.updateMatrixWorld(true);this.cab.getWorldPosition(this.alvo);
+    const dx=p.x-this.g.position.x,dz=p.z-this.g.position.z,d=Math.hypot(dx,dz);
+    if(this.fase==='furia'){
+      this.braco.rotation.set(.12,0,-.1);this.bracoEsq.rotation.x=-.8;this.cab.rotation.x=-.12;this.g.rotation.z=Math.sin(jogo.t*34)*.025;
+      if(this.timer<=0){this.g.rotation.z=0;this.cab.rotation.x=0;this.fase='perseguir';this.timer=.15;}
+    }else if(this.fase==='perseguir'){
+      if(!(jogo.buff.invis>0)){
+        this.g.rotation.y=Math.atan2(dx,dz);
+        const passo=d>3.6?(this.furia?6.8:5.2):d<2?-3:0;
+        // O corpo permanece entre as carteiras, inclusive durante a fúria.
+        if(d>.01){this.g.position.x=clamp(this.g.position.x+dx/d*passo*dt,CFG.ARENA.x0+8,CFG.ARENA.x1-7);this.g.position.z=clamp(this.g.position.z+dz/d*passo*dt,-3,3);}
+        if(this.timer<=0&&d<23){this.comboTotal=this.furia?3:2;this.golpeCombo=0;this.prepararGolpe(jogo);}
+      }
+      this.braco.rotation.set(.2,0,-.4);this.pernas.forEach((l,i)=>{const a=Math.sin(jogo.t*(this.furia?12:9)+i*Math.PI);l.rotation.x=a*.35;l.userData.joelho.rotation.x=Math.max(0,-a)*.5;});this.bracoEsq.rotation.x=-Math.sin(jogo.t*9)*.3;
+    }else if(this.fase==='preparar'){
+      // A mira para de seguir antes de cada golpe; todos os golpes têm aviso.
+      if(this.timer>this.travaMira){this.mira.copy(p);this.aviso.position.copy(p);}
+      this.aviso.rotation.y+=dt*4;this.apontar(this.tipoGolpe==='varredura'?-.95:0);
+      if(this.timer<=0){
+        this.fase='golpear';this.durGolpe=this.furia?.34:.42;this.timer=this.durGolpe;this.acertou=false;
+        this.g.updateMatrixWorld(true);this.cabecaRaquete.getWorldPosition(this.centroAnt);
+        if(this.tipoGolpe==='descarga')this.disparar();
+      }
+    }else if(this.fase==='golpear'){
+      if(this.tipoGolpe==='varredura'){
+        const progresso=clamp(1-this.timer/this.durGolpe,0,1),anterior=clamp(progresso-dt/this.durGolpe,0,1);
+        for(let n=1;n<=4;n++){
+          this.apontar(-.95+1.9*(anterior+(progresso-anterior)*n/4));this.g.updateMatrixWorld(true);this.cabecaRaquete.getWorldPosition(this.centro);
+          this.linha.set(this.centroAnt,this.centro);
+          if(this.linha.distanceSq()<1e-10)this.proximo.copy(this.centro);else this.linha.closestPointToPoint(p,true,this.proximo);
+          const raio=1.1*1.22*this.g.scale.x+.18*clamp(jogo.jogador.modelo?.zoom||1,1,2.5);
+          if(!this.acertou&&this.proximo.distanceToSquared(p)<raio*raio){this.acertou=true;this.ferir(jogo,this.furia?46:40,this.centro);if(!this.ativo)return;}
+          for(const b of this.world.lab.corpos)if(b.contato<=0&&b.g.position.distanceToSquared(this.centro)<4){this.world.lab.impulso(b,this.tmp.copy(b.g.position).sub(this.g.position),12);b.contato=.4;}
+          this.centroAnt.copy(this.centro);
+        }
+      }else this.apontar(0);
+      if(this.timer<=0){this.aviso.visible=false;this.fase=this.golpeCombo<this.comboTotal?'intervalo':'cansado';this.timer=this.fase==='intervalo'?(this.furia?.12:.18):(this.furia?1.05:1.45);}
+    }else if(this.fase==='intervalo'){
+      this.braco.rotation.set(.1,0,-.6);if(this.timer<=0)this.prepararGolpe(jogo);
+    }else if(this.fase==='cansado'){
+      this.braco.rotation.set(.2,0,-2.3);this.pernas.forEach(l=>{l.rotation.x=0;l.userData.joelho.rotation.x=0;});this.bracoEsq.rotation.x=-.15;
+      if(this.timer<=0){this.fase='perseguir';this.timer=this.furia?.25:.4;}
+    }
+    this.g.updateMatrixWorld(true);this.cab.getWorldPosition(this.alvo);
+    this.faísca.visible=['preparar','golpear','furia'].includes(this.fase);this.faísca.material.color.setHex(this.furia?0xff8844:0x90e8ff);
+    this.metalRaquete.emissive.setHex(this.faísca.visible?(this.furia?0xa92c05:0x174b65):0);
+    this.plugue.material.emissive.setHex(this.faísca.visible?0x124ab0:0);this.atualizarHUD();
+  }
+  apontar(varredura){
+    this.g.updateMatrixWorld(true);this.braco.getWorldPosition(this.ombro);
+    const direcao=this.tmp.copy(this.mira).sub(this.ombro).normalize();
+    direcao.applyAxisAngle(this.eixoY,-this.g.rotation.y+varredura);this.braco.quaternion.setFromUnitVectors(V(0,1,0),direcao);
+  }
+}
+
+
+
 class WorldManager {
   constructor(cena, audio) {
     this.cena = cena; this.audio = audio;
@@ -1851,10 +2330,102 @@ class WorldManager {
     this.raycaster = new THREE.Raycaster();
     this.dirs = [V(1, 0, 0), V(-1, 0, 0), V(0, 1, 0), V(0, -1, 0), V(0, 0, 1), V(0, 0, -1)];
     this.emPerigo = null; this.avisoGas = false;
-    this.construirCenario(); this.criarGotas(); this.criarParticulas(); this.criarPerigos(); this.criarHumanos(); this.criarCarteira(); this.criarLivroPerdido(); this.criarPingos();
+    this.construirCenario(); this.criarSalaRaquete(); this.criarGotas(); this.criarParticulas(); this.criarPerigos(); this.criarHumanos(); this.criarCarteira(); this.criarLivroPerdido(); this.criarPingos();
     this.efeitosHabilidade = []; this.unhasTusk = [];
+    this.lab = new LabPhysics(this); this.chefe = new RacketBoss(this);
 
   }
+
+  // Sala de aula no extremo leste, acessível pela porta no fim do corredor.
+  criarSalaRaquete() {
+    const F=CFG.YMIN,H=CFG.YMAX-F,cy=(F+CFG.YMAX)/2;
+    const M=(color,opts={})=>new THREE.MeshStandardMaterial({color,roughness:.78,...opts});
+    const parede=M(0xc6c9b4),rodape=M(0x718c7a),piso=M(0xc5b799),metal=M(0x505967,{metalness:.45});
+    const madeira=M(0xc18a57),borda=M(0x82532f),azul=M(0x385d80),papel=M(0xf3efdf);
+    const box=(w,h,d,m,x,y,z,solido=true)=>{
+      const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
+      if(h>8)mesh.userData.semSombraUltra=true;
+      return solido?this.fixo(mesh,x,y,z):this.deco(mesh,x,y,z);
+    };
+    const placa=(titulo,sub,x,y,z,ry,w,h,fundo='#18334c',cor='#e8e8d8')=>{
+      const c=document.createElement('canvas');c.width=768;c.height=256;const t=c.getContext('2d');
+      t.fillStyle=fundo;t.fillRect(0,0,768,256);t.strokeStyle=cor;t.lineWidth=5;t.strokeRect(8,8,752,240);
+      t.textAlign='center';t.fillStyle=cor;t.font='bold 62px sans-serif';t.fillText(titulo,384,105,720);
+      t.font='34px sans-serif';t.fillText(sub,384,189,720);
+      return this.deco(new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),side:THREE.DoubleSide})),x,y,z,ry);
+    };
+    box(42,2,40,piso,139,F-1,0);
+    box(42,2,40,M(0xcfd3d8),139,CFG.YMAX+1,0);
+    box(2,H+2,40,parede,159,cy,0);
+    for(const lado of [-1,1]){
+      box(40,H+2,2,parede,140,cy,lado*19);
+      box(38,3.3,.08,rodape,139,F+1.65,lado*17.94,false);
+      box(38,.12,.13,borda,139,F+3.35,lado*17.9,false);
+      box(2.2,9.5,.22,metal,119,F+4.75,lado*5.15);
+    }
+    box(.08,3.3,36,rodape,157.94,F+1.65,0,false);
+    // Juntas discretas do piso, sem marcações de quadra.
+    const rejunte=M(0xa99f8c);
+    for(let x=122;x<158;x+=4)box(.025,.01,36,rejunte,x,F+.012,0,false);
+    for(let z=-14;z<18;z+=4)box(40,.01,.025,rejunte,138,F+.013,z,false);
+    placa('SALA 3','',117.85,F+10.65,0,-Math.PI/2,8.8,1.7);
+    placa('SALA 3  →','Fim do corredor',106,F+7,-7.38,0,7,1.7);
+    // Quadro de giz na frente da turma, com moldura, apagador e bandeja.
+    box(.35,6.8,24,borda,157.65,F+7.5,0);
+    placa('MATEMÁTICA','2x + 6 = 18     |     x = ?',157.43,F+7.5,0,-Math.PI/2,22.8,5.7,'#214c3c','#e6eadb');
+    box(.7,.25,23,madeira,157.2,F+4.1,0);
+    box(.35,.2,1.1,metal,157.05,F+4.32,-8,false);
+    box(.16,.09,.7,papel,157.04,F+4.27,5,false);
+    // Mesma construção das carteiras das outras salas, voltadas para o quadro (+X).
+    const carteira=(x,z)=>{
+      const p=(w,h,d,m,u,y,v,solido=true)=>box(d,h,w,m,x-v,F+y,z+u,solido);
+      p(5.25,.32,2.9,madeira,0,3.05,-.15);
+      p(5.25,.11,.14,borda,0,2.87,1.22,false);
+      p(4.25,.14,2.2,metal,0,2.25,-.15,false);
+      for(const u of [-2.3,2.3])for(const v of [-1.16,1])p(.25,2.86,.25,metal,u,1.43,v);
+      p(3.3,.27,2.35,azul,0,1.98,3.17);
+      for(const u of [-1.37,1.37]){
+        p(.22,1.9,.22,metal,u,.95,2.35);
+        p(.22,4.18,.22,metal,u,2.09,3.99);
+      }
+      p(3.24,1.55,.28,azul,0,3.56,3.99);
+      // Caderno e lápis em algumas mesas.
+      if((x+z)%3===0){p(1.25,.08,.95,papel,.7,3.25,-.2,false);p(.06,.06,1.1,borda,-.5,3.25,-.2,false);}
+    };
+    for(const x of [127,134,141,148])for(const z of [-13,-7,7,13])carteira(x,z);
+    // Mesa do professor ao lado do quadro, fora do corredor central.
+    box(4.2,.55,8,madeira,154.1,F+3.2,-10.5);
+    for(const z of [-13.8,-7.2])box(3.7,2.9,.4,borda,154.1,F+1.45,z);
+    box(.3,2.3,7,borda,155.8,F+1.9,-10.5);
+    for(let i=0;i<3;i++)box(1.6,.18,1.2,i%2?azul:papel,154.1,F+3.57+i*.18,-12,false);
+    // Armário de material e mural de avisos, sem decoração temática da arena.
+    box(5.6,6,1.7,madeira,149.5,F+3,16.9);
+    for(const x of [148.1,150.9]){
+      box(2.6,5.7,.09,borda,x,F+3,15.99,false);
+      box(.12,.7,.1,metal,x+.8,F+3,15.91,false);
+    }
+    placa('AVISOS','Trabalho em grupo · Entrega na sexta',137,F+7.3,17.85,Math.PI,10,3,'#ac8555','#fff7df');
+    // Janelas altas e luminárias brancas, no estilo das salas da escola.
+    const vidro=new THREE.MeshBasicMaterial({color:0xb4d6df}),caixilho=M(0xe5e2d4);
+    for(const x of [127,140,153]){
+      box(8.4,5.4,.15,caixilho,x,F+8,-17.82,false);
+      box(7.9,4.9,.17,vidro,x,F+8,-17.7,false);
+      box(.16,4.9,.2,caixilho,x,F+8,-17.55,false);
+      box(7.9,.16,.2,caixilho,x,F+8,-17.55,false);
+      box(8.7,.22,.6,caixilho,x,F+5.2,-17.55,false);
+    }
+    const luz=new THREE.MeshBasicMaterial({color:0xeaf6ff});
+    for(const x of [127,140,153])for(const z of [-8,8])box(5,.18,1.3,luz,x,CFG.YMAX-.12,z,false);
+    // Relógio de parede sobre o quadro.
+    const rel=document.createElement('canvas');rel.width=256;rel.height=256;const ctx=rel.getContext('2d');
+    ctx.fillStyle='#f5f2e8';ctx.beginPath();ctx.arc(128,128,120,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#354150';ctx.lineWidth=10;ctx.stroke();
+    ctx.fillStyle='#354150';ctx.font='bold 28px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    for(let n=1;n<=12;n++){const a=n/6*Math.PI;ctx.fillText(n,128+Math.sin(a)*92,128-Math.cos(a)*92);}
+    ctx.beginPath();ctx.moveTo(128,128);ctx.lineTo(86,98);ctx.moveTo(128,128);ctx.lineTo(168,60);ctx.lineWidth=7;ctx.stroke();
+    this.deco(new THREE.Mesh(new THREE.PlaneGeometry(2.3,2.3),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(rel),transparent:true})),157.4,F+12,0,-Math.PI/2);
+    this.pontos.arena=V(144,F,0);
+  }
+
 
   // Registra malha estática: matriz congelada + AABB pré-calculada
   fixo(mesh, x, y, z, ry = 0, rx = 0) {
@@ -2044,7 +2615,10 @@ class WorldManager {
     const cy = (YMAX + F) / 2, H = YMAX - F + 4, T = 1;
     caixa(MX * 2, 2, MZ * 2, m.piso, 0, F - 1, 0); caixaParede(MX * 2 + 4, 2, MZ * 2 + 4, m.teto, 0, YMAX + 1, 0);
     caixaParede(MX * 2 + 4, H, 4, m.par, 0, cy, -MZ - 2); caixaParede(MX * 2 + 4, H, 4, m.par, 0, cy, MZ + 2);
-    caixaParede(2, H, MZ * 2, m.par, -MX - 1, cy, 0); caixaParede(2, H, MZ * 2, m.par, MX + 1, cy, 0);
+    caixaParede(2, H, MZ * 2, m.par, -MX - 1, cy, 0);
+    // A parede leste agora tem um vão de 10 m no final do corredor.
+    for (const lado of [-1,1]) caixaParede(2,H,MZ-5,m.par,MX+1,cy,lado*(MZ+5)/2);
+    caixaParede(2,YMAX-F-9.5,10,m.par,MX+1,F+9.5+(YMAX-F-9.5)/2,0);
 
     // Planta: corredor central (z -8..8) com 10 portas reais; divisórias terminam nas paredes do corredor
     const parede = (eixo, fixo, ini, fim, portas = []) => {
@@ -2107,7 +2681,8 @@ class WorldManager {
       if (livre(PN) && x !== -23) armarioCorredor(x, -6.85, M(0x7089aa, 0.55, { metalness: 0.16 }), M(0x87a0c2, 0.42, { metalness: 0.08 }));   // x = -23: armário trancado (easter egg)
       if (livre(PS)) armarioCorredor(x, 6.85, M(0x58729a, 0.56, { metalness: 0.18 }), M(0x7090bf, 0.42, { metalness: 0.08 }));
     }
-    janela(-MX + 0.05, 0, Math.PI / 2); janela(MX - 0.05, 0, -Math.PI / 2);
+    // A janela leste deu lugar à entrada da Sala 3.
+    janela(-MX + 0.05, 0, Math.PI / 2);
     for (let x = -110; x <= 110; x += 20) dbox(14, 0.3, 1.6, B(0xeaf6ff), x, YMAX - 0.15, 0);
 
     // ARMÁRIO TRANCADO (easter egg Mosquito Cadeado): arrombe segurando F; a posição fica em this.armario
@@ -2356,7 +2931,7 @@ class WorldManager {
     // Laboratório (x 42..71): bancadas com frascos, galão radioativo e o PROJETO DE ELETRICIDADE (easter egg)
     for (const z of [-92, -82, -50, -40, -30, -20]) {
       caixa(20, 0.8, 5, m.bancada, 56, F + 3.6, z); caixa(19, 3.2, 4.4, m.metal, 56, F + 1.6, z);
-      for (let i = 0; i < 4; i++) this.deco(new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.8, 1.4, 12), M([0x66ffaa, 0xff6688, 0x66ccff, 0xffe066][i], 0.2, { emissive: [0x22aa66, 0xaa2244, 0x2266aa, 0xaa9922][i], emissiveIntensity: 0.6 })), 49 + i * 4.5, F + 4.7, z);
+      // Frascos móveis são criados por LabPhysics após as bancadas e seus colisores.
     }
     { const TP = this.pontos.tomada = V(42.9, F + 4.2, -66);
       caixa(4.5, 0.8, 12, m.bancada, 46.5, F + 3.6, -66); caixa(4, 3.2, 11.4, m.metal, 46.5, F + 1.6, -66);
@@ -3001,7 +3576,15 @@ class WorldManager {
       if (this.livroDevolvidoVisual) this.livroDevolvidoVisual.visible = L.entregue;
     }
   }
-  limitar(p) { p.x = clamp(p.x, -CFG.MX + 1, CFG.MX - 1); p.z = clamp(p.z, -CFG.MZ + 1, CFG.MZ - 1); p.y = clamp(p.y, CFG.YMIN + 0.3, CFG.YMAX - 0.3); }   // fantasma: só os limites do prédio
+  limitar(p) {
+    const a=CFG.ARENA;
+    p.x=clamp(p.x,-CFG.MX+1,a.x1-1);p.z=clamp(p.z,-CFG.MZ+1,CFG.MZ-1);
+    if(p.x>CFG.MX-1&&(p.z<a.z0+1||p.z>a.z1-1)){
+      const z=clamp(p.z,a.z0+1,a.z1-1);
+      if(p.x-(CFG.MX-1)<Math.abs(p.z-z))p.x=CFG.MX-1;else p.z=z;
+    }
+    p.y=clamp(p.y,CFG.YMIN+.3,CFG.YMAX-.3);
+  }   // fantasma: só os limites do prédio
 
   // ---- Carteira perdida no corredor (B perto dela devolve e rende sangue; até 3 vezes) ----
   criarCarteira() {
@@ -3177,7 +3760,10 @@ class WorldManager {
     u.nucleo.material.color.setHex(c); u.nucleo.material.emissive.setHex(c); u.nucleo.material.emissiveIntensity = 0.9;
     u.halo.material.color.setHex(u.tipo === "veneno" ? 0x55ff55 : c);
     g.scale.setScalar(u.tipo === "dourada" ? 1.4 : 1);
-    if (perto) g.position.set(clamp(perto.x + (Math.random() - 0.5) * 22, -CFG.MX + 2, CFG.MX - 2), clamp(perto.y + (Math.random() - 0.3) * 5, CFG.YMIN + 1, CFG.YMAX - 1), clamp(perto.z + (Math.random() - 0.5) * 22, -CFG.MZ + 2, CFG.MZ - 2)); else this.sorteio(g.position);
+    if (perto) {
+      g.position.set(perto.x+(Math.random()-.5)*22,clamp(perto.y+(Math.random()-.3)*5,CFG.YMIN+1,CFG.YMAX-1),perto.z+(Math.random()-.5)*22);
+      this.limitar(g.position);
+    } else this.sorteio(g.position);
     g.userData.extra = !!perto; g.visible = true; this.ativas.push(g);
   }
 
@@ -3336,6 +3922,7 @@ class WorldManager {
     this.emPerigo = null; this.avisoGas = false;
     this.luz.intensity = (Math.sin(jogo.t * 3.1) * Math.sin(jogo.t * 17.3) > 0.93 ? 0.5 : 1.6) * (jogo.modoGrafico === 'ultra' ? 0.68 : 1);   // lâmpada falhando
     this.atualizarHumanos(dt * jogo.escalaTempo, jogo);   // tempo parado deixa humanos em câmera lenta
+    this.lab.update(dt, jogo); this.chefe.update(dt, jogo);
     this.atualizarFXHabilidades(dt);
     if (this.relogio) { const d = new Date(), s = d.getSeconds() + d.getMilliseconds() / 1000, mi = d.getMinutes() + s / 60, h = (d.getHours() % 12) + mi / 60;
       this.relogio.s.rotation.z = -s / 60 * Math.PI * 2; this.relogio.m.rotation.z = -mi / 60 * Math.PI * 2; this.relogio.h.rotation.z = -h / 12 * Math.PI * 2; }
@@ -3837,7 +4424,7 @@ class TouchControls {
     for (const k in this.teclas) this.teclas[k] = false;
     this.panel.hidden = true; $("mt-more").setAttribute("aria-expanded", "false");
   }
-  atualizar() { this.el.hidden = !this.ativo(); }
+  atualizar() { this.el.hidden = !this.ativo(); this.game.mundo?.chefe?.visivel(this.game); }
 }
 
 
@@ -4166,7 +4753,7 @@ class GameManager {
   multSangue() { return Math.min(4, (this.boost > 0 ? 2 : 1) * (this.buff.sangue > 0 ? 2 : 1) * (this.buff.frenesi > 0 ? 2 : 1)); } // limita empilhamento de bônus
   fatorGas() { return this.buff.gas > 0 ? 0 : this.estado.attr.gas; }
   fatorColeta() { return this.buff.scan > 0 ? 2.5 : 1; }
-  atordoar(r, seg) { const p = this.jogador.pos; for (const h of this.mundo.humanos) if (h.alvo.distanceTo(p) < r) { h.atord = Math.max(h.atord || 0, seg); h.raiva = 0; } }
+  atordoar(r, seg) { const p = this.jogador.pos; if (this.mundo.chefe.alvo.distanceTo(p) < r) this.mundo.chefe.atordoar(seg); for (const h of this.mundo.humanos) if (h.alvo.distanceTo(p) < r) { h.atord = Math.max(h.atord || 0, seg); h.raiva = 0; } }
   rajadaTusk() {   // Unhas fisicas voam ate humanos e acertam so no impacto
     const S=this.estado, ato=Math.max(1,S.mantis.length), p=this.jogador.pos;
     const alcance=ato>=4?25:22;
@@ -4191,8 +4778,10 @@ class GameManager {
   }
 
   picar() {
+    if (!this.jogando || this.menuAberto) return;
+    if (this.mundo.chefe.picar(this)) return;
     const h = this.mundo.humanoPerto;
-    if (!this.jogando || this.menuAberto || !h) return;
+    if (!h) return;
     const frenesiAtivo = this.buff.frenesi > 0;
     const feitas = frenesiAtivo ? (this.alvosFrenesi.get(h)?.qtd || 0) : 0;
     // A primeira picada libera outra após 3s. A segunda é a última nesta ativação.
@@ -4525,6 +5114,7 @@ class GameManager {
       "CORREDOR CENTRAL: armários, bebedouros, extintores e uma carteira perdida (B)\n" +
       "NORTE: Artes · Sala 1 · Sala 2 · Biblioteca (estante de devolução, B) · Laboratório · Enfermaria\n" +
       "SUL: Cantina (livro perdido em uma mesa, B) · Ginásio · Banheiro · Auditório (palco e estátua)\n\n" +
+      "LABORATÓRIO: voe contra os frascos para derrubá-los.\nSALA 3: encontre o garoto da raquete na sala de aula ao fim direito do corredor. O chefe fica vulnerável ao terminar o combo!\n\n" +
       "E pica humanos · R habilidade · K skins · C conquistas · H dica\n" +
       `Há ${Object.keys(CFG.SKINS).length} skins para achar. Devolver o livro libera o Mosquito Encadernado.`,
       "Feche com = ou clique aqui", 12000);
@@ -4536,7 +5126,7 @@ class GameManager {
     if (!continuo) { this.ui.flash("rgba(232,41,75,.8)"); this.audio.dano(); }
   }
   morrer() {
-    this.limparEntrada();
+    this.limparEntrada(); this.mundo.chefe.reiniciar(); this.mundo.lab.anterior = null;
     const S = this.estado, perda = Math.floor(S.sangue * 0.25); S.sangue -= perda;
     this.combo = 0; this.comboT = 0; this.boost = 0; this.egg.morte++; this.egg.vida = 0; this.jogador.reaparecer();
     this.audio.dano(); this.ui.flash("rgba(232,41,75,.9)"); this.ui.toast(`Você foi pego! −${perda} sangue`); this.ui.hud(S); S.salvar();
@@ -4567,7 +5157,7 @@ class GameManager {
     if (this.boost > 0) this.boost -= dt;
     this.ui.combo(this.combo, this.comboT, this.boost);
     this.ui.barras(j.stamina, S.staminaMax, j.vida, S.vidaMax);
-    this.ui.alerta(w.emPerigo === "gas" ? "☣ GÁS TÓXICO — saia!" : w.emPerigo === "poca" ? "☣ Poça tóxica — suba!" : w.avisoGas ? "⚠ INSETICIDA a caminho!" : w.humanoPerto ? `🩸 Aperte E para picar ${w.humanoPerto.nome}` : this.eggMsg ? this.eggMsg : (w.livroPerdido && !w.livroPerdido.entregue && !w.livroPerdido.carregando && j.pos.distanceToSquared(w.livroPerdido.g.position) < 36) ? "📘 Aperte B para pegar o livro perdido" : (w.livroPerdido && w.livroPerdido.carregando && w.livroPerdido.shelf && j.pos.distanceToSquared(w.livroPerdido.shelf.position) < 49) ? "📚 Aperte B para devolver o livro à estante" : (w.carteira && w.carteira.visivel && j.pos.distanceToSquared(w.carteira.g.position) < 36) ? "🎒 Aperte B para pegar a carteira" : "",
+    this.ui.alerta(w.chefe.ativo ? "" : w.emPerigo === "gas" ? "☣ GÁS TÓXICO — saia!" : w.emPerigo === "poca" ? "☣ Poça tóxica — suba!" : w.avisoGas ? "⚠ INSETICIDA a caminho!" : w.humanoPerto ? `🩸 Aperte E para picar ${w.humanoPerto.nome}` : this.eggMsg ? this.eggMsg : (w.livroPerdido && !w.livroPerdido.entregue && !w.livroPerdido.carregando && j.pos.distanceToSquared(w.livroPerdido.g.position) < 36) ? "📘 Aperte B para pegar o livro perdido" : (w.livroPerdido && w.livroPerdido.carregando && w.livroPerdido.shelf && j.pos.distanceToSquared(w.livroPerdido.shelf.position) < 49) ? "📚 Aperte B para devolver o livro à estante" : (w.carteira && w.carteira.visivel && j.pos.distanceToSquared(w.carteira.g.position) < 36) ? "🎒 Aperte B para pegar a carteira" : "",
       w.emPerigo ? "#8dff6a" : w.avisoGas ? "#ffd84d" : this.eggMsg ? "#ff8ad8" : "#ff6b8a");
     this.ui.perigo("rgba(120,255,80,.7)", w.emPerigo ? 0.35 : 0);
     this.audio.zumbir(clamp(j.vel.length() / (S.velMax * 2), 0, 1), j.corre);
@@ -4587,6 +5177,7 @@ class GameManager {
     requestAnimationFrame(() => this.laco());
     const dt = Math.min(this.relogio.getDelta(), 0.05); this.t += dt;
     if (this.jogando && !this.menuAberto) this.atualizar(dt);
+    this.mundo.chefe.visivel(this);
     // A música do Caminhão de som só toca com a skin equipada, jogo rodando, sem menu aberto e com a aba visível
     this.audio.tocarMusicaCarreta(this.jogando && !this.menuAberto && !document.hidden && this.estado.skin === "carreta", this.estado.skin === "carreta");
     this.jogador.animar(dt, this.t, this.jogando);
