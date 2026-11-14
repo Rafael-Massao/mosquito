@@ -41,6 +41,7 @@ const CFG = {
     tusk:       { nome: "Tusk", corpo: 0xf59ab8, abd: 0xef7fa6, perna: 0xc2527f, brilho: 0xff8ac0, ei: 0.18, tusk: true, dica: "Há 4 partes de um louva-a-deus espalhadas pela escola (brilho verde). Cada uma evolui o Tusk de Ato, como o stand do JoJo" },
     mosquito8000: { nome: "Mosquito 8000", corpo: 0x8f9bb0, abd: 0x6c7890, perna: 0x3b4252, brilho: 0x00e5ff, ei: 0.9, metal: true, asa: 0x9be9ff, robo: true, dica: "O quadro de matemática da Sala 1 aceita respostas (tecla Q). A certa dá conquista... mas e se você pensar bem maior?" },
     encadernado: { nome: "Mosquito Encadernado", corpo: 0x29365d, abd: 0x63528a, perna: 0x282646, brilho: 0xffd28b, olho: 0xf0d59d, asa: 0xffe9bf, ei: 0.12, livro: true, dica: "Alguém esqueceu um livro em uma mesa da cantina. Leve-o à estante marcada da biblioteca (tecla B)." },
+    raquete: { nome: "Mosquito da Raquete", corpo: 0x202127, abd: 0x375b8b, brilho: 0xff8a25, ei: 0.06, menino: true, asa: 0xd8e9ef, dica: "Decifre os quatro bilhetes, abra a Sala 3 e derrote o garoto da raquete." },
   },
   // CONQUISTAS: cat = categoria · r = raridade (b/p/o) · premio = sangue · secreto = escondida até ser obtida
   RAR: { b: { nome: "Bronze", cor: "#cd7f32", pts: 10 }, p: { nome: "Prata", cor: "#c4ccdc", pts: 25 }, o: { nome: "Ouro", cor: "#ffd84d", pts: 50 } },
@@ -51,6 +52,9 @@ const CFG = {
     { nome: "Ato 4", visual: { corpo: 0xf4a0c4, abd: 0xf08ab4, perna: 0xf4a0c4, brilho: 0xffd24a, ei: 0.25, asa: 0xfff0b0 }, attr: { colhe: 1.6, sangue: 1.4, vel: 1.2, def: 0.1, cura: 8 } },
   ],
   CONQ: [
+    { id: "circuito_bronze", nome: "Asas de bronze", ico: "🥉", desc: "Complete os 8 aros do circuito do ginásio em até 120 s", cat: "Exploração", r: "b", premio: 80 },
+    { id: "circuito_prata", nome: "Asas de prata", ico: "🥈", desc: "Complete o circuito de voo em até 45 s", cat: "Exploração", r: "p", premio: 140 },
+    { id: "circuito_ouro", nome: "Asas de ouro", ico: "🥇", desc: "Complete o circuito de voo em até 28 s", cat: "Exploração", r: "o", premio: 240 },
     { id: "pote_caido", nome: "Experimento no chão", ico: "🧪", desc: "Derrube um frasco de uma bancada do laboratório", cat: "Exploração", r: "b", premio: 50 },
     { id: "boss_raquete", nome: "Curto-circuito", ico: "⚡", desc: "Vença o garoto da raquete na Sala 3", cat: "Combate", r: "o", premio: 500 },
     { id: "primeiro", nome: "Primeiro voo", ico: "🦟", desc: "Comece uma partida", cat: "Progresso", r: "b", premio: 20 },
@@ -133,6 +137,7 @@ const ATRIB = {
   tusk: CFG.TUSK[0].attr, 
   mosquito8000: { vel: 1.3, stam: 1.5, colhe: 1.2 },
   encadernado: { stam: 1.12, colhe: 1.10 },
+  raquete: { def: .15, stam: 1.15 },
 };
 for (const id in ATRIB) CFG.SKINS[id].attr = ATRIB[id];
 const descAttr = (a = {}) => {   // texto dos atributos para o menu de skins
@@ -156,10 +161,11 @@ for (const id of Object.keys(CFG.SKINS)) CFG.CONQ.push({ id: "skin_" + id, nome:
     r: i <= 3 ? "b" : i <= 8 ? "p" : "o", premio: Math.round(30 * Math.pow(1.35, i)) })).filter(Boolean);
   CFG.CONQ.splice(CFG.CONQ.findIndex((c) => c.id === "corpo10") + 1, 0, ...lista);
 }
-const SKIN_ICO = { pixel: "👾", dengue: "🦟", relojoeiro: "⏳", radioativo: "☢️", jogador: "🏀", fantasma: "👻", vampiro: "🧛", mosquito: "🪰", carreta: "🔊", eletrizado: "⚡", pintado: "🎨", extintor: "🧯", cadeado: "🔒", tusk: "🦗", mosquito8000: "🤖", encadernado: "📖" };
+const SKIN_ICO = { pixel: "👾", dengue: "🦟", relojoeiro: "⏳", radioativo: "☢️", jogador: "🏀", fantasma: "👻", vampiro: "🧛", mosquito: "🪰", carreta: "🔊", eletrizado: "⚡", pintado: "🎨", extintor: "🧯", cadeado: "🔒", tusk: "🦗", mosquito8000: "🤖", encadernado: "📖", raquete: "⚡" };
 
 // ---- Habilidades especiais (tecla R): cada skin tem a sua; "padrao" vale para quem está sem skin. usar(g) recebe o GameManager e pode devolver false para cancelar a recarga ----
 const HABS = {
+  raquete: { nome: "Estalo elétrico", ico: "⚡", cd: 18, dur: 0, desc: "Atordoa humanos próximos por 2 s e recupera 25 de stamina.", usar(g) { g.atordoar(10,2); g.jogador.stamina=Math.min(g.estado.staminaMax,g.jogador.stamina+25); g.mundo.emitir(g.jogador.pos,0xff8a25,24,4); g.audio.tom(900,180,.25,"sawtooth",.1); } },
   padrao:     { nome: "Impulso", ico: "💨", cd: 6, dur: 0, desc: "Dispara um impulso veloz para a frente.", usar(g) { g.jogador.vel.addScaledVector(g.jogador.frente, 26); g.mundo.emitir(g.jogador.pos, 0xffffff, 16, 4, "espuma"); } },
   pixel:      { nome: "Glitch", ico: "👾", cd: 6, dur: 0, desc: "Teletransporta 14 unidades para a frente, parando antes das paredes.", usar(g) { const j = g.jogador; g.mundo.emitir(j.pos, 0x33ff66, 20, 5); for (let i = 0; i < 14; i++) { j.pos.addScaledVector(j.frente, 1); g.mundo.resolver(j.pos, 0.18); } g.mundo.emitir(j.pos, 0x33ff66, 20, 5); } },
   dengue:     { nome: "Surto", ico: "🦟", cd: 22, dur: 8, desc: "Por 8 s todo sangue (gotas e picadas) vale em dobro.", usar(g) { g.buff.sangue = 8; g.ui.flash("rgba(255,60,60,.4)"); } },
@@ -199,6 +205,15 @@ const $ = (id) => document.getElementById(id);
 const { clamp } = THREE.MathUtils;
 const amort = (k, dt) => 1 - Math.exp(-k * dt);   // amortecimento independente de FPS
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const SALA3 = {
+  senha: '2852',
+  pistas: [
+    {id:1,sala:'Sala 1',conta:'6 ÷ 3',x:-66.2,y:3.2,z:-99.7,ry:0},
+    {id:2,sala:'Biblioteca',conta:'2 × 4',x:41.4,y:3.2,z:-13.5,ry:-Math.PI/2},
+    {id:3,sala:'Laboratório',conta:'15 ÷ 3',x:70.4,y:3.2,z:-13.5,ry:-Math.PI/2},
+    {id:4,sala:'Cantina',conta:'10 − 8',x:-117.7,y:3.2,z:24,ry:Math.PI/2}
+  ]
+};
 const CONTROLES_KEY = "mosquito-evolution-controles-v1";
 function lerControles() {
   try {
@@ -230,18 +245,44 @@ const COR_PIXEL_OPCOES = [
 // ESTADO + PERSISTÊNCIA
 // ------------------------------------------------------------
 class GameState {
-  constructor() {
+  constructor(dados) {
     this.sangue = 0;
     this.nv = { asas: 0, tromba: 0, estomago: 0, corpo: 0 };
     this.skins = []; this.skin = null; this.picadas = 0; this.auraTusk = true; this.pixelCor = COR_PIXEL_PADRAO;
     this.conq = []; this.salas = []; this.carteiras = 0; this.livroDevolvido = false; this.mantis = []; this.habs = [];
+    this.portaSala3Aberta=false;this.pistasSala3=[];this.recordeVoo=null;
     try {
-      const s = JSON.parse(localStorage.getItem(CFG.SAVE));
+      const s = dados === undefined ? JSON.parse(localStorage.getItem(CFG.SAVE)) : dados;
       if (s && s.nv) { this.sangue = +s.sangue || 0; for (const k in this.nv) this.nv[k] = clamp(Math.floor(Number(s.nv[k]) || 0), 0, CFG.UP_MAX); }
       if (s) { this.auraTusk = s.auraTusk !== false; this.pixelCor = corPixelValida(s.pixelCor) ? s.pixelCor.toLowerCase() : COR_PIXEL_PADRAO; const mig = (k) => (k === "arcoiris" ? "pixel" : k); this.skins = Array.isArray(s.skins) ? s.skins.map(mig).filter((k) => CFG.SKINS[k]) : []; this.skin = CFG.SKINS[mig(s.skin)] ? mig(s.skin) : null; this.picadas = +s.picadas || 0; this.conq = Array.isArray(s.conq) ? s.conq.filter((id) => CFG.CONQ.some((c) => c.id === id)) : []; this.salas = Array.isArray(s.salas) ? s.salas : []; this.carteiras = +s.carteiras || 0; this.livroDevolvido = s.livroDevolvido === true; this.habs = Array.isArray(s.habs) ? s.habs : []; this.mantis = Array.isArray(s.mantis) ? s.mantis.filter((i) => ["cabeca", "foices", "torax", "abdomen"].includes(i)) : []; }
+      if(s){this.portaSala3Aberta=s.portaSala3Aberta===true;this.pistasSala3=Array.isArray(s.pistasSala3)?[...new Set(s.pistasSala3.filter(n=>[1,2,3,4].includes(n)))]:[];}
+      if(s&&Number.isFinite(s.recordeVoo)&&s.recordeVoo>0&&s.recordeVoo<=120)this.recordeVoo=s.recordeVoo;
     } catch (e) { /* sem save */ }
+    // Quem já venceu o chefe recebe a recompensa nova sem perder a skin equipada.
+    if(this.conq.includes('boss_raquete')&&!this.skins.includes('raquete')){
+      this.skins.push('raquete');if(!this.conq.includes('skin_raquete'))this.conq.push('skin_raquete');if(dados===undefined)this.salvar();
+    }
   }
-  salvar() { try { localStorage.setItem(CFG.SAVE, JSON.stringify({ sangue: this.sangue, nv: this.nv, skins: this.skins, skin: this.skin, picadas: this.picadas, conq: this.conq, salas: this.salas, carteiras: this.carteiras, livroDevolvido: this.livroDevolvido, mantis: this.mantis, habs: this.habs, auraTusk: this.auraTusk, pixelCor: this.pixelCor })); } catch (e) {} }
+  dados() { return { sangue:this.sangue,nv:{...this.nv},skins:[...this.skins],skin:this.skin,picadas:this.picadas,conq:[...this.conq],salas:[...this.salas],carteiras:this.carteiras,livroDevolvido:this.livroDevolvido,mantis:[...this.mantis],habs:[...this.habs],auraTusk:this.auraTusk,pixelCor:this.pixelCor,portaSala3Aberta:this.portaSala3Aberta,pistasSala3:[...this.pistasSala3],recordeVoo:this.recordeVoo }; }
+  salvar() { try { localStorage.setItem(CFG.SAVE, JSON.stringify(this.dados())); } catch (e) {} }
+  static lerBackup(texto) {
+    if(typeof texto!=='string'||texto.length>131072)throw Error('Arquivo muito grande. Escolha um backup do jogo de até 128 KB.');
+    let pacote;try{pacote=JSON.parse(texto);}catch(_){throw Error('O arquivo não contém um backup JSON válido.');}
+    if(!pacote||pacote.jogo!=='mosquito-evolution'||pacote.versao!==1)throw Error('Este arquivo não é um backup compatível do Mosquito Evolution.');
+    const s=pacote.progresso,erro=()=>{throw Error('Progresso inválido ou de uma versão mais nova do jogo. O save atual foi mantido.');};
+    if(!s||typeof s!=='object'||Array.isArray(s)||!s.nv)erro();
+    const numero=(v,max=1e12)=>typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=max;
+    for(const k of Object.keys(CFG.UPS))if(!Number.isInteger(s.nv[k])||!numero(s.nv[k],CFG.UP_MAX))erro();
+    for(const k of ['sangue','picadas','carteiras'])if(!numero(s[k]))erro();
+    const lista=(v,permitidos,obrigatoria=true)=>{if(v===undefined&&!obrigatoria)return;if(!Array.isArray(v)||v.length>200||v.some(x=>!permitidos.includes(x))||new Set(v).size!==v.length)erro();};
+    lista(s.skins,Object.keys(CFG.SKINS));lista(s.conq,CFG.CONQ.map(c=>c.id));lista(s.salas,CFG.SALAS.map(x=>x[0]));
+    lista(s.mantis,['cabeca','foices','torax','abdomen'],false);lista(s.habs,Object.keys(HABS),false);lista(s.pistasSala3,[1,2,3,4],false);
+    if(s.skin!==null&&!s.skins.includes(s.skin))erro();
+    for(const k of ['livroDevolvido','auraTusk','portaSala3Aberta'])if(s[k]!==undefined&&typeof s[k]!=='boolean')erro();
+    if(s.pixelCor!==undefined&&!corPixelValida(s.pixelCor))erro();
+    if(s.recordeVoo!=null&&(!numero(s.recordeVoo,120)||s.recordeVoo===0))erro();
+    return new GameState(s);
+  }
   get total() { return this.nv.asas + this.nv.tromba + this.nv.estomago + this.nv.corpo; }
   get estagio() { let e = CFG.ESTAGIOS[0]; for (const x of CFG.ESTAGIOS) if (this.total >= x.min) e = x; return e; }
   custo(k) { return this.nv[k] >= CFG.UP_MAX ? Infinity : Math.floor(CFG.UPS[k].base * Math.pow(CFG.CRESCE, this.nv[k])); }
@@ -470,31 +511,61 @@ kbd{font:700 .7rem Figtree,sans-serif;border:1px solid rgba(255,255,255,.25);bor
   montarMenu() {
     const m = document.createElement("div"); m.id = "hx-menu";
     const voa = Array.from({ length: 9 }, (_, i) => `<i style="left:${-5 - i * 7}vw;top:${8 + ((i * 37) % 80)}vh;font-size:${1.4 + (i % 3)}rem;animation-duration:${22 + i * 5}s;animation-delay:-${i * 4}s">🦟</i>`).join("");
-    const ctrl = [["W A S D", "mover"], ["Mouse", "olhar"], ["Espaço / Ctrl", "subir / descer"], ["Shift", "sprint"], ["1 2 3 4", "evoluir"], ["E", "picar um humano"], ["R", "habilidade da skin"], ["K / C", "skins / conquistas"], ["F", "arrombar armário"], ["Q", "responder o quadro"], ["B", "carteira / livro"], ["H · M · =", "dica · som · tour"]]
+    const ctrl = [["W A S D", "mover"], ["Mouse", "olhar"], ["Espaço / Ctrl", "subir / descer"], ["Shift", "sprint"], ["1 2 3 4", "evoluir"], ["E", "picar um humano"], ["R", "habilidade da skin"], ["K / C", "skins / conquistas"], ["F", "arrombar armário"], ["Q", "quadro / fechadura da Sala 3"], ["B", "objetos / pistas / fechadura"], ["H · M · =", "dica · som · tour"], ["Esc", "pausar / fechar menus"]]
       .map(([a, b]) => `<kbd>${a}</kbd><span>${b}</span>`).join("");
     m.innerHTML = `<div class="hxm-fundo">${voa}</div><section class="hxm-painel"><header><h1 id="hx-menu-titulo">MOSQUITO</h1><p>Evolução noturna · escola assombrada de humanos</p></header>
+<nav class="hxm-abas" role="tablist" aria-label="Menu do jogo">
+<button type="button" id="hx-tab-inicio" role="tab" data-menu-aba="inicio" aria-selected="true" aria-controls="hx-painel-inicio">Início</button>
+<button type="button" id="hx-tab-controles" role="tab" data-menu-aba="controles" aria-selected="false" aria-controls="hx-painel-controles" tabindex="-1">Controles</button>
+</nav>
+<div id="hx-painel-inicio" role="tabpanel" aria-labelledby="hx-tab-inicio">
 <div class="hxm-grid"><div class="hxm-col">
+<button class="hx-btn" id="hx-btn-jogar">Jogar</button><div class="hxm-atalhos"><button id="hx-btn-skins">🎨 Skins <kbd>K</kbd></button><button id="hx-btn-conq">🏆 Conquistas <kbd>C</kbd></button></div></div>
+<div class="hxm-col hxm-graficos"><b>⚙️ Modo gráfico</b><div class="hxm-graf-botoes">
+<button type="button" data-modo-grafico="leve">🚀 Leve</button><button type="button" data-modo-grafico="medio">⚖️ Normal</button><button type="button" data-modo-grafico="alto">✨ Alto</button><button type="button" data-modo-grafico="ultra">💎 Ultra</button></div>
+<small id="hx-graf-desc">Escolha o desempenho ideal para o seu dispositivo.</small></div></div>
+<details class="hxm-bottom hxm-progresso"><summary>Seu progresso</summary><div class="hxm-res" id="hx-resumo"></div><p class="hxm-save" id="hx-save"></p><div class="school-menu-actions"><button type="button" id="hx-btn-mapa">🗺 Mapa da escola</button><button type="button" id="hx-btn-backup">💾 Backup do progresso</button></div></details></div>
+<div id="hx-painel-controles" role="tabpanel" aria-labelledby="hx-tab-controles" hidden>
 <fieldset class="hxm-dispositivo"><legend>Como você quer jogar?</legend><div>
 <button type="button" data-controle="desktop" aria-pressed="false">💻 Computador</button>
 <button type="button" data-controle="mobile" aria-pressed="false">📱 Celular / toque</button>
 </div><small id="hx-controle-desc"></small></fieldset>
-<button class="hx-btn" id="hx-btn-jogar">Jogar</button><div class="hxm-atalhos"><button id="hx-btn-skins">🎨 Skins <kbd>K</kbd></button><button id="hx-btn-conq">🏆 Conquistas <kbd>C</kbd></button></div>
-<div class="hxm-graficos"><b>⚙️ Modo gráfico</b><div class="hxm-graf-botoes">
-<button type="button" data-modo-grafico="leve">🚀 Leve</button><button type="button" data-modo-grafico="medio">⚖️ Normal</button><button type="button" data-modo-grafico="alto">✨ Alto</button><button type="button" data-modo-grafico="ultra">💎 Ultra</button></div>
-<small id="hx-graf-desc">Escolha o desempenho ideal para o seu dispositivo.</small></div></div>
-<div class="hxm-col"><h3>Controles</h3><div class="hxm-ctrl" id="hx-controles-pc">${ctrl}</div>
+<h2 id="hx-controles-titulo">Mouse e teclado</h2><div class="hxm-ctrl" id="hx-controles-pc">${ctrl}<kbd>V</kbd><span>mapa da escola</span></div>
 <div class="hxm-ctrl" id="hx-controles-mobile" hidden>
 <b>Direcional</b><span>mover com o polegar esquerdo</span>
 <b>Arrastar</b><span>olhar pelo cenário</span>
 <b>Altitude</b><span>olhe para cima ou para baixo enquanto voa</span>
 <b>Sprint</b><span>segurar para acelerar</span>
-<b>Picar / Poder</b><span>atacar / usar habilidade</span>
-<b>Pegar</b><span>pegar ou devolver objetos</span>
+<b>Picar / Poder</b><span>toque sem soltar o direcional ou a câmera</span>
+<b>Pegar</b><span>objetos, pistas, fechadura e circuito</span>
 <b>Evoluções</b><span>cartões entre o direcional e as ações</span>
 <b>Skins / Conquistas</b><span>botões sempre visíveis no topo</span>
-<b>••• / Ⅱ</b><span>mais ações / pausar</span>
-</div></div></div><div class="hxm-bottom"><div class="hxm-res" id="hx-resumo"></div><p class="hxm-save" id="hx-save"></p></div></section>`;
+<b>••• / Ⅱ</b><span>mapa, backup e mais ações / pausar</span>
+</div><button type="button" class="hxm-voltar" id="hx-controles-voltar">Voltar ao início</button></div></section>`;
     document.body.appendChild(m); this.menuEl = m;
+    const abas=[...m.querySelectorAll('[data-menu-aba]')];
+    abas.forEach((b,i)=>{
+      b.addEventListener('click',()=>this.mudarAbaMenu(b.dataset.menuAba));
+      b.addEventListener('keydown',e=>{
+        let destino;
+        if(e.key==='ArrowRight')destino=(i+1)%abas.length;
+        else if(e.key==='ArrowLeft')destino=(i+abas.length-1)%abas.length;
+        else if(e.key==='Home')destino=0;
+        else if(e.key==='End')destino=abas.length-1;
+        else return;
+        e.preventDefault();e.stopPropagation();this.mudarAbaMenu(abas[destino].dataset.menuAba,true);
+      });
+    });
+    $('hx-controles-voltar').addEventListener('click',()=>this.mudarAbaMenu('inicio',true));
+  }
+  mudarAbaMenu(aba,focar=false){
+    if(!['inicio','controles'].includes(aba))return;
+    this.menuEl.querySelectorAll('[data-menu-aba]').forEach(b=>{
+      const ativa=b.dataset.menuAba===aba;b.setAttribute('aria-selected',String(ativa));b.tabIndex=ativa?0:-1;
+      $(b.getAttribute('aria-controls')).hidden=!ativa;
+      if(ativa&&focar)b.focus({preventScroll:true});
+    });
+    this.menuEl.scrollTop=0;
   }
   _w(el, pct) { const v = Math.round(clamp(pct, 0, 100)); if (this.cache[el.id || el] !== v) { this.cache[el.id || el] = v; el.style.width = v + "%"; } }
   hud(S) {
@@ -703,6 +774,50 @@ ${sel === "tusk" && liberada ? `<button id="sk-aura-tusk" type="button" aria-pre
   }
   previewParar() { this.previewLoop(false); }
 
+  enigmaSala3(S,modo,aoResponder,aoFechar){
+    if(!this.sala3El){
+      const e=document.createElement('div');e.id='hud-sala3';e.className='puzzle-modal';e.hidden=true;
+      e.innerHTML='<section role="dialog" aria-modal="true" aria-labelledby="puzzle-title" tabindex="-1"><header><b id="puzzle-title"></b><p>Resolva as contas dos bilhetes e use a ordem 1 → 4.</p></header><div class="puzzle-content"><ol class="puzzle-notes"></ol><div class="puzzle-entry"><output aria-label="Senha digitada" aria-live="polite"></output><div class="puzzle-keys"></div><p class="puzzle-feedback" aria-live="polite"></p></div></div><button type="button" class="puzzle-close">Voltar ao jogo</button></section>';
+      const keys=e.querySelector('.puzzle-keys');
+      for(const k of ['1','2','3','4','5','6','7','8','9','⌫','0','OK']){
+        const b=document.createElement('button');b.type='button';b.dataset.key=k;b.textContent=k;
+        if(k==='⌫')b.setAttribute('aria-label','Apagar último dígito');if(k==='OK')b.setAttribute('aria-label','Confirmar senha');keys.appendChild(b);
+      }
+      document.body.appendChild(e);this.sala3El=e;
+    }
+    const e=this.sala3El,dialog=e.querySelector('section'),list=e.querySelector('.puzzle-notes'),out=e.querySelector('output'),fb=e.querySelector('.puzzle-feedback');
+    e.dataset.modo=modo;e.querySelector('#puzzle-title').textContent=modo==='porta'?'🔒 Fechadura — Sala 3':'📄 Caderno de pistas — Sala 3';
+    list.replaceChildren();for(const p of SALA3.pistas){
+      const li=document.createElement('li'),b=document.createElement('b'),small=document.createElement('small');
+      b.textContent=p.id+' · '+p.sala;small.textContent=S.pistasSala3.includes(p.id)?p.conta+' = ?':'Bilhete ainda não encontrado';li.dataset.encontrada=String(S.pistasSala3.includes(p.id));li.append(b,small);list.appendChild(li);
+    }
+    let valor='',resolvido=false;fb.textContent='';e.hidden=false;document.exitPointerLock?.();
+    const render=()=>{out.textContent=valor.padEnd(4,'—').split('').join(' ');e.querySelector('[data-key="OK"]').disabled=valor.length!==4||resolvido;};
+    const tecla=k=>{
+      if(modo!=='porta'||resolvido)return;
+      if(/^\d$/.test(k)&&valor.length<4)valor+=k;
+      else if(k==='⌫')valor=valor.slice(0,-1);
+      else if(k==='OK'&&valor.length===4){const r=aoResponder(valor);fb.textContent=r.msg;fb.dataset.certo=String(!!r.fechar);resolvido=!!r.fechar;if(resolvido)this.sala3T=setTimeout(aoFechar,850);else valor='';}
+      render();
+    };
+    e.querySelectorAll('[data-key]').forEach(b=>{b.onclick=()=>tecla(b.dataset.key);});
+    e.querySelector('.puzzle-close').onclick=aoFechar;
+    dialog.onkeydown=ev=>{
+      ev.stopPropagation();
+      if(ev.key==='Escape'){ev.preventDefault();aoFechar();}
+      else if(/^\d$/.test(ev.key)){ev.preventDefault();tecla(ev.key);}
+      else if(ev.key==='Backspace'){ev.preventDefault();tecla('⌫');}
+      else if(ev.key==='Enter'&&ev.target.tagName!=='BUTTON'){ev.preventDefault();tecla('OK');}
+      else if(ev.key==='Tab'){
+        const buttons=[...dialog.querySelectorAll('button')].filter(b=>!b.disabled&&b.offsetParent!==null),i=buttons.indexOf(document.activeElement);
+        if(ev.shiftKey&&i<=0){ev.preventDefault();buttons.at(-1)?.focus();}else if(!ev.shiftKey&&i===buttons.length-1){ev.preventDefault();buttons[0]?.focus();}
+      }
+    };
+    render();dialog.focus();
+  }
+  fecharEnigmaSala3(){clearTimeout(this.sala3T);if(this.sala3El)this.sala3El.hidden=true;}
+
+
   // ---- Pergunta do quadro de matemática: caixa com campo de texto ----
   pergunta(titulo, enunciado, aoResponder, aoFechar) {
     if (!this.perg) {
@@ -758,7 +873,7 @@ ${sel === "tusk" && liberada ? `<button id="sk-aura-tusk" type="button" aria-pre
     });
     const e = $('hx-graf-desc'); if (e) e.textContent = descricoes[modo];
   }
-  menu(titulo, botao) { this.menuEl.hidden = false; $("hx-menu-titulo").textContent = titulo; $("hx-btn-jogar").textContent = botao; if (this.ultimoS) this.saveInfo(this.ultimoS); }
+  menu(titulo, botao) { this.menuEl.hidden = false; this.mudarAbaMenu('inicio'); $("hx-menu-titulo").textContent = titulo; $("hx-btn-jogar").textContent = botao; if (this.ultimoS) this.saveInfo(this.ultimoS); }
   esconderMenu() { this.menuEl.hidden = true; }
   exibirControles(modo) {
     this.controleAtual = modo;
@@ -768,6 +883,7 @@ ${sel === "tusk" && liberada ? `<button id="sk-aura-tusk" type="button" aria-pre
       b.setAttribute("aria-pressed", String(b.dataset.controle === modo));
     });
     $("hx-controles-pc").hidden = mobile; $("hx-controles-mobile").hidden = !mobile;
+    $('hx-controles-titulo').textContent=mobile?'Celular e toque':'Mouse e teclado';
     $("hx-controle-desc").textContent = mobile
       ? "Controles na tela. Vire o celular de lado para ampliar a visão."
       : "Jogue com mouse e teclado.";
@@ -813,6 +929,66 @@ const moFrases = [
 // ------------------------------------------------------------
 // MODELO DO MOSQUITO (morfologia muda com cada evolução)
 // ------------------------------------------------------------
+function criarBlackPower() {
+  const copiar=()=>{const g=criarBlackPower.base.clone(true);g.traverse(o=>{if(o.geometry)o.geometry=o.geometry.clone();if(o.material)o.material=o.material.clone();});return g;};
+  if(criarBlackPower.base)return copiar();
+  const g=new THREE.Group();
+  const mat=(color,extra={})=>new THREE.MeshStandardMaterial({color,roughness:.65,...extra});
+  const mesh=(geo,m,x,y,z,p)=>{const a=new THREE.Mesh(geo,m);a.position.set(x,y,z);p.add(a);return a;};
+    // Black power cheio: copa arredondada, franja e laterais até as orelhas.
+    // A linha inferior acompanha o couro cabeludo; não há anel sob o queixo.
+    const centroAfro=V(0,.35,-.12),raiosAfro=V(.98,1.01,.8);
+    const linhaCabelo=phi=>.12+.30*Math.pow(Math.max(0,Math.cos(phi)),2)-.35*Math.max(0,-Math.cos(phi));
+    const limiteCabelo=phi=>Math.acos((linhaCabelo(phi)-centroAfro.y)/raiosAfro.y);
+    const superficie=(theta,phi)=>{
+      const ondula=1+.025*Math.sin(phi*5+theta*4)+.018*Math.cos(phi*9-theta*7);
+      const afina=1-.2*Math.pow(Math.max(0,(theta-1.25)/(limiteCabelo(phi)-1.25)),2);
+      return V(Math.sin(theta)*Math.sin(phi)*raiosAfro.x*ondula*afina,
+        Math.cos(theta)*raiosAfro.y,Math.sin(theta)*Math.cos(phi)*raiosAfro.z*ondula*afina).add(centroAfro);
+    };
+    const vertices=[],indices=[],faixas=20,volta=48;
+    for(let j=0;j<=faixas+1;j++)for(let i=0;i<=volta;i++){
+      const phi=i/volta*Math.PI*2,p=superficie(Math.min(j,faixas)/faixas*limiteCabelo(phi),phi);
+      // Miolo contínuo preenche os cachos, inclusive na raiz junto às orelhas.
+      p.sub(centroAfro).multiplyScalar(.93).add(centroAfro);
+      if(j>faixas){p.x*=.46;p.z=centroAfro.z+(p.z-centroAfro.z)*.48;p.y+=.06;}
+      vertices.push(p.x,p.y,p.z);
+      if(j>0&&i>0){const a=(j-1)*(volta+1)+i-1,b=j*(volta+1)+i-1;indices.push(a,b,a+1,a+1,b,b+1);}
+    }
+    const geoAfro=new THREE.BufferGeometry();geoAfro.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geoAfro.setIndex(indices);geoAfro.computeVertexNormals();
+    const fio=mat(0x201b1a,{roughness:1});
+    const afro=mesh(geoAfro,fio,0,0,0,g);afro.name='boss-black-power';
+    const pontos=[],aleatorio=n=>{const v=Math.sin(n*127.1+311.7)*43758.5453;return v-Math.floor(v);};
+    for(let n=0;n<640;n++){
+      const y=1-2*(n+.5)/640,theta=Math.acos(y),phi=n*2.399963;
+      if(theta>limiteCabelo(phi))continue;
+      pontos.push({p:superficie(theta,phi),normal:V(Math.sin(theta)*Math.sin(phi),y,Math.sin(theta)*Math.cos(phi))});
+    }
+    // Cachos sobrepostos, com tamanhos e direções variados, quebram a borda lisa.
+    const geoMecha=new THREE.SphereGeometry(1,9,6),posMecha=geoMecha.attributes.position;
+    for(let i=0;i<posMecha.count;i++){
+      const x=posMecha.getX(i),y=posMecha.getY(i),z=posMecha.getZ(i),r=1+.09*Math.sin(x*7+y*4)*Math.cos(z*8-y*3);
+      posMecha.setXYZ(i,x*r,y*r,z*r);
+    }
+    geoMecha.computeVertexNormals();
+    const cachos=new THREE.InstancedMesh(geoMecha,fio.clone(),pontos.length),obj=new THREE.Object3D(),cor=new THREE.Color();
+    const espirais=new THREE.InstancedMesh(new THREE.TorusGeometry(.06,.022,5,10,Math.PI*1.8),fio,pontos.length*2);
+    pontos.forEach(({p,normal},n)=>{
+      const r=.105+aleatorio(n)*.035;
+      obj.position.copy(p);obj.rotation.set(aleatorio(n+1)*3,aleatorio(n+2)*3,aleatorio(n+3)*3);
+      obj.scale.set(r*(.88+aleatorio(n+4)*.3),r*(1+aleatorio(n+5)*.35),r);obj.updateMatrix();cachos.setMatrixAt(n,obj.matrix);
+      cor.setRGB(.75+aleatorio(n+6)*.35,.75+aleatorio(n+6)*.35,.75+aleatorio(n+6)*.35);cachos.setColorAt(n,cor);
+      for(let k=0;k<2;k++){
+        obj.position.copy(p).addScaledVector(normal,r*(k?.7:.88));
+        obj.quaternion.setFromUnitVectors(V(0,0,1),normal);obj.rotateZ(aleatorio(n*2+k+7)*Math.PI*2);obj.rotateY(k?.45:-.25);
+        obj.scale.setScalar(.75+aleatorio(n*2+k+9)*.45);obj.updateMatrix();espirais.setMatrixAt(n*2+k,obj.matrix);
+      }
+    });
+    cachos.name='boss-cachos';espirais.name='boss-fios';
+    cachos.frustumCulled=false;espirais.frustumCulled=false;g.add(cachos,espirais);
+  criarBlackPower.base=g;return copiar();
+}
+
 function construirMosquito(S) {
 const nivelTotal = () => S.total, estagioAtual = () => S.estagio, ESTAGIOS = CFG.ESTAGIOS;
 // ------------------------------------------------------------
@@ -943,6 +1119,42 @@ for (let i = 0; i < 6; i++) {
   coroa.add(cone(0.02, 0.1, matOuro, Math.cos(a) * 0.07, 0.04, Math.sin(a) * 0.07));
 }
 corpoG.add(espinhos, presas, coroa);
+
+// Recompensa do chefe: mosquito com seis membros, camisa e jeans largos.
+const rqG=new THREE.Group();rqG.name='skin-raquete-corpo';mosquito.add(rqG);
+const rqAbd=new THREE.Group();rqAbd.name='skin-raquete-abdomen';abdomen.add(rqAbd);
+const rqPreto=mat(0x18191f),rqJeans=mat(0x375b8b),rqCostura=mat(0x7196c0),rqSola=mat(0x363943),rqQuitina=mat(0x493431);
+const rqBox=(p,w,h,d,m,x,y,z)=>{const a=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);a.position.set(x,y,z);p.add(a);return a;};
+rqG.add(elipsoide(.21,1.05,.9,1.38,rqPreto,0,0,.015));
+rqG.add(elipsoide(.15,1.05,1,.95,rqQuitina,0,.09,-.29));
+const rqCabelo=criarBlackPower();rqCabelo.name='skin-raquete-black';rqCabelo.position.set(0,.09,-.29);rqCabelo.rotation.y=Math.PI;rqCabelo.scale.setScalar(.25);rqG.add(rqCabelo);
+for(const l of [-1,1]){
+  rqG.add(elipsoide(.095,.78,1,.65,matOlho,l*.105,.1,-.40));
+  rqG.add(tubo(V(l*.06,.18,-.4),V(l*.14,.39,-.5),.007,rqPreto));
+  rqG.add(elipsoide(.085,1,.8,1.2,rqPreto,l*.2,-.02,-.06));
+  // Dois pares de pernas dianteiras finas mantêm a silhueta de inseto.
+  for(const z of [-.10,.08]){
+    const a=V(l*.17,-.04,z),b=V(l*.31,-.17,z-.03),c=V(l*.45,-.30,z-.15);
+    rqG.add(tubo(a,b,.017,rqQuitina),tubo(b,c,.009,rqPreto));
+  }
+}
+rqBox(rqG,.065,.016,.1,mat(0xff8a25),.09,.185,.04);
+rqG.add(elipsoide(.18,1,.7,1,rqJeans,0,-.07,.24));
+rqBox(rqG,.31,.055,.17,rqPreto,0,-.06,.25);
+const rqPernas=[-1,1].map(l=>{
+  const g=new THREE.Group();g.position.set(l*.12,-.12,.26);rqG.add(g);
+  // Jeans mais curtos; largura baggy e altura dos tênis preservadas.
+  g.add(elipsoide(.12,.95,1.05,1,rqJeans,l*.025,-.08,.035));
+  g.add(elipsoide(.105,1,1,1.05,rqJeans,l*.05,-.225,.085));
+  rqBox(g,.19,.055,.21,rqCostura,l*.05,-.32,.085);
+  rqBox(g,.02,.16,.025,rqCostura,l*.14,-.22,.085);
+  rqBox(g,.19,.10,.29,rqPreto,l*.05,-.395,.035);
+  rqBox(g,.195,.025,.30,rqSola,l*.05,-.455,.035);
+  for(let i=0;i<3;i++)rqBox(g,.11,.013,.025,rqSola,l*.05,-.335,-.045+i*.045);
+  return g;
+});
+for(let i=0;i<4;i++)rqAbd.add(elipsoide(.14-i*.018,.9,.85,1.05,rqJeans,0,-i*.018,.04+i*.14));
+
 
 // ---- Estruturas extras das skins: caminhão de som (rig) e raios elétricos ----
 const cacheTex = {}, hexCss = (c) => "#" + (c >>> 0).toString(16).padStart(6, "0");
@@ -1648,9 +1860,9 @@ function aplicarEvolucaoVisual() {
   invisFantasmaAnterior = null; // evolução/troca de skin redefine todos os materiais
   // SKIN PIXEL: troca TODA a silhueta do mosquito por cubos 3D.
   // As outras skins seguem com a geometria original, sem modificação.
-  const px = !!(sk && sk.pixel), robo = !!(sk && sk.robo), enc = !!(sk && sk.livro);
-  corpoG.visible = !(px || robo || enc);
-  abdomenCorpo.visible = !(px || robo || enc);
+  const px = !!(sk && sk.pixel), robo = !!(sk && sk.robo), enc = !!(sk && sk.livro), menino = !!(sk && sk.menino);
+  corpoG.visible = !(px || robo || enc || menino);
+  abdomenCorpo.visible = !(px || robo || enc || menino);
   hasteGrupo.visible = !(px || enc);
   trompa.visible = !(robo || enc);
   pxCorpo.visible = px;
@@ -1662,6 +1874,7 @@ function aplicarEvolucaoVisual() {
     pxAsas[i].visible = px;
     encAsas[i].visible = enc;
   }
+  rqG.visible = rqAbd.visible = menino; rqG.scale.setScalar(cs); rqAbd.scale.set(abx,abx,abz);
   pxCorpo.scale.setScalar(cs);
   pxAbdomen.scale.set(abx, abx, abz);
   pxTromba.scale.set(1 + (e - 1) * 0.35, 1 + (e - 1) * 0.35, c);
@@ -1800,6 +2013,7 @@ function tickSkin(t, _dt, invisAtiva = false) {
     roboArticulacoes.forEach((g, i) => { g.rotation.z = Math.sin(t * 6 + i * 1.1) * 0.12; });
     luzCorpo.intensity = 1.0 + 0.55 * pulso;
   }
+  if (S.skin === 'raquete') rqPernas.forEach((p,i)=>{p.rotation.x=Math.sin(t*7+i*Math.PI)*.09;p.rotation.z=Math.sin(t*5+i)*.04;});
   if (S.skin === 'encadernado') {
     // Oscilacao discreta das pernas/canetas, sem soltar as articulacoes.
     encPernas.forEach((p, i) => {
@@ -2020,57 +2234,7 @@ class RacketBoss {
     }
     mesh(new THREE.ConeGeometry(.08,.22,8),pele,0,-.06,.52,this.cab).rotation.x=Math.PI/2;
     box(.22,.04,.04,mat(0x6b332b),0,-.26,.45,this.cab);
-    // Black power cheio: copa arredondada, franja e laterais até as orelhas.
-    // A linha inferior acompanha o couro cabeludo; não há anel sob o queixo.
-    const centroAfro=V(0,.35,-.12),raiosAfro=V(.98,1.01,.8);
-    const linhaCabelo=phi=>.12+.30*Math.pow(Math.max(0,Math.cos(phi)),2)-.35*Math.max(0,-Math.cos(phi));
-    const limiteCabelo=phi=>Math.acos((linhaCabelo(phi)-centroAfro.y)/raiosAfro.y);
-    const superficie=(theta,phi)=>{
-      const ondula=1+.025*Math.sin(phi*5+theta*4)+.018*Math.cos(phi*9-theta*7);
-      const afina=1-.2*Math.pow(Math.max(0,(theta-1.25)/(limiteCabelo(phi)-1.25)),2);
-      return V(Math.sin(theta)*Math.sin(phi)*raiosAfro.x*ondula*afina,
-        Math.cos(theta)*raiosAfro.y,Math.sin(theta)*Math.cos(phi)*raiosAfro.z*ondula*afina).add(centroAfro);
-    };
-    const vertices=[],indices=[],faixas=20,volta=48;
-    for(let j=0;j<=faixas+1;j++)for(let i=0;i<=volta;i++){
-      const phi=i/volta*Math.PI*2,p=superficie(Math.min(j,faixas)/faixas*limiteCabelo(phi),phi);
-      // Miolo contínuo preenche os cachos, inclusive na raiz junto às orelhas.
-      p.sub(centroAfro).multiplyScalar(.93).add(centroAfro);
-      if(j>faixas){p.x*=.46;p.z=centroAfro.z+(p.z-centroAfro.z)*.48;p.y+=.06;}
-      vertices.push(p.x,p.y,p.z);
-      if(j>0&&i>0){const a=(j-1)*(volta+1)+i-1,b=j*(volta+1)+i-1;indices.push(a,b,a+1,a+1,b,b+1);}
-    }
-    const geoAfro=new THREE.BufferGeometry();geoAfro.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geoAfro.setIndex(indices);geoAfro.computeVertexNormals();
-    const fio=mat(0x201b1a,{roughness:1});
-    const afro=mesh(geoAfro,fio,0,0,0,this.cab);afro.name='boss-black-power';
-    const pontos=[],aleatorio=n=>{const v=Math.sin(n*127.1+311.7)*43758.5453;return v-Math.floor(v);};
-    for(let n=0;n<640;n++){
-      const y=1-2*(n+.5)/640,theta=Math.acos(y),phi=n*2.399963;
-      if(theta>limiteCabelo(phi))continue;
-      pontos.push({p:superficie(theta,phi),normal:V(Math.sin(theta)*Math.sin(phi),y,Math.sin(theta)*Math.cos(phi))});
-    }
-    // Cachos sobrepostos, com tamanhos e direções variados, quebram a borda lisa.
-    const geoMecha=new THREE.SphereGeometry(1,9,6),posMecha=geoMecha.attributes.position;
-    for(let i=0;i<posMecha.count;i++){
-      const x=posMecha.getX(i),y=posMecha.getY(i),z=posMecha.getZ(i),r=1+.09*Math.sin(x*7+y*4)*Math.cos(z*8-y*3);
-      posMecha.setXYZ(i,x*r,y*r,z*r);
-    }
-    geoMecha.computeVertexNormals();
-    const cachos=new THREE.InstancedMesh(geoMecha,fio.clone(),pontos.length),obj=new THREE.Object3D(),cor=new THREE.Color();
-    const espirais=new THREE.InstancedMesh(new THREE.TorusGeometry(.06,.022,5,10,Math.PI*1.8),fio,pontos.length*2);
-    pontos.forEach(({p,normal},n)=>{
-      const r=.105+aleatorio(n)*.035;
-      obj.position.copy(p);obj.rotation.set(aleatorio(n+1)*3,aleatorio(n+2)*3,aleatorio(n+3)*3);
-      obj.scale.set(r*(.88+aleatorio(n+4)*.3),r*(1+aleatorio(n+5)*.35),r);obj.updateMatrix();cachos.setMatrixAt(n,obj.matrix);
-      cor.setRGB(.75+aleatorio(n+6)*.35,.75+aleatorio(n+6)*.35,.75+aleatorio(n+6)*.35);cachos.setColorAt(n,cor);
-      for(let k=0;k<2;k++){
-        obj.position.copy(p).addScaledVector(normal,r*(k?.7:.88));
-        obj.quaternion.setFromUnitVectors(V(0,0,1),normal);obj.rotateZ(aleatorio(n*2+k+7)*Math.PI*2);obj.rotateY(k?.45:-.25);
-        obj.scale.setScalar(.75+aleatorio(n*2+k+9)*.45);obj.updateMatrix();espirais.setMatrixAt(n*2+k,obj.matrix);
-      }
-    });
-    cachos.name='boss-cachos';espirais.name='boss-fios';
-    cachos.frustumCulled=false;espirais.frustumCulled=false;this.cab.add(cachos,espirais);
+    this.cab.add(criarBlackPower());
     // Braço direito, mão, cabo preto, aro laranja e grade metálica.
     this.braco=new THREE.Group();this.braco.position.set(.98,4.72,0);this.g.add(this.braco);
     mesh(new THREE.CylinderGeometry(.18,.22,1.05,14),pele,0,.5,0,this.braco);
@@ -2174,7 +2338,7 @@ class RacketBoss {
     this.queda={pos:this.g.position.clone(),rot:this.g.quaternion.clone(),braco:this.braco.quaternion.clone(),fim,dir,impacto:false};
     this.world.audio.tom(900,60,.55,'sawtooth',.08);
     const primeira=!jogo.estado.conq.includes('boss_raquete');
-    jogo.ganhar('boss_raquete');jogo.ui.toast(primeira?'🏆 Raquete desligada! +500 sangue.':'🏆 Raquete desligada! Revanche vencida.');
+    jogo.ganhar('boss_raquete');jogo.desbloquear('raquete');jogo.ui.toast(primeira?'🏆 Raquete desligada! +500 sangue.':'🏆 Raquete desligada! Revanche vencida.');
     this.atualizarHUD();this.visivel(jogo);
   }
   atualizarQueda(dt){
@@ -2254,7 +2418,7 @@ class RacketBoss {
       if(!this.dentro(p)){this.derrotado=false;this.reiniciar();return;}
       if(this.fase==='caindo'){this.atualizarQueda(dt);this.atualizarHUD();this.visivel(jogo);}return;
     }
-    if(!this.dentro(p)){if(this.ativo)this.reiniciar();return;}
+    if((this.world.portaSala3&&!this.world.portaSala3.livre)||!this.dentro(p)){if(this.ativo)this.reiniciar();return;}
     if(!this.ativo&&this.g.position.distanceToSquared(p)>784)return;
     if(!this.ativo){this.ativo=true;this.fase='perseguir';this.timer=.55;jogo.ui.toast('⚡ Desvie do combo inteiro! Pique quando ele cansar.');}
     this.visivel(jogo);dt*=jogo.buff.tempo>0?0:jogo.escalaTempo;if(dt<=0)return;
@@ -2330,7 +2494,7 @@ class WorldManager {
     this.raycaster = new THREE.Raycaster();
     this.dirs = [V(1, 0, 0), V(-1, 0, 0), V(0, 1, 0), V(0, -1, 0), V(0, 0, 1), V(0, 0, -1)];
     this.emPerigo = null; this.avisoGas = false;
-    this.construirCenario(); this.criarSalaRaquete(); this.criarGotas(); this.criarParticulas(); this.criarPerigos(); this.criarHumanos(); this.criarCarteira(); this.criarLivroPerdido(); this.criarPingos();
+    this.construirCenario(); this.criarSalaRaquete(); this.criarEnigmaSala3(); this.criarGotas(); this.criarParticulas(); this.criarPerigos(); this.criarHumanos(); this.criarCarteira(); this.criarLivroPerdido(); this.criarPingos();
     this.efeitosHabilidade = []; this.unhasTusk = [];
     this.lab = new LabPhysics(this); this.chefe = new RacketBoss(this);
 
@@ -2424,6 +2588,60 @@ class WorldManager {
     ctx.beginPath();ctx.moveTo(128,128);ctx.lineTo(86,98);ctx.moveTo(128,128);ctx.lineTo(168,60);ctx.lineWidth=7;ctx.stroke();
     this.deco(new THREE.Mesh(new THREE.PlaneGeometry(2.3,2.3),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(rel),transparent:true})),157.4,F+12,0,-Math.PI/2);
     this.pontos.arena=V(144,F,0);
+  }
+
+
+  criarEnigmaSala3(){
+    const F=CFG.YMIN,madeira=new THREE.MeshStandardMaterial({color:0x876548,roughness:.8}),metal=new THREE.MeshStandardMaterial({color:0x3c4a58});
+    const box=(g,w,h,d,m,x,y,z)=>{const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(x,y,z);g.add(b);return b;};
+    const folhas=[-1,1].map(l=>{
+      const g=new THREE.Group();g.position.set(119,F,l*2.5);this.cena.add(g);
+      box(g,.4,9.3,4.94,madeira,0,4.65,0);
+      box(g,.46,2.2,2,metal,0,6.7,0);
+      box(g,.48,1.8,1.6,new THREE.MeshBasicMaterial({color:0x96bac5}),0,6.7,0);
+      box(g,.55,.8,.16,metal,-.05,4,-l*1.8);return g;
+    });
+    const bloqueio=new THREE.Mesh(new THREE.BoxGeometry(.6,9.5,10),new THREE.MeshBasicMaterial({side:THREE.DoubleSide}));
+    bloqueio.position.set(119,F+4.75,0);bloqueio.updateMatrixWorld(true);
+    const col={mesh:bloqueio,box:new THREE.Box3().setFromObject(bloqueio)};this.col.push(col);
+    const painel=new THREE.Group();painel.position.set(117.55,1.5,5.9);this.cena.add(painel);
+    box(painel,.3,2.3,1.7,metal,0,0,0);
+    const c=document.createElement('canvas');c.width=256;c.height=320;const ctx=c.getContext('2d');
+    ctx.fillStyle='#172435';ctx.fillRect(0,0,256,320);ctx.fillStyle='#f3df9a';ctx.textAlign='center';ctx.font='bold 30px sans-serif';ctx.fillText('SALA 3',128,42);
+    ctx.font='20px sans-serif';ctx.fillText('4 DÍGITOS',128,76);ctx.fillText('B / PEGAR',128,297);
+    for(let n=1;n<=9;n++){const x=55+((n-1)%3)*73,y=112+Math.floor((n-1)/3)*53;ctx.fillStyle='#40566c';ctx.fillRect(x-24,y-19,48,39);ctx.fillStyle='#fff';ctx.fillText(n,x,y+8);}
+    const tela=new THREE.Mesh(new THREE.PlaneGeometry(1.5,1.9),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c)}));tela.position.x=-.16;tela.rotation.y=-Math.PI/2;painel.add(tela);
+    const led=new THREE.Mesh(new THREE.SphereGeometry(.12,8,6),new THREE.MeshBasicMaterial({color:0xff4e55}));led.position.set(-.2,1.04,0);painel.add(led);
+    this.portaSala3={folhas,col,painel,led,aberta:false,livre:false,progresso:0,pos:V(116.5,1.5,5.9)};
+    this.pistasSala3=SALA3.pistas.map(p=>{
+      const c=document.createElement('canvas');c.width=512;c.height=384;const t=c.getContext('2d');
+      t.fillStyle='#fff1b7';t.fillRect(0,0,512,384);t.strokeStyle='#ac7937';t.lineWidth=12;t.strokeRect(6,6,500,372);
+      t.textAlign='center';t.fillStyle='#524128';t.font='bold 38px sans-serif';t.fillText('ACESSO À SALA 3',256,62);
+      t.font='30px sans-serif';t.fillText('PISTA '+p.id+' DE 4',256,120);t.font='bold 76px sans-serif';t.fillText(p.conta+' = ?',256,225);
+      t.font='26px sans-serif';t.fillText('B / PEGAR PARA ANOTAR',256,325);
+      const m=new THREE.Mesh(new THREE.PlaneGeometry(3.6,2.7),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),side:THREE.DoubleSide}));
+      this.deco(m,p.x,p.y,p.z,p.ry);m.name='pista-sala3-'+p.id;
+      return {...p,mesh:m,pos:V(p.x,p.y,p.z)};
+    });
+  }
+  abrirSala3(imediato=false){
+    const d=this.portaSala3;if(!d)return;d.aberta=true;if(imediato)d.progresso=1;this.atualizarPortaSala3(0);
+  }
+  atualizarPortaSala3(dt){
+    const d=this.portaSala3;if(!d||!d.aberta)return;
+    d.progresso=Math.min(1,d.progresso+dt/.95);const u=d.progresso*d.progresso*(3-2*d.progresso);
+    d.folhas.forEach((g,i)=>{g.position.z=(i?1:-1)*(2.5+5.1*u);});d.led.material.color.setHex(0x6df49c);
+    if(d.progresso===1&&!d.livre){d.livre=true;const i=this.col.indexOf(d.col);if(i>=0)this.col.splice(i,1);}
+  }
+  limitarSala3(p,raio=.18){
+    // A tranca vale também para Fantasma e Glitch; não há entrada pelas paredes.
+    if(this.portaSala3&&!this.portaSala3.livre)p.x=Math.min(p.x,118-raio);
+  }
+  pistaSala3Perto(pos){let perto=null,dist=36;for(const p of this.pistasSala3||[]){const d=p.pos.distanceToSquared(pos);if(d<dist){dist=d;perto=p;}}return perto;}
+  painelSala3Perto(pos){return !!this.portaSala3&&this.portaSala3.pos.distanceToSquared(pos)<49;}
+  dicaSala3(pos){
+    if(this.painelSala3Perto(pos)&&!this.portaSala3.aberta)return '🔒 Sala 3 trancada · Pegar / B para digitar a senha';
+    const p=this.pistaSala3Perto(pos);return p?'📄 Pista '+p.id+' · Pegar / B para ler e anotar':'';
   }
 
 
@@ -3456,6 +3674,7 @@ class WorldManager {
   // Só raycasta contra malhas cuja AABB está perto (poda por bounding box)
   malhasPerto(p, r) { this.perto.length = 0; for (const c of this.col) if (c.box.distanceToPoint(p) < r) this.perto.push(c.mesh); return this.perto; }
   resolver(pos, raio = 0.18) {
+    this.limitarSala3(pos,raio);
     const ms = this.malhasPerto(pos, raio + 0.4);
     if (!ms.length) return;
     this.raycaster.far = raio;
@@ -3567,6 +3786,7 @@ class WorldManager {
   }
   apagarGas(pos, r) { for (const n of this.gasAtivos) if (n.position.distanceTo(pos) < r) { n.userData.fase = "ativo"; n.userData.t = 0.01; } }   // encerra as nuvens no raio
   iniciarPontos(S) {   // estado salvo: armário arrombado e livro já devolvido
+    if(S.portaSala3Aberta)this.abrirSala3(true);
     const A = this.armario; if (A && S.skins.includes("cadeado")) { A.aberto = true; A.cad.visible = false; A.pivo.rotation.y = -1.75; A.led.visible = false; }
     const L = this.livroPerdido;
     if (L) {
@@ -3577,6 +3797,7 @@ class WorldManager {
     }
   }
   limitar(p) {
+    this.limitarSala3(p);
     const a=CFG.ARENA;
     p.x=clamp(p.x,-CFG.MX+1,a.x1-1);p.z=clamp(p.z,-CFG.MZ+1,CFG.MZ-1);
     if(p.x>CFG.MX-1&&(p.z<a.z0+1||p.z>a.z1-1)){
@@ -3739,7 +3960,19 @@ class WorldManager {
     }
   }
 
-    // ---- Gotas (pool) ----
+  encontrarHumanoParaPicar(jogo) {
+    // Consulta a posição atual ao apertar o botão, sem depender do alvo do frame anterior.
+    let alvo=null,menor=(jogo.estado.raioColeta+.9)**2;
+    for(const h of this.humanos){
+      if(h.pronto>0||(jogo.buff.frenesi>0&&(jogo.alvosFrenesi.get(h)?.qtd||0)>=2))continue;
+      h.g.updateMatrixWorld(true);h.cab.getWorldPosition(h.alvo);
+      const d=h.alvo.distanceToSquared(jogo.jogador.pos);
+      if(d<menor){menor=d;alvo=h;}
+    }
+    this.humanoPerto=alvo;return alvo;
+  }
+
+  // ---- Gotas (pool) ----
   criarGotas() {
     const geo = new THREE.SphereGeometry(0.2, 16, 12), halo = new THREE.SphereGeometry(0.42, 12, 10);
     this.cores = { normal: 0xff1744, dourada: 0xffd84d, veneno: 0x9d33ff };
@@ -3922,7 +4155,7 @@ class WorldManager {
     this.emPerigo = null; this.avisoGas = false;
     this.luz.intensity = (Math.sin(jogo.t * 3.1) * Math.sin(jogo.t * 17.3) > 0.93 ? 0.5 : 1.6) * (jogo.modoGrafico === 'ultra' ? 0.68 : 1);   // lâmpada falhando
     this.atualizarHumanos(dt * jogo.escalaTempo, jogo);   // tempo parado deixa humanos em câmera lenta
-    this.lab.update(dt, jogo); this.chefe.update(dt, jogo);
+    this.atualizarPortaSala3(dt);this.lab.update(dt, jogo); this.chefe.update(dt, jogo);
     this.atualizarFXHabilidades(dt);
     if (this.relogio) { const d = new Date(), s = d.getSeconds() + d.getMilliseconds() / 1000, mi = d.getMinutes() + s / 60, h = (d.getHours() % 12) + mi / 60;
       this.relogio.s.rotation.z = -s / 60 * Math.PI * 2; this.relogio.m.rotation.z = -mi / 60 * Math.PI * 2; this.relogio.h.rotation.z = -h / 12 * Math.PI * 2; }
@@ -4329,6 +4562,9 @@ class TouchControls {
   <button type="button" data-action="dica">💡 Dica</button>
   <button type="button" data-action="som">♫ Som</button>
   <button type="button" data-action="quadro">📝 Quadro</button>
+  <button type="button" data-action="pistas">📄 Pistas</button>
+  <button type="button" data-action="mapa">🗺 Mapa</button>
+  <button type="button" data-action="backup">💾 Backup</button>
   <button type="button" data-action="tour">🗺 Tour</button>
   <button type="button" data-hold="f" class="mt-lock">🔓 Arrombar · segure perto do armário</button>
 </div>
@@ -4352,12 +4588,26 @@ class TouchControls {
       picar: () => game.picar(), poder: () => game.usarHabilidade(),
       pegar: () => game.interagirComPerdidos(), quadro: () => game.abrirPergunta(),
       skins: () => game.abrirColecao("skins"), conq: () => game.abrirColecao("conq"),
-      dica: () => game.dica(), tour: () => game.tour(),
+      dica: () => game.dica(), tour: () => game.tour(), pistas: () => game.abrirEnigmaSala3("pistas"),
+      mapa: () => game.extras.abrirMapa(), backup: () => game.extras.abrirBackup(),
       som: () => game.ui.toast(game.audio.alternarMudo() ? "Som desligado" : "Som ligado")
     };
-    el.querySelectorAll("[data-action]").forEach(b => b.addEventListener("click", () => {
-      if (this.ativo()) acoes[b.dataset.action]();
-    }));
+    el.querySelectorAll('[data-action]').forEach(b => {
+      if (['picar','poder','pegar'].includes(b.dataset.action)) {
+        // O segundo/terceiro dedo nem sempre gera click. Executar no toque inicial.
+        b.addEventListener('pointerdown', e => {
+          if (!this.ativo() || e.button > 0 || this.ponteiros.has(e.pointerId)) return;
+          e.preventDefault(); this.capturar(e,b,'acao'); b.classList.add('pressed');
+          acoes[b.dataset.action]();
+        });
+        b.addEventListener('lostpointercapture', e => this.soltar(e.pointerId));
+        b.addEventListener('click', e => {
+          e.preventDefault();
+          // Mantém teclado/leitor de tela; ignora o click de compatibilidade do toque.
+          if (e.detail === 0 && this.ativo()) acoes[b.dataset.action]();
+        });
+      } else b.addEventListener('click', () => { if (this.ativo()) acoes[b.dataset.action](); });
+    });
     this.stick.addEventListener("pointerdown", e => {
       if (!this.ativo() || this.movimento !== null || e.button > 0) return;
       e.preventDefault(); this.movimento = e.pointerId;
@@ -4428,6 +4678,180 @@ class TouchControls {
 }
 
 
+// Mapa, circuito de voo e backups: recursos opcionais, fora do HUD permanente.
+class SchoolActivities {
+  constructor(game) {
+    this.g=game;this.corrida=null;this.pendente=null;this.leitura=0;
+    this.largada=V(17,2,14);this.pontos=[[17,3,25],[30,5,42],[30,7,65],[30,6,82],[5,7,82],[5,6,60],[5,4,42],[17,3,25]].map(p=>V(...p));
+    this.criarCircuito();
+    $('hx-btn-mapa').onclick=()=>this.abrirMapa();$('hx-btn-backup').onclick=()=>this.abrirBackup();
+  }
+  tempo(t){return t==null?'Ainda não completou':t.toFixed(2).replace('.',',')+' s';}
+  placa(texto,cor='#ffd84d',quadrada=false) {
+    const c=document.createElement('canvas');c.width=quadrada?128:512;c.height=128;const x=c.getContext('2d');
+    x.fillStyle='#172336';x.fillRect(0,0,c.width,128);x.strokeStyle=cor;x.lineWidth=8;x.strokeRect(4,4,c.width-8,120);
+    x.fillStyle=cor;x.font=quadrada?'bold 80px sans-serif':'bold 36px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(texto,c.width/2,64);
+    return new THREE.CanvasTexture(c);
+  }
+  criarCircuito() {
+    const cena=this.g.cena,base=new THREE.Mesh(new THREE.TorusGeometry(2.8,.1,8,40),new THREE.MeshBasicMaterial({color:0x5de6ff}));
+    base.rotation.x=-Math.PI/2;base.position.set(17,CFG.YMIN+.15,14);cena.add(base);
+    const placa=new THREE.Mesh(new THREE.PlaneGeometry(7,1.75),new THREE.MeshBasicMaterial({map:this.placa('CIRCUITO · B / PEGAR'),side:THREE.DoubleSide}));
+    placa.position.set(17,4.7,12.5);placa.rotation.y=Math.PI;cena.add(placa);
+    const geo=new THREE.TorusGeometry(2.35,.12,8,40);
+    this.aros=this.pontos.map((p,i)=>{
+      const normal=p.clone().sub(i?this.pontos[i-1]:this.largada).normalize();
+      const obj=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0x5de6ff,transparent:true,opacity:.3}));
+      obj.name='circuito-aro-'+(i+1);obj.position.copy(p);obj.quaternion.setFromUnitVectors(V(0,0,1),normal);obj.visible=false;cena.add(obj);
+      const num=new THREE.Sprite(new THREE.SpriteMaterial({map:this.placa(String(i+1),'#ffd84d',true),depthTest:false}));num.scale.set(1.05,1.05,1);num.position.y=2.9;obj.add(num);
+      return {obj,normal};
+    });
+  }
+  painel(titulo) {
+    const g=this.g;if(g.menuAberto)return null;
+    this.focoAnterior=document.activeElement;g.limparEntrada();g.menuAberto=true;g.audio.silenciar();g.toque.atualizar();document.exitPointerLock?.();
+    if(!this.modal){
+      this.modal=document.createElement('div');this.modal.className='school-modal';this.modal.hidden=true;
+      this.modal.innerHTML='<section role="dialog" aria-modal="true" aria-labelledby="school-title" tabindex="-1"><header><h2 id="school-title"></h2><button type="button" class="school-close" aria-label="Fechar janela">✕</button></header><div class="school-body"></div></section>';
+      document.body.appendChild(this.modal);this.modal.querySelector('.school-close').onclick=()=>g.fecharColecao();
+      this.modal.onkeydown=e=>{
+        e.stopPropagation();
+        if(e.key==='Escape'){e.preventDefault();g.fecharColecao();}
+        if(e.key==='Tab'){
+          const bs=[...this.modal.querySelectorAll('button,input,a')].filter(b=>!b.disabled&&b.offsetParent!==null),i=bs.indexOf(document.activeElement);
+          if(e.shiftKey&&i<=0){e.preventDefault();bs.at(-1)?.focus();}else if(!e.shiftKey&&i===bs.length-1){e.preventDefault();bs[0]?.focus();}
+        }
+      };
+    }
+    this.modal.hidden=false;this.modal.querySelector('h2').textContent=titulo;
+    const body=this.modal.querySelector('.school-body');body.replaceChildren();this.modal.querySelector('section').focus();return body;
+  }
+  fecharPainel(){
+    this.leitura++;this.pendente=null;
+    if(this.modal&&!this.modal.hidden){this.modal.hidden=true;this.focoAnterior?.focus?.({preventScroll:true});}
+  }
+  parente(el,tag,txt,classe){const n=document.createElement(tag);if(txt!==undefined)n.textContent=txt;if(classe)n.className=classe;el.appendChild(n);return n;}
+  botao(el,txt,fn){const b=this.parente(el,'button',txt);b.type='button';b.onclick=fn;return b;}
+  abrirMapa(){
+    const body=this.painel('Mapa da escola');if(!body)return;
+    const g=this.g,S=g.estado,p=g.jogador.pos,ns='http://www.w3.org/2000/svg';
+    this.parente(body,'p','Norte em cima · azul: visitada · cinza: a explorar · ponto rosa: você.');
+    const svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','-125 -108 290 216');svg.setAttribute('role','img');svg.setAttribute('aria-label','Planta da escola, salas visitadas e sua posição');svg.classList.add('school-map');body.appendChild(svg);
+    const el=(tag,attrs,text)=>{const n=document.createElementNS(ns,tag);for(const [k,v]of Object.entries(attrs))n.setAttribute(k,v);if(text)n.textContent=text;svg.appendChild(n);return n;};
+    CFG.SALAS.forEach(([nome,x0,x1,z0,z1],i)=>{
+      el('rect',{x:x0,y:z0,width:x1-x0,height:z1-z0,rx:1,fill:S.salas.includes(nome)?'#204d63':'#20293c',stroke:'#71849c','stroke-width':.8});
+      // Números grandes remetem à lista abaixo, sem espremer nomes nas salas estreitas.
+      el('text',{x:(x0+x1)/2,y:(z0+z1)/2+3,'text-anchor':'middle',fill:'#f2f5fc','font-size':9,'font-weight':700},String(i+1));
+    });
+    for(const x of [-94,-49,-7,28,56,94])el('line',{x1:x-5,x2:x+5,y1:-8,y2:-8,stroke:'#c0eaff','stroke-width':1.5});
+    for(const x of [-40,17,57,94])el('line',{x1:x-5,x2:x+5,y1:8,y2:8,stroke:'#c0eaff','stroke-width':1.5});
+    el('line',{x1:118,x2:118,y1:-5,y2:5,stroke:S.portaSala3Aberta?'#67edaf':'#ffad66','stroke-width':2});
+    el('circle',{cx:p.x,cy:p.z,r:3,fill:'#ff5077',stroke:'#fff','stroke-width':1});
+    const atual=CFG.SALAS.find(s=>p.x>=s[1]&&p.x<=s[2]&&p.z>=s[3]&&p.z<=s[4]);
+    this.parente(body,'p','Você está: '+(atual?atual[0]:'Corredor')+' · '+S.salas.length+'/'+CFG.SALAS.length+' salas visitadas.','school-location');
+    const lista=this.parente(body,'ol',undefined,'school-rooms');CFG.SALAS.forEach((s,i)=>this.parente(lista,'li',(i+1)+'. '+s[0]+(S.salas.includes(s[0])?' ✓':'')));
+    const metas=this.parente(body,'div',undefined,'school-objectives');this.parente(metas,'h3','O que explorar');
+    const itens=[
+      S.portaSala3Aberta?'🔓 Sala 3 aberta.':'🔒 Sala 3: '+S.pistasSala3.length+'/4 pistas anotadas. Procure os bilhetes na Sala 1, Biblioteca, Laboratório e Cantina.',
+      S.conq.includes('boss_raquete')?'⚡ Garoto da raquete derrotado.':'⚡ Vença o garoto da raquete para ganhar a skin dele.',
+      '🏁 Ginásio: circuito de 8 aros. Recorde: '+this.tempo(S.recordeVoo)+'.',
+      S.livroDevolvido?'📚 Livro devolvido à biblioteca.':'📚 Há um livro perdido na cantina. Leve-o à biblioteca.'
+    ];itens.forEach(t=>this.parente(metas,'p',t));
+    if(this.corrida)this.botao(body,'Encerrar circuito atual',()=>{this.cancelarCorrida();g.fecharColecao();});
+  }
+  exportar(estado=this.g.estado,nome='mosquito-progresso.json') {
+    const dados={jogo:'mosquito-evolution',versao:1,salvoEm:new Date().toISOString(),progresso:estado.dados()};
+    const url=URL.createObjectURL(new Blob([JSON.stringify(dados,null,2)],{type:'application/json'}));
+    const a=document.createElement('a');a.href=url;a.download=nome;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);
+  }
+  abrirBackup(){
+    const body=this.painel('Backup do progresso');if(!body)return;
+    this.parente(body,'p','Guarde seu progresso para trocar de navegador ou atualizar o site. O arquivo inclui evoluções, skins, conquistas, pistas e recorde do circuito.');
+    this.botao(body,'Baixar meu progresso (.json)',()=>{try{this.exportar();status.textContent='Backup preparado para download.';}catch(_){status.textContent='Não foi possível baixar. Tente novamente neste navegador.';}});
+    const input=this.parente(body,'input');input.type='file';input.accept='.json,application/json';input.hidden=true;input.setAttribute('aria-label','Escolher backup do jogo');
+    this.botao(body,'Escolher arquivo para importar',()=>input.click());
+    const status=this.parente(body,'p','', 'school-feedback');status.setAttribute('role','status');
+    const preview=this.parente(body,'div',undefined,'school-backup-preview');
+    const restaurar=this.botao(body,'Restaurar este progresso',()=>this.restaurarBackup(this.pendente,status));restaurar.disabled=true;
+    input.onchange=async()=>{
+      const file=input.files?.[0],id=++this.leitura;this.pendente=null;restaurar.disabled=true;preview.replaceChildren();if(!file)return;
+      try{
+        if(file.size>131072)throw Error('Arquivo muito grande. O limite é 128 KB.');
+        const s=GameState.lerBackup(await file.text());if(id!==this.leitura)return;
+        this.pendente=s;this.parente(preview,'h3','Prévia do progresso');
+        this.parente(preview,'p','Nível '+s.total+' · '+Math.floor(s.sangue).toLocaleString('pt-BR')+' sangue · '+s.skins.length+' skins · '+s.conq.length+' conquistas.');
+        this.parente(preview,'p','Circuito: '+this.tempo(s.recordeVoo)+' · Sala 3 '+(s.portaSala3Aberta?'aberta':'trancada')+'.');
+        this.parente(preview,'p','Restaurar substitui o progresso deste navegador e reinicia a partida. O progresso anterior ficará disponível para recuperação.');
+        status.textContent='Arquivo válido. Confira a prévia antes de restaurar.';restaurar.disabled=false;
+      }catch(e){if(id===this.leitura)status.textContent=e.message;}
+    };
+    try{
+      if(localStorage.getItem(CFG.SAVE+'-antes-importar'))this.botao(body,'Recuperar progresso anterior à última importação',()=>{
+        this.leitura++;this.pendente=null;restaurar.disabled=true;preview.replaceChildren();
+        try{this.pendente=GameState.lerBackup(localStorage.getItem(CFG.SAVE+'-antes-importar'));preview.replaceChildren();this.parente(preview,'p','Anterior: nível '+this.pendente.total+' · '+Math.floor(this.pendente.sangue)+' sangue · '+this.pendente.skins.length+' skins.');status.textContent='Confira o progresso anterior e clique em Restaurar para recuperá-lo.';restaurar.disabled=false;}catch(e){status.textContent=e.message;}
+      });
+    }catch(_){status.textContent='O navegador bloqueou o armazenamento. Você ainda pode baixar uma cópia.';}
+  }
+  restaurarBackup(estado,status){
+    if(!estado)return;const g=this.g,jogando=g.jogando;
+    try{
+      const anterior=JSON.stringify({jogo:'mosquito-evolution',versao:1,progresso:g.estado.dados()});
+      // Pausar antes de gravar evita que visibilitychange sobrescreva a importação ao recarregar.
+      g.jogando=false;localStorage.setItem(CFG.SAVE+'-antes-importar',anterior);localStorage.setItem(CFG.SAVE,JSON.stringify(estado.dados()));
+      g.limparEntrada();location.reload();
+    }catch(_){g.jogando=jogando;status.textContent='Não foi possível gravar o backup. Libere o armazenamento do navegador e tente novamente.';}
+  }
+  pertoLargada(){return this.g.jogador.pos.distanceToSquared(this.largada)<30;}
+  interagir(){
+    if(!this.pertoLargada())return false;
+    const body=this.painel('Circuito de voo — Ginásio');if(!body)return true;
+    this.parente(body,'p','Atravesse os 8 aros na ordem. O próximo fica dourado. Use a câmera para subir e descer; sprint e habilidades estão liberados.');
+    this.parente(body,'p','🥉 Até 120 s: +80 sangue · 🥈 Até 45 s: +140 · 🥇 Até 28 s: +240. Cada medalha paga uma única vez.');
+    this.parente(body,'p','Recorde: '+this.tempo(this.g.estado.recordeVoo)+'. Pausar ou abrir o mapa também pausa o relógio. Sair do ginásio ou morrer encerra a tentativa.');
+    this.botao(body,this.corrida?'Recomeçar da largada':'Começar circuito',()=>{this.g.fecharColecao();this.iniciarCorrida();});
+    if(this.corrida)this.botao(body,'Encerrar tentativa',()=>{this.cancelarCorrida();this.g.fecharColecao();});
+    return true;
+  }
+  iniciarCorrida(){
+    const g=this.g;g.jogador.pos.copy(this.largada);g.jogador.vel.set(0,0,0);g.jogador.yaw=Math.PI;g.jogador.pitch=0;g.jogador.foco.copy(this.largada);
+    this.corrida={tempo:0,indice:0,contagem:3,anterior:this.largada.clone()};this.colorirAros();
+  }
+  colorirAros(){this.aros.forEach((a,i)=>{const r=this.corrida;a.obj.visible=!!r&&i>=r.indice;if(r){a.obj.material.color.setHex(i===r.indice?0xffd84d:0x5de6ff);a.obj.material.opacity=i===r.indice?1:.22;}});}
+  cancelarCorrida(msg){this.corrida=null;this.colorirAros();if(msg)this.g.ui.toast(msg);}
+  aviso(){const r=this.corrida;return r?(r.contagem>0?'🏁 Prepare-se: '+Math.ceil(r.contagem):'🏁 Aro '+(r.indice+1)+'/8 · '+r.tempo.toFixed(1).replace('.',',')+' s · siga o dourado'):'';}
+  dica(){return !this.corrida&&this.pertoLargada()?'🏁 Circuito de voo · Pegar / B para começar':'';}
+  atualizar(dt){
+    const r=this.corrida;if(!r)return;const p=this.g.jogador.pos;
+    if(p.x<-9||p.x>44||p.z<8.5||p.z>98){this.cancelarCorrida('Circuito encerrado: você saiu do ginásio.');return;}
+    if(r.contagem>0){p.copy(this.largada);this.g.jogador.vel.set(0,0,0);r.contagem=Math.max(0,r.contagem-dt);r.anterior.copy(p);return;}
+    const antes=r.tempo;r.tempo+=dt;
+    // Interseção segmento/plano evita perder um aro ao atravessá-lo em alta velocidade.
+    while(r.indice<this.pontos.length){
+      const centro=this.pontos[r.indice],n=this.aros[r.indice].normal;
+      const a=r.anterior.clone().sub(centro).dot(n),b=p.clone().sub(centro).dot(n);
+      if(!(a<=0&&b>0))break;
+      const u=-a/(b-a),hit=r.anterior.clone().lerp(p,u);
+      if(hit.distanceToSquared(centro)>2.2**2)break;
+      r.indice++;this.g.audio.clique();this.g.mundo.emitir(centro,0xffd84d,8,2);this.colorirAros();
+      if(r.indice===this.pontos.length){const tempo=antes+dt*u;if(tempo<=120)this.concluirCorrida(tempo);else this.cancelarCorrida('Tempo esgotado! Volte à largada para tentar de novo.');return;}
+    }
+    r.anterior.copy(p);
+    if(r.tempo>=120)this.cancelarCorrida('Tempo esgotado! Volte à largada para tentar de novo.');
+  }
+  concluirCorrida(tempo){
+    const g=this.g,S=g.estado;this.cancelarCorrida();const novo=S.recordeVoo==null||tempo<S.recordeVoo;
+    if(novo)S.recordeVoo=tempo;let premio=0;
+    for(const [id,limite]of [['circuito_bronze',120],['circuito_prata',45],['circuito_ouro',28]])if(tempo<=limite&&!S.conq.includes(id)){premio+=CFG.CONQ.find(c=>c.id===id).premio;g.ganhar(id);}
+    S.salvar();g.ui.hud(S);g.audio.egg();
+    const body=this.painel('Circuito concluído!');if(!body)return;
+    this.parente(body,'p',(tempo<=28?'🥇 Ouro':tempo<=45?'🥈 Prata':'🥉 Bronze')+' · '+this.tempo(tempo),'school-result');
+    this.parente(body,'p',(novo?'Novo recorde! ':'Recorde: ')+this.tempo(S.recordeVoo));
+    this.parente(body,'p',premio?'Medalhas conquistadas: +'+premio+' sangue.':'Você já recebeu as recompensas desta medalha. Tente melhorar seu tempo!');
+    this.botao(body,'Tentar novamente',()=>{g.fecharColecao();this.iniciarCorrida();});
+    this.botao(body,'Continuar explorando',()=>g.fecharColecao());
+  }
+}
+
 class GameManager {
   constructor() {
     this.modoControle = lerControles();
@@ -4487,6 +4911,7 @@ class GameManager {
       if (mudou) this.estado.salvar();
     }
     this.jogador.modelo.aplicar(); this.jogador.zoomV = this.jogador.modelo.zoom; this.ui.hud(this.estado); this.ui.saveInfo(this.estado); this.ui.habilidade(this.estado.skin, 0, 1, 0);
+    this.extras=new SchoolActivities(this);
     this.laco();
   }
 
@@ -4588,6 +5013,7 @@ class GameManager {
         if (this.menuAberto) this.fecharColecao(); else if (this.jogando) this.pausar();
         return;
       }
+      if (k === "v" && !this.menuAberto) { this.extras?.abrirMapa(); return; }
       if (k === "k") { this.abrirColecao("skins"); return; }
       if (k === "c") { this.abrirColecao("conq"); return; }
       if (this.menuAberto) return;
@@ -4780,7 +5206,7 @@ class GameManager {
   picar() {
     if (!this.jogando || this.menuAberto) return;
     if (this.mundo.chefe.picar(this)) return;
-    const h = this.mundo.humanoPerto;
+    const h = this.mundo.encontrarHumanoParaPicar(this);
     if (!h) return;
     const frenesiAtivo = this.buff.frenesi > 0;
     const feitas = frenesiAtivo ? (this.alvosFrenesi.get(h)?.qtd || 0) : 0;
@@ -4844,7 +5270,7 @@ class GameManager {
     this.ui.abrirColecao(this.estado, aba, this.apiColecao());
   }
   fecharColecao() {
-    this.ui.fecharColecao(); this.ui.fecharPergunta(); this.menuAberto = false; this.audio.clique();
+    this.ui.fecharColecao(); this.ui.fecharPergunta(); this.ui.fecharEnigmaSala3(); this.extras?.fecharPainel(); this.menuAberto = false; this.audio.clique();
     this.limparEntrada(); this.toque.atualizar();
     if (this.jogando) this.travarMouse();
   }
@@ -4876,6 +5302,7 @@ class GameManager {
   dica() {
     const S = this.estado, msgs = Object.keys(CFG.SKINS).filter((k) => !S.skins.includes(k)).map((k) => CFG.SKINS[k].dica);
     if (S.skins.includes("tusk") && S.mantis.length < 4) msgs.push(`Tusk Ato ${S.mantis.length}/4: faltam ${4 - S.mantis.length} partes do louva-a-deus (procure um brilho verde)`);
+    if(!S.portaSala3Aberta)msgs.unshift("Sala 3: procure os bilhetes na Sala 1, Biblioteca, Laboratório e Cantina. Use Pegar/B para anotar; resolva na ordem 1 a 4.");
     if (!msgs.length) { this.ui.toast("🏆 Você achou todos os easter eggs!"); return; }
     this.ui.toast(`🔍 ${msgs[this.egg.dica++ % msgs.length]}`);
   }
@@ -5001,8 +5428,31 @@ class GameManager {
       this.ui.evolucao("🦗 TUSK — ATO 4 COMPLETO!");
     }
   }
+  abrirEnigmaSala3(modo='porta'){
+    if(!this.jogando||this.menuAberto)return;
+    if(modo==='porta'&&!this.mundo.painelSala3Perto(this.jogador.pos))return;
+    this.limparEntrada();this.menuAberto=true;this.audio.silenciar();this.toque.atualizar();
+    this.ui.enigmaSala3(this.estado,modo,senha=>this.responderSenhaSala3(senha),()=>this.fecharColecao());
+  }
+  responderSenhaSala3(senha){
+    if(String(senha)!==SALA3.senha)return {msg:'Senha incorreta. Confira as contas e a ordem dos bilhetes.'};
+    if(!this.mundo.painelSala3Perto(this.jogador.pos))return {msg:'Aproxime-se do painel da Sala 3.'};
+    this.estado.portaSala3Aberta=true;this.estado.salvar();this.mundo.abrirSala3();this.audio.egg();
+    return {msg:'✔ Senha correta! Porta destrancada.',fechar:true};
+  }
+  interagirEnigmaSala3(){
+    if(this.mundo.painelSala3Perto(this.jogador.pos)){
+      if(this.mundo.portaSala3.aberta)this.ui.toast('🔓 Sala 3 destrancada.');else this.abrirEnigmaSala3();return true;
+    }
+    const p=this.mundo.pistaSala3Perto(this.jogador.pos);if(!p)return false;
+    if(!this.estado.pistasSala3.includes(p.id)){this.estado.pistasSala3.push(p.id);this.estado.salvar();this.audio.clique();}
+    this.abrirEnigmaSala3('pistas');return true;
+  }
+
+
   abrirPergunta() {
     if (this.menuAberto || !this.jogando) return;
+    if(this.mundo.painelSala3Perto(this.jogador.pos)&&!this.mundo.portaSala3.aberta){this.abrirEnigmaSala3();return;}
     if (this.jogador.pos.distanceToSquared(this.mundo.pontos.quadroMat) > 22 * 22) { this.ui.toast("Chegue perto do quadro de matemática (Sala 1)"); return; }
     this.limparEntrada(); this.menuAberto = true; this.audio.silenciar(); this.toque.atualizar();
     this.ui.pergunta("📝 Matemática — Sala 1", "2 + 2 = ?", (txt) => this.responderQuadro(txt), () => this.fecharColecao());
@@ -5088,6 +5538,9 @@ class GameManager {
 
   // ---- Itens perdidos do mapa (tecla B): carteira e livro perdido ----
   interagirComPerdidos() {
+    if(!this.jogando||this.menuAberto)return;
+    if(this.extras?.interagir())return;
+    if(this.interagirEnigmaSala3())return;
     const S = this.estado, p = this.jogador.pos, c = this.mundo.carteira, L = this.mundo.livroPerdido;
     if (L && !L.entregue) {
       if (!L.carregando && L.g.visible && p.distanceToSquared(L.g.position) <= 36) {
@@ -5103,7 +5556,7 @@ class GameManager {
         this.ui.hud(S); S.salvar(); return;
       }
     }
-    if (!this.jogando || !c || !c.visivel || p.distanceToSquared(c.g.position) > 36) { this.ui.toast("Nenhuma carteira ou livro por perto"); return; }
+    if (!this.jogando || !c || !c.visivel || p.distanceToSquared(c.g.position) > 36) { this.ui.toast("Nenhum item, bilhete ou painel por perto"); return; }
     S.carteiras++; S.sangue += 250; this.jogador.modelo.punch = 0.8; this.mundo.posicionarCarteira(S);
     this.audio.egg(); this.ui.toast(`🎒 Carteira devolvida! +250 sangue (${S.carteiras}/3)`); this.ui.hud(S); S.salvar(); this.ganhar("carteira");
   }
@@ -5114,8 +5567,8 @@ class GameManager {
       "CORREDOR CENTRAL: armários, bebedouros, extintores e uma carteira perdida (B)\n" +
       "NORTE: Artes · Sala 1 · Sala 2 · Biblioteca (estante de devolução, B) · Laboratório · Enfermaria\n" +
       "SUL: Cantina (livro perdido em uma mesa, B) · Ginásio · Banheiro · Auditório (palco e estátua)\n\n" +
-      "LABORATÓRIO: voe contra os frascos para derrubá-los.\nSALA 3: encontre o garoto da raquete na sala de aula ao fim direito do corredor. O chefe fica vulnerável ao terminar o combo!\n\n" +
-      "E pica humanos · R habilidade · K skins · C conquistas · H dica\n" +
+      "LABORATÓRIO: voe contra os frascos para derrubá-los.\nSALA 3: a porta no fim direito do corredor pede uma senha. Procure quatro bilhetes na Sala 1, Biblioteca, Laboratório e Cantina. Use Pegar/B para ler e o painel para digitar. Vença o chefe para ganhar a skin Mosquito da Raquete!\n\n" +
+      "GINÁSIO: circuito de 8 aros. Use Pegar/B na largada para tentar bater seu recorde.\nV abre o mapa · E pica · R habilidade · K skins · C conquistas\n" +
       `Há ${Object.keys(CFG.SKINS).length} skins para achar. Devolver o livro libera o Mosquito Encadernado.`,
       "Feche com = ou clique aqui", 12000);
   }
@@ -5126,6 +5579,7 @@ class GameManager {
     if (!continuo) { this.ui.flash("rgba(232,41,75,.8)"); this.audio.dano(); }
   }
   morrer() {
+    this.extras?.cancelarCorrida();
     this.limparEntrada(); this.mundo.chefe.reiniciar(); this.mundo.lab.anterior = null;
     const S = this.estado, perda = Math.floor(S.sangue * 0.25); S.sangue -= perda;
     this.combo = 0; this.comboT = 0; this.boost = 0; this.egg.morte++; this.egg.vida = 0; this.jogador.reaparecer();
@@ -5152,12 +5606,15 @@ class GameManager {
     j.fator = (w.emPerigo === "gas" ? 0.65 : 1) * (this.buff.vel > 0 ? 1.7 : 1) * (this.buff.pesado > 0 ? 0.45 : 1);
     j.update(dt, this.teclas, this.modoControle === "mobile" ? this.toque : null);
     w.update(dt, this);
+    this.extras?.atualizar(dt);
     this.eggMsg = ""; this.checarEggs(dt); this.fxSkin(dt);
+    if(!this.eggMsg)this.eggMsg=this.mundo.dicaSala3(j.pos);
+    if(!this.eggMsg)this.eggMsg=this.extras?.dica()||'';
     if (this.comboT > 0 && (this.comboT -= dt) <= 0) this.combo = 0;
     if (this.boost > 0) this.boost -= dt;
     this.ui.combo(this.combo, this.comboT, this.boost);
     this.ui.barras(j.stamina, S.staminaMax, j.vida, S.vidaMax);
-    this.ui.alerta(w.chefe.ativo ? "" : w.emPerigo === "gas" ? "☣ GÁS TÓXICO — saia!" : w.emPerigo === "poca" ? "☣ Poça tóxica — suba!" : w.avisoGas ? "⚠ INSETICIDA a caminho!" : w.humanoPerto ? `🩸 Aperte E para picar ${w.humanoPerto.nome}` : this.eggMsg ? this.eggMsg : (w.livroPerdido && !w.livroPerdido.entregue && !w.livroPerdido.carregando && j.pos.distanceToSquared(w.livroPerdido.g.position) < 36) ? "📘 Aperte B para pegar o livro perdido" : (w.livroPerdido && w.livroPerdido.carregando && w.livroPerdido.shelf && j.pos.distanceToSquared(w.livroPerdido.shelf.position) < 49) ? "📚 Aperte B para devolver o livro à estante" : (w.carteira && w.carteira.visivel && j.pos.distanceToSquared(w.carteira.g.position) < 36) ? "🎒 Aperte B para pegar a carteira" : "",
+    this.ui.alerta(w.chefe.ativo ? "" : w.emPerigo === "gas" ? "☣ GÁS TÓXICO — saia!" : w.emPerigo === "poca" ? "☣ Poça tóxica — suba!" : w.avisoGas ? "⚠ INSETICIDA a caminho!" : this.extras?.aviso() ? this.extras.aviso() : w.humanoPerto ? `🩸 Aperte E para picar ${w.humanoPerto.nome}` : this.eggMsg ? this.eggMsg : (w.livroPerdido && !w.livroPerdido.entregue && !w.livroPerdido.carregando && j.pos.distanceToSquared(w.livroPerdido.g.position) < 36) ? "📘 Aperte B para pegar o livro perdido" : (w.livroPerdido && w.livroPerdido.carregando && w.livroPerdido.shelf && j.pos.distanceToSquared(w.livroPerdido.shelf.position) < 49) ? "📚 Aperte B para devolver o livro à estante" : (w.carteira && w.carteira.visivel && j.pos.distanceToSquared(w.carteira.g.position) < 36) ? "🎒 Aperte B para pegar a carteira" : "",
       w.emPerigo ? "#8dff6a" : w.avisoGas ? "#ffd84d" : this.eggMsg ? "#ff8ad8" : "#ff6b8a");
     this.ui.perigo("rgba(120,255,80,.7)", w.emPerigo ? 0.35 : 0);
     this.audio.zumbir(clamp(j.vel.length() / (S.velMax * 2), 0, 1), j.corre);
