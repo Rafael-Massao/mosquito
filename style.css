@@ -25,6 +25,11 @@
 .school-objectives,.school-backup-preview:has(h3){border-top:1px solid #38465c;margin-top:14px;padding-top:4px}
 .school-modal .school-result{font:800 1.6rem var(--titulo);color:#ffda75}
 .school-modal .school-feedback{color:#ffe1a1;min-height:1.5em}
+.quest-card{padding:12px 14px;margin:10px 0;border:1px solid #3d526a;border-radius:12px;background:#1c2a3c}
+.quest-card h3{margin-top:0}.quest-card small{display:block;color:#ffda75;font-weight:700}
+.school-modal .quest-personagem{color:#98dfe9;font-weight:700}
+.school-modal .quest-objetivo{padding:12px;border-left:3px solid #ffd84d;background:#243447;border-radius:0 8px 8px 0}
+.school-modal .quest-concluida{color:#8dedb9}
 @media(max-width:480px){.school-modal section{padding:14px}.school-rooms{grid-template-columns:repeat(2,minmax(0,1fr));font-size:.75rem}.school-modal h2{font-size:1.05rem}.school-menu-actions{grid-template-columns:1fr}}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--noite);color:var(--osso);font-family:var(--texto)}

@@ -7,6 +7,7 @@
 (() => {
 
 const CFG = {
+  ESCALA_JOGADOR: .2,
   MX: 118, MZ: 100, PX: 118, PZ: 100, MN: 105, MS: 108, YMIN: -3.5, YMAX: 12, SAVE: "mosquito-evolucao-v1", CRESCE: 1.3, COMBO_T: 4,
   ESTAGIOS: [
     { min: 0,  nome: "Larva voadora",           cor: 0xffb45c },
@@ -32,7 +33,7 @@ const CFG = {
     jogador:    { nome: "Craque da quadra",   corpo: 0xff7a1a, abd: 0x1a1a1a, brilho: 0xff7a1a, ei: 0.3,  dica: "Faça uma cesta: atravesse um aro do ginásio de cima para baixo" },
     fantasma:   { nome: "Fantasma", corpo: 0xdff4ff, abd: 0xbfe6ff, brilho: 0x88ccff, ei: 0.6, alfa: 0.35, asa: 0xffffff, dica: "Encare seu reflexo no espelho do banheiro" },
     vampiro:    { nome: "Conde Drácula",      corpo: 0x14000a, abd: 0x8b0000, brilho: 0xff0033, ei: 0.7,  dica: "Pique 10 humanos" },
-    mosquito:   { nome: "Mosquitão da rua",   corpo: 0x5a7a22, abd: 0x42591a, perna: 0x2b3416, brilho: 0xb8ff4d, asa: 0xcfe98c, ei: 0.35, rua: true, dica: "Encare o Mosquitão da rua: a estátua sobre o palco do auditório" },
+    mosquito:   { nome: "Mosquitão da rua",   corpo: 0x5a7a22, abd: 0x42591a, perna: 0x2b3416, brilho: 0xb8ff4d, asa: 0xcfe98c, ei: 0.35, rua: true, dica: "Aproxime-se do Mosquitão da rua no expositor à direita do palco do auditório" },
     carreta:    { nome: "Caminhão de som",    corpo: 0x15151f, abd: 0x1b1b2b, perna: 0x0a0a12, brilho: 0xff44cc, ei: 1.0, asa: 0xffd9f5, rig: true, dica: "Fique parado 3 s diante do telão do auditório (a moldura muda de cor)" },
     eletrizado: { nome: "Eletrizado",         corpo: 0x1a2030, abd: 0x24304a, perna: 0x0e1220, brilho: 0x4fd0ff, ei: 0.8, asa: 0xcfefff, metal: true, raios: true, fumaca: true, dica: "No laboratório há uma tomada ligada ao projeto de eletricidade. Encoste nela" },
     pintado:    { nome: "Meio pintado",       corpo: 0x1c1c22, abd: 0x2a1a20, perna: 0x0b0b0e, brilho: 0xd01020, ei: 0.15, meia: 0xd01020, goticulas: true, dica: "Na sala de artes alguém derrubou tinta vermelha. Encoste na poça" },
@@ -43,8 +44,8 @@ const CFG = {
     encadernado: { nome: "Mosquito Encadernado", corpo: 0x29365d, abd: 0x63528a, perna: 0x282646, brilho: 0xffd28b, olho: 0xf0d59d, asa: 0xffe9bf, ei: 0.12, livro: true, dica: "Alguém esqueceu um livro em uma mesa da cantina. Leve-o à estante marcada da biblioteca (tecla B)." },
     raquete: { nome: "Mosquito da Raquete", corpo: 0x202127, abd: 0x375b8b, brilho: 0xff8a25, ei: 0.06, menino: true, asa: 0xd8e9ef, dica: "Decifre os quatro bilhetes, abra a Sala 3 e derrote o garoto da raquete." },
   },
-  // CONQUISTAS: cat = categoria · r = raridade (b/p/o) · premio = sangue · secreto = escondida até ser obtida
-  RAR: { b: { nome: "Bronze", cor: "#cd7f32", pts: 10 }, p: { nome: "Prata", cor: "#c4ccdc", pts: 25 }, o: { nome: "Ouro", cor: "#ffd84d", pts: 50 } },
+  // CONQUISTAS: cat = categoria · r = raridade (b/p/o/pl) · premio = sangue
+  RAR: { b: { nome: "Bronze", cor: "#cd7f32", pts: 10 }, p: { nome: "Prata", cor: "#c4ccdc", pts: 25 }, o: { nome: "Ouro", cor: "#ffd84d", pts: 50 }, pl: { nome: "Platina", cor: "#a8edf2", pts: 100 } },
   TUSK: [   // o Tusk evolui a cada parte do louva-a-deus encontrada (Ato 1 a 4): visual e atributos
     { nome: "Ato 1", visual: { corpo: 0xf59ab8, abd: 0xef7fa6, perna: 0xc2527f, brilho: 0xff8ac0, ei: 0.18, asa: 0xffc8dc, olho: 0x8a4fd0 }, attr: { colhe: 1.1 } },
     { nome: "Ato 2", visual: { corpo: 0xf07cad, abd: 0xd95b90, perna: 0x9a4f9a, brilho: 0xff6fb0, ei: 0.2, asa: 0xffc8dc }, attr: { colhe: 1.25, sangue: 1.1 } },
@@ -52,6 +53,7 @@ const CFG = {
     { nome: "Ato 4", visual: { corpo: 0xf4a0c4, abd: 0xf08ab4, perna: 0xf4a0c4, brilho: 0xffd24a, ei: 0.25, asa: 0xfff0b0 }, attr: { colhe: 1.6, sangue: 1.4, vel: 1.2, def: 0.1, cura: 8 } },
   ],
   CONQ: [
+    { id: "ze_picada", nome: "Zé Picada", ico: '<svg viewBox="0 0 48 48" width="36" height="36" role="img" aria-label="Troféu de platina"><path d="M12 8H5v8q0 11 14 11M36 8h7v8q0 11-14 11" fill="none" stroke="#8fcbd5" stroke-width="4"/><path d="M12 4h24v14q0 12-12 13-12-1-12-13Z" fill="#d9f5ff" stroke="#8fcbd5" stroke-width="2"/><path d="m24 9 3 6 6 1-5 5 1 6-5-3-5 3 1-6-5-5 6-1Z" fill="#7092c9"/><path d="M22 31h4v7h7v6H15v-6h7Z" fill="#a8cfdf"/><path d="M16 6v12q0 7 6 9" fill="none" stroke="#fff" stroke-width="2"/></svg>', desc: "Conquiste todos os outros troféus do jogo", cat: "Platina", r: "pl", premio: 2000 },
     { id: "circuito_bronze", nome: "Asas de bronze", ico: "🥉", desc: "Complete os 8 aros do circuito do ginásio em até 120 s", cat: "Exploração", r: "b", premio: 80 },
     { id: "circuito_prata", nome: "Asas de prata", ico: "🥈", desc: "Complete o circuito de voo em até 45 s", cat: "Exploração", r: "p", premio: 140 },
     { id: "circuito_ouro", nome: "Asas de ouro", ico: "🥇", desc: "Complete o circuito de voo em até 28 s", cat: "Exploração", r: "o", premio: 240 },
@@ -162,6 +164,8 @@ for (const id of Object.keys(CFG.SKINS)) CFG.CONQ.push({ id: "skin_" + id, nome:
   CFG.CONQ.splice(CFG.CONQ.findIndex((c) => c.id === "corpo10") + 1, 0, ...lista);
 }
 const SKIN_ICO = { pixel: "👾", dengue: "🦟", relojoeiro: "⏳", radioativo: "☢️", jogador: "🏀", fantasma: "👻", vampiro: "🧛", mosquito: "🪰", carreta: "🔊", eletrizado: "⚡", pintado: "🎨", extintor: "🧯", cadeado: "🔒", tusk: "🦗", mosquito8000: "🤖", encadernado: "📖", raquete: "⚡" };
+const TROFEUS_PARA_PLATINA = CFG.CONQ.filter(c=>c.id!=='ze_picada');
+const progressoPlatina = S => { const obtidas=new Set(S.conq);return {v:TROFEUS_PARA_PLATINA.filter(c=>obtidas.has(c.id)).length,max:TROFEUS_PARA_PLATINA.length}; };
 
 // ---- Habilidades especiais (tecla R): cada skin tem a sua; "padrao" vale para quem está sem skin. usar(g) recebe o GameManager e pode devolver false para cancelar a recarga ----
 const HABS = {
@@ -244,31 +248,55 @@ const COR_PIXEL_OPCOES = [
 // ------------------------------------------------------------
 // ESTADO + PERSISTÊNCIA
 // ------------------------------------------------------------
+const MISSOES = [
+  {id:'voo',nome:'Tico',tipo:'grilo',escala:.18,sala:'Ginásio',pos:[8,18],ry:Math.PI,titulo:'Asas de campeão',premio:80,meta:1,
+    fala:'Sou Tico, treinador de voo. Quero ver você completar meus oito aros. Quando terminar, volte aqui para receber sua recompensa!',objetivo:'Complete o circuito de 8 aros em até 120 segundos e volte a Tico.'},
+  {id:'tintas',nome:'Bia',tipo:'joaninha',escala:.10,sala:'Artes',pos:[-99,-17],ry:0,titulo:'Cores de volta',premio:120,meta:3,
+    fala:'Preciso terminar uma pintura, mas minhas três latas grandes de tinta ficaram na sala. Pode trazer a vermelha, a azul e a amarela?',objetivo:'Recolha as três latas marcadas em Artes usando Pegar/B, mesmo se tiverem caído no chão.'},
+  {id:'livro',nome:'Nina',tipo:'mariposa',escala:.16,sala:'Biblioteca',pos:[31,-12],ry:0,titulo:'Uma página perdida',premio:100,meta:1,
+    fala:'Um livro da biblioteca foi parar na cantina. Encontre-o e devolva à estante marcada; depois venha me contar.',objetivo:'Pegue o livro perdido na cantina e devolva à estante marcada da biblioteca.'},
+  {id:'sensores',nome:'Professor Nilo',tipo:'humano',sala:'Laboratório',pos:[65,-12],ry:0,titulo:'Ronda científica',premio:150,meta:3,
+    fala:'Instalei três sensores para acompanhar o ambiente da escola. Confira o laboratório, a enfermaria e o banheiro, e traga os resultados.',objetivo:'Use Pegar/B nos sensores azuis: laboratório, enfermaria e banheiro.'},
+  {id:'entrega',nome:'Mimi',tipo:'formiga',escala:.08,sala:'Cantina',pos:[-47,15],ry:Math.PI,titulo:'Um doce favor',premio:100,meta:1,
+    fala:'Separei um pacote de açúcar para o café da Dora, a zeladora. Você consegue levar até ela no corredor? Depois volte para buscar seu pagamento.',objetivo:'Entregue o pacote de açúcar a Dora, no corredor, e volte a Mimi.'},
+  {id:'passeio',nome:'Dora',tipo:'humana',sala:'Corredor',pos:[-18,4],ry:Math.PI,titulo:'Conhecendo a escola',premio:140,meta:6,
+    fala:'Que tal conhecer melhor a escola? Visite seis salas diferentes e depois volte aqui. O corredor não conta!',objetivo:'Visite seis salas diferentes, além do corredor, e volte a Dora.'}
+];
+const ITENS_MISSAO = [
+  {id:'vermelha',missao:'tintas',nome:'Tinta vermelha',pos:[-108,.65,-86],cor:0xe94b59},
+  {id:'azul',missao:'tintas',nome:'Tinta azul',pos:[-80,.65,-72],cor:0x4399f5},
+  {id:'amarela',missao:'tintas',nome:'Tinta amarela',pos:[-108,.65,-46],cor:0xffd34f},
+  {id:'lab',missao:'sensores',nome:'Sensor do laboratório',pos:[67,0,-58],cor:0x65d9f2},
+  {id:'enfermaria',missao:'sensores',nome:'Sensor da enfermaria',pos:[75,0,-14],cor:0x65d9f2},
+  {id:'banheiro',missao:'sensores',nome:'Sensor do banheiro',pos:[59,0,12],cor:0x65d9f2}
+];
+const itensDaMissao=id=>id==='entrega'?['dora']:ITENS_MISSAO.filter(x=>x.missao===id).map(x=>x.id);
 class GameState {
   constructor(dados) {
     this.sangue = 0;
     this.nv = { asas: 0, tromba: 0, estomago: 0, corpo: 0 };
     this.skins = []; this.skin = null; this.picadas = 0; this.auraTusk = true; this.pixelCor = COR_PIXEL_PADRAO;
     this.conq = []; this.salas = []; this.carteiras = 0; this.livroDevolvido = false; this.mantis = []; this.habs = [];
-    this.portaSala3Aberta=false;this.pistasSala3=[];this.recordeVoo=null;
+    this.portaSala3Aberta=false;this.pistasSala3=[];this.recordeVoo=null;this.missoes={};
     try {
       const s = dados === undefined ? JSON.parse(localStorage.getItem(CFG.SAVE)) : dados;
       if (s && s.nv) { this.sangue = +s.sangue || 0; for (const k in this.nv) this.nv[k] = clamp(Math.floor(Number(s.nv[k]) || 0), 0, CFG.UP_MAX); }
       if (s) { this.auraTusk = s.auraTusk !== false; this.pixelCor = corPixelValida(s.pixelCor) ? s.pixelCor.toLowerCase() : COR_PIXEL_PADRAO; const mig = (k) => (k === "arcoiris" ? "pixel" : k); this.skins = Array.isArray(s.skins) ? s.skins.map(mig).filter((k) => CFG.SKINS[k]) : []; this.skin = CFG.SKINS[mig(s.skin)] ? mig(s.skin) : null; this.picadas = +s.picadas || 0; this.conq = Array.isArray(s.conq) ? s.conq.filter((id) => CFG.CONQ.some((c) => c.id === id)) : []; this.salas = Array.isArray(s.salas) ? s.salas : []; this.carteiras = +s.carteiras || 0; this.livroDevolvido = s.livroDevolvido === true; this.habs = Array.isArray(s.habs) ? s.habs : []; this.mantis = Array.isArray(s.mantis) ? s.mantis.filter((i) => ["cabeca", "foices", "torax", "abdomen"].includes(i)) : []; }
       if(s){this.portaSala3Aberta=s.portaSala3Aberta===true;this.pistasSala3=Array.isArray(s.pistasSala3)?[...new Set(s.pistasSala3.filter(n=>[1,2,3,4].includes(n)))]:[];}
       if(s&&Number.isFinite(s.recordeVoo)&&s.recordeVoo>0&&s.recordeVoo<=120)this.recordeVoo=s.recordeVoo;
+      for(const q of MISSOES){const m=s?.missoes?.[q.id];if(m&&m.aceita===true)this.missoes[q.id]={aceita:true,entregue:m.entregue===true,itens:Array.isArray(m.itens)?[...new Set(m.itens.filter(x=>itensDaMissao(q.id).includes(x)))]:[]};}
     } catch (e) { /* sem save */ }
     // Quem já venceu o chefe recebe a recompensa nova sem perder a skin equipada.
     if(this.conq.includes('boss_raquete')&&!this.skins.includes('raquete')){
       this.skins.push('raquete');if(!this.conq.includes('skin_raquete'))this.conq.push('skin_raquete');if(dados===undefined)this.salvar();
     }
   }
-  dados() { return { sangue:this.sangue,nv:{...this.nv},skins:[...this.skins],skin:this.skin,picadas:this.picadas,conq:[...this.conq],salas:[...this.salas],carteiras:this.carteiras,livroDevolvido:this.livroDevolvido,mantis:[...this.mantis],habs:[...this.habs],auraTusk:this.auraTusk,pixelCor:this.pixelCor,portaSala3Aberta:this.portaSala3Aberta,pistasSala3:[...this.pistasSala3],recordeVoo:this.recordeVoo }; }
+  dados() { return { sangue:this.sangue,nv:{...this.nv},skins:[...this.skins],skin:this.skin,picadas:this.picadas,conq:[...this.conq],salas:[...this.salas],carteiras:this.carteiras,livroDevolvido:this.livroDevolvido,mantis:[...this.mantis],habs:[...this.habs],auraTusk:this.auraTusk,pixelCor:this.pixelCor,portaSala3Aberta:this.portaSala3Aberta,pistasSala3:[...this.pistasSala3],recordeVoo:this.recordeVoo,missoes:Object.fromEntries(Object.entries(this.missoes).map(([id,m])=>[id,{aceita:m.aceita,entregue:m.entregue,itens:[...m.itens]}])) }; }
   salvar() { try { localStorage.setItem(CFG.SAVE, JSON.stringify(this.dados())); } catch (e) {} }
   static lerBackup(texto) {
     if(typeof texto!=='string'||texto.length>131072)throw Error('Arquivo muito grande. Escolha um backup do jogo de até 128 KB.');
     let pacote;try{pacote=JSON.parse(texto);}catch(_){throw Error('O arquivo não contém um backup JSON válido.');}
-    if(!pacote||pacote.jogo!=='mosquito-evolution'||pacote.versao!==1)throw Error('Este arquivo não é um backup compatível do Mosquito Evolution.');
+    if(!pacote||pacote.jogo!=='mosquito-evolution'||![1,2].includes(pacote.versao))throw Error('Este arquivo não é um backup compatível do Mosquito Evolution.');
     const s=pacote.progresso,erro=()=>{throw Error('Progresso inválido ou de uma versão mais nova do jogo. O save atual foi mantido.');};
     if(!s||typeof s!=='object'||Array.isArray(s)||!s.nv)erro();
     const numero=(v,max=1e12)=>typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=max;
@@ -281,6 +309,10 @@ class GameState {
     for(const k of ['livroDevolvido','auraTusk','portaSala3Aberta'])if(s[k]!==undefined&&typeof s[k]!=='boolean')erro();
     if(s.pixelCor!==undefined&&!corPixelValida(s.pixelCor))erro();
     if(s.recordeVoo!=null&&(!numero(s.recordeVoo,120)||s.recordeVoo===0))erro();
+    if(s.missoes!==undefined){
+      if(!s.missoes||typeof s.missoes!=='object'||Array.isArray(s.missoes)||Object.keys(s.missoes).some(id=>!MISSOES.some(q=>q.id===id)))erro();
+      for(const [id,m]of Object.entries(s.missoes)){if(!m||m.aceita!==true||typeof m.entregue!=='boolean')erro();lista(m.itens,itensDaMissao(id));}
+    }
     return new GameState(s);
   }
   get total() { return this.nv.asas + this.nv.tromba + this.nv.estomago + this.nv.corpo; }
@@ -467,7 +499,7 @@ kbd{font:700 .7rem Figtree,sans-serif;border:1px solid rgba(255,255,255,.25);bor
 .sk-card{--c:#8a93a6;position:relative;display:grid;gap:5px;justify-items:center;text-align:center;padding:14px 8px;border-radius:14px;background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.1);color:#eef2f8;cursor:pointer;font-family:inherit}
 .sk-card:hover{background:rgba(255,255,255,.09)}.sk-card.sel{border-color:var(--c);box-shadow:0 0 18px color-mix(in srgb,var(--c) 45%,transparent)}.sk-card.trava{opacity:.65}
 .sk-ico{font-size:1.9rem}.sk-card b{font:800 .8rem Syne,sans-serif}.sk-card em{position:absolute;top:6px;right:6px;font-style:normal;font-size:.58rem;font-weight:800;color:#0e0c18;background:#7dff9a;border-radius:6px;padding:1px 5px}
-.sk-prev{display:flex;flex-direction:column;gap:7px;padding:14px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);align-self:start}
+.sk-prev{min-width:0;display:flex;flex-direction:column;gap:7px;padding:14px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);align-self:start}
 .sk-vista{position:relative;height:250px;border-radius:12px;overflow:hidden;background:radial-gradient(circle at 50% 40%,#2c2250,#0d0a1c)}.sk-vista canvas{position:absolute;inset:0;width:100%;height:100%}
 .sk-atos{position:absolute;left:8px;bottom:8px;display:flex;gap:5px;z-index:2}.sk-atos button{border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.55);color:#fff;border-radius:8px;padding:4px 9px;font:700 .7rem Figtree,sans-serif;cursor:pointer}.sk-atos button.on{background:#ffd84d;color:#0e0c18}
 .sk-prev h3{margin:4px 0 0;font:800 1.15rem Syne,sans-serif}.sk-prev p{margin:0;font-size:.78rem;color:#98a0af;line-height:1.45}.sk-sec{margin-top:4px;font:800 .72rem Syne,sans-serif;color:#ffd84d;letter-spacing:.05em;text-transform:uppercase}
@@ -524,20 +556,20 @@ kbd{font:700 .7rem Figtree,sans-serif;border:1px solid rgba(255,255,255,.25);bor
 <div class="hxm-col hxm-graficos"><b>⚙️ Modo gráfico</b><div class="hxm-graf-botoes">
 <button type="button" data-modo-grafico="leve">🚀 Leve</button><button type="button" data-modo-grafico="medio">⚖️ Normal</button><button type="button" data-modo-grafico="alto">✨ Alto</button><button type="button" data-modo-grafico="ultra">💎 Ultra</button></div>
 <small id="hx-graf-desc">Escolha o desempenho ideal para o seu dispositivo.</small></div></div>
-<details class="hxm-bottom hxm-progresso"><summary>Seu progresso</summary><div class="hxm-res" id="hx-resumo"></div><p class="hxm-save" id="hx-save"></p><div class="school-menu-actions"><button type="button" id="hx-btn-mapa">🗺 Mapa da escola</button><button type="button" id="hx-btn-backup">💾 Backup do progresso</button></div></details></div>
+<details class="hxm-bottom hxm-progresso"><summary>Seu progresso</summary><div class="hxm-res" id="hx-resumo"></div><p class="hxm-save" id="hx-save"></p><div class="school-menu-actions"><button type="button" id="hx-btn-mapa">🗺 Mapa da escola</button><button type="button" id="hx-btn-backup">💾 Backup do progresso</button><button type="button" id="hx-btn-missoes">📋 Missões da escola</button></div></details></div>
 <div id="hx-painel-controles" role="tabpanel" aria-labelledby="hx-tab-controles" hidden>
 <fieldset class="hxm-dispositivo"><legend>Como você quer jogar?</legend><div>
 <button type="button" data-controle="desktop" aria-pressed="false">💻 Computador</button>
 <button type="button" data-controle="mobile" aria-pressed="false">📱 Celular / toque</button>
 </div><small id="hx-controle-desc"></small></fieldset>
-<h2 id="hx-controles-titulo">Mouse e teclado</h2><div class="hxm-ctrl" id="hx-controles-pc">${ctrl}<kbd>V</kbd><span>mapa da escola</span></div>
+<h2 id="hx-controles-titulo">Mouse e teclado</h2><div class="hxm-ctrl" id="hx-controles-pc">${ctrl}<kbd>V / J</kbd><span>mapa / diário de missões</span></div>
 <div class="hxm-ctrl" id="hx-controles-mobile" hidden>
 <b>Direcional</b><span>mover com o polegar esquerdo</span>
 <b>Arrastar</b><span>olhar pelo cenário</span>
 <b>Altitude</b><span>olhe para cima ou para baixo enquanto voa</span>
 <b>Sprint</b><span>segurar para acelerar</span>
 <b>Picar / Poder</b><span>toque sem soltar o direcional ou a câmera</span>
-<b>Pegar</b><span>objetos, pistas, fechadura e circuito</span>
+<b>Pegar</b><span>conversar, recolher itens, pistas e fechadura</span>
 <b>Evoluções</b><span>cartões entre o direcional e as ações</span>
 <b>Skins / Conquistas</b><span>botões sempre visíveis no topo</span>
 <b>••• / Ⅱ</b><span>mapa, backup e mais ações / pausar</span>
@@ -660,7 +692,7 @@ kbd{font:700 .7rem Figtree,sans-serif;border:1px solid rgba(255,255,255,.25);bor
       const itens = lista.map((c) => {
         const tem = S.conq.includes(c.id), r = RAR[c.r], oculto = c.secreto && !tem, p = tem || oculto ? null : api.progresso(c.id);
         const barra = p ? `<div style="margin-top:8px;height:5px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden"><i style="display:block;height:100%;width:${Math.round(p.v / p.max * 100)}%;background:${r.cor}"></i></div><small style="font:600 .68rem Figtree,sans-serif;color:#7f8798">${Math.floor(p.v)} / ${p.max}</small>` : "";
-        return `<div style="display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,${tem ? ".08" : ".025"});border:1px solid ${tem ? r.cor : "rgba(255,255,255,.1)"};border-left:4px solid ${r.cor};border-radius:12px;padding:12px 14px;opacity:${tem ? 1 : 0.8}">`
+        return `<div data-conquista="${c.id}" style="${c.r==='pl'?'background:linear-gradient(130deg,#173348,#28253d);box-shadow:inset 0 0 24px #a8edf218;':''}display:flex;gap:12px;align-items:flex-start;background-color:rgba(255,255,255,${tem ? ".08" : ".025"});border:1px solid ${tem ? r.cor : "rgba(255,255,255,.1)"};border-left:4px solid ${r.cor};border-radius:12px;padding:12px 14px;opacity:${tem ? 1 : 0.8}">`
           + `<span style="font-size:1.7rem;filter:${tem ? "none" : "grayscale(1) brightness(.6)"}">${oculto ? "❔" : c.ico}</span><span style="flex:1"><b style="display:block;font:800 .92rem Syne,sans-serif;color:${tem ? r.cor : "#eef2f8"}">${oculto ? "???" : c.nome}</b>`
           + `<small style="font:600 .74rem/1.4 Figtree,sans-serif;color:#98a0af">${oculto ? "Conquista secreta: continue explorando a escola." : c.desc}</small>${barra}`
           + `<small style="display:block;margin-top:6px;font:700 .68rem Figtree,sans-serif;color:${r.cor}">${r.nome} · +${c.premio} sangue · ${r.pts} pts</small></span>${tem ? '<span style="color:#7dff9a;font-weight:800">✔</span>' : ""}</div>`;
@@ -670,14 +702,14 @@ kbd{font:700 .7rem Figtree,sans-serif;border:1px solid rgba(255,255,255,.25);bor
         + `<div style="height:8px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden;margin-bottom:14px"><i style="display:block;height:100%;width:${pct}%;background:linear-gradient(90deg,#cd7f32,#c4ccdc,#ffd84d)"></i></div>`
         + `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">${cats.map((c) => chip(c, f.cat === c, `data-cat="${c}"`)).join("")}</div>`
         + `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">${["Todas", "Obtidas", "Pendentes"].map((c) => chip(c, f.st === c, `data-st="${c}"`)).join("")}</div>`
-        + `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">${itens}</div>`;
+        + `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(280px,100%),1fr));gap:10px">${itens}</div>`;
       this.colConteudo.querySelectorAll("[data-cat]").forEach((b) => b.addEventListener("click", () => { f.cat = b.dataset.cat; api.aba("conq"); }));
       this.colConteudo.querySelectorAll("[data-st]").forEach((b) => b.addEventListener("click", () => { f.st = b.dataset.st; api.aba("conq"); }));
     }
     box.style.display = "flex"; document.exitPointerLock?.();
   }
   colecaoAberta() { return !!this.colBox && this.colBox.style.display === "flex"; }
-  fecharColecao() { if (this.colBox) this.colBox.style.display = "none"; this.previewParar(); this.skSel = undefined; this.skAto = 0; }
+  fecharColecao() { if (this.colBox) this.colBox.style.display = "none"; this.previewParar(); this.skSel = undefined; this.skAto = 0; this.skCompararBase = false; }
 
   // ---- Aba de skins: lista + painel lateral com modelo 3D girando, atributos e habilidade ----
   renderSkins(S, api) {
@@ -696,7 +728,9 @@ kbd{font:700 .7rem Figtree,sans-serif;border:1px solid rgba(255,255,255,.25);bor
     this.colConteudo.innerHTML = `<div class="sk-wrap"><div class="sk-lista">${["", ...ids].map((id) => card(id || null)).join("")}</div>
 <aside class="sk-prev"><div class="sk-vista" id="sk-vista">${atos}</div><h3>${liberada ? (sk ? sk.nome : "Padrão") : "???"}${sel === "tusk" && liberada ? ` · Ato ${ato}` : ""}</h3>
 <p>${liberada ? (sk ? "Gire para ver os detalhes. " + (sel === "tusk" ? "Atos não desbloqueados são só uma prévia." : "") : "O visual original do mosquito, sem bônus.") : "🔒 " + sk.dica}</p>
-${liberada ? `<div class="sk-sec">Atributos</div>${at.length ? `<ul>${at.map((t) => `<li>${t}</li>`).join("")}</ul>` : "<p>Sem bônus de atributos.</p>"}
+${liberada ? `<div class="sk-sec">Evoluções</div><p class="sk-niveis">Asas ${S.nv.asas} · Tromba ${S.nv.tromba} · Estômago ${S.nv.estomago} · Corpo ${S.nv.corpo}</p>
+<button id="sk-comparar" type="button" aria-pressed="${!!this.skCompararBase}" style="width:100%;padding:10px;border-radius:10px;border:1px solid #607892;background:#25364b;color:#e8f3ff;font:700 .82rem Figtree,sans-serif;cursor:pointer">${this.skCompararBase ? "Mostrar evoluções atuais" : "Comparar com nível 0"}</button>
+<small>${this.skCompararBase ? "Prévia sem evoluções, com a mesma distância de câmera." : "O modelo mostra seus upgrades atuais até o nível 30."}${sel === "tusk" ? " Os Atos do Tusk são liberados pelas partes do louva-a-deus." : ""}</small><div class="sk-sec">Atributos</div>${at.length ? `<ul>${at.map((t) => `<li>${t}</li>`).join("")}</ul>` : "<p>Sem bônus de atributos.</p>"}
 <div class="sk-sec">Habilidade <kbd>R</kbd></div><div class="sk-hab">${H.ico} ${H.nome}</div><p>${H.desc}</p><small>Recarga: ${cd}s${H.dur ? ` · duração: ${H.dur}s` : ""}</small>` : ""}
 ${sel === "pixel" && liberada ? `<div class="sk-sec">🎨 Cor do Mosquito 8-bit</div>
 <div class="sk-pixel-colors">${COR_PIXEL_OPCOES.map(([nome, cor]) => `<button type="button" class="sk-pixel-swatch" data-pixel-cor="${cor}" style="--cor:${cor}" title="${nome}" aria-label="Cor ${nome}" aria-pressed="${S.pixelCor === cor}"></button>`).join("")}</div>
@@ -707,6 +741,7 @@ ${sel === "tusk" && liberada ? `<button id="sk-aura-tusk" type="button" aria-pre
     const c = this.colConteudo;
     c.querySelectorAll("[data-sk]").forEach((b) => { b.addEventListener("click", () => { this.skSel = b.dataset.sk || null; this.skAto = this.skSel === "tusk" ? Math.max(1, S.mantis.length) : 0; this.renderSkins(S, api); }); b.addEventListener("dblclick", () => { if (tem(b.dataset.sk || null)) api.escolher(b.dataset.sk || null); }); });
     c.querySelectorAll("[data-ato]").forEach((b) => b.addEventListener("click", () => { this.skAto = +b.dataset.ato; this.renderSkins(S, api); }));
+    const comparar=c.querySelector("#sk-comparar");if(comparar)comparar.onclick=()=>{this.skCompararBase=!this.skCompararBase;this.renderSkins(S,api);};
     const botaoAura = c.querySelector("#sk-aura-tusk");
     if (botaoAura) botaoAura.addEventListener("click", () => {
       api.alternarAuraTusk();
@@ -727,7 +762,7 @@ ${sel === "tusk" && liberada ? `<button id="sk-aura-tusk" type="button" aria-pre
     const pv = this.previewIniciar(), vista = c.querySelector("#sk-vista");
     if (pv.erro) { vista.insertAdjacentHTML("afterbegin", '<p style="padding:20px">Preview 3D indisponível neste navegador.</p>'); return; }
     vista.prepend(pv.canvas);
-    const chave = [sel, ato, liberada, S.mantis.length, S.auraTusk !== false].join("|");
+    const chave = [sel, ato, liberada, S.mantis.length, S.auraTusk !== false, S.pixelCor, ...Object.values(S.nv), !!this.skCompararBase].join("|");
     if (pv.chave !== chave) { pv.chave = chave; this.previewMostrar(S, sel, ato, !liberada); } else this.previewLoop(true);
   }
   // Motor do preview: um segundo renderizador pequeno, com um mosquito próprio montado com a skin escolhida
@@ -746,11 +781,25 @@ ${sel === "tusk" && liberada ? `<button id="sk-aura-tusk" type="button" aria-pre
     const pv = this.previewIniciar(); if (pv.erro) return;
     if (pv.modelo) { pv.raiz.remove(pv.modelo.mosquito); pv.modelo.mosquito.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) [].concat(o.material).forEach((m) => m.dispose()); }); pv.modelo = null; }
     const pe = Object.create(S); pe.skin = id; pe.mantis = id === "tusk" ? ["cabeca", "foices", "torax", "abdomen"].slice(0, Math.max(1, ato)) : S.mantis;   // estado só de preview: não altera o jogo
-    const m = construirMosquito(pe); m.aplicar(); pv.modelo = m; pv.raiz.add(m.mosquito); m.mosquito.position.set(0, 0, 0); m.mosquito.rotation.set(0.25, id === "mosquito8000" ? Math.PI : 0, 0);
+    pe.nv={...S.nv};
+    const m = construirMosquito(pe); m.aplicar();
+    // Enquadra o visual atual completo, inclusive a aura e os modelos instanciados.
+    // A comparação usa este mesmo raio, antes de zerar os níveis só da prévia.
+    m.mosquito.position.set(0,0,0);m.mosquito.scale.setScalar(m.escala);m.mosquito.updateMatrixWorld(true);
+    let raio=.6;const centro=V(),instancia=new THREE.Matrix4(),matriz=new THREE.Matrix4();
+    const medirMalha=(geo,mx)=>{if(!geo.boundingSphere)geo.computeBoundingSphere();const b=geo.boundingSphere;centro.copy(b.center).applyMatrix4(mx);raio=Math.max(raio,centro.length()+b.radius*mx.getMaxScaleOnAxis());};
+    m.mosquito.traverseVisible(o=>{if(!o.geometry)return;if(o.isInstancedMesh){for(let i=0;i<o.count;i++){o.getMatrixAt(i,instancia);medirMalha(o.geometry,matriz.multiplyMatrices(o.matrixWorld,instancia));}}else medirMalha(o.geometry,o.matrixWorld);});
+    pv.raioModelo=raio+.1;
+    if(this.skCompararBase){pe.nv={asas:0,tromba:0,estomago:0,corpo:0};m.aplicar();}
+    pv.modelo = m; pv.raiz.add(m.mosquito); m.mosquito.position.set(0, 0, 0); m.mosquito.rotation.set(0.25, id === "mosquito8000" ? Math.PI : 0, 0);
     if (bloqueada) m.mosquito.traverse((o) => { if (o.isLine) o.visible = false; });
     pv.cena.overrideMaterial = bloqueada ? new THREE.MeshBasicMaterial({ color: 0x0b0a14 }) : null;   // skin trancada aparece só como silhueta
-    const z = m.zoom; pv.cam.position.set(0, 0.8 * z, 5.6 * Math.pow(z, 0.85)); pv.cam.lookAt(0, -0.2, 0);
+    this.enquadrarPreview();
     this.previewLoop(true);
+  }
+  enquadrarPreview(){
+    const pv=this.pv,vertical=THREE.MathUtils.degToRad(pv.cam.fov*.5),angulo=Math.min(vertical,Math.atan(Math.tan(vertical)*pv.cam.aspect));
+    const distancia=pv.raioModelo*1.1/Math.sin(angulo);pv.cam.position.set(0,.12,1).normalize().multiplyScalar(distancia);pv.cam.lookAt(0,0,0);
   }
   previewLoop(ligar) {
     const pv = this.pv; if (!pv || pv.erro) return;
@@ -765,7 +814,7 @@ ${sel === "tusk" && liberada ? `<button id="sk-aura-tusk" type="button" aria-pre
       const m = pv.modelo;
       if (m) { pv.raiz.rotation.y += dt * 0.7; const b = Math.sin(pv.t * 40) * 0.55; m.asas[0].rotation.z = b; m.asas[1].rotation.z = -b; m.mosquito.position.y = Math.sin(pv.t * 2) * 0.08; m.mosquito.scale.setScalar(m.escala); m.tick(pv.t, dt); }
       const c = pv.canvas, w = c.clientWidth, h = c.clientHeight;
-      if (w && h && c.width !== Math.round(w * pv.r.getPixelRatio())) { pv.r.setSize(w, h, false); pv.cam.aspect = w / h; pv.cam.updateProjectionMatrix(); }
+      if (w && h && (c.width !== Math.round(w * pv.r.getPixelRatio()) || c.height !== Math.round(h * pv.r.getPixelRatio()))) { pv.r.setSize(w, h, false); pv.cam.aspect = w / h; pv.cam.updateProjectionMatrix(); this.enquadrarPreview(); }
       if (this.graficoAtual !== 'leve' || !pv.ultimoDesenho || agora - pv.ultimoDesenho >= 45) {
         pv.r.render(pv.cena, pv.cam); pv.ultimoDesenho = agora;
       }
@@ -1226,14 +1275,15 @@ const geoCoracao = (() => { const h = new THREE.Shape(); h.moveTo(0, -0.5); h.be
 const estrela = (r, x, y, z, ry = 0, rx = 0) => { const e = new THREE.Mesh(geoEstrela, matEstrela); e.scale.setScalar(r); e.position.set(x, y, z); e.rotation.set(rx, ry, 0); return e; };
 const caixaT = (w, h, d, mt, x, y, z) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mt); o.position.set(x, y, z); return o; };
 const tA = [0, 1, 2, 3].map(() => ({ c: new THREE.Group(), a: new THREE.Group() }));   // c = no corpo, a = no abdômen
+const tuskAsas = [], tuskBico = new THREE.Group();tuskBico.visible=false;trompa.add(tuskBico);
 tA.forEach((t) => { t.c.visible = t.a.visible = false; corpoG.add(t.c); abdomenCorpo.add(t.a); });   // a = escala junto com o estômago
 { // ATO 1: bico prateado, orelhas-asa moles, antenas onduladas, estrelas e três corações pendurados na cauda
   const g = tA[0].c, bico = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.32, 10), mat(0xb9c4d8, { roughness: 0.3, metalness: 0.5 }));
-  bico.rotation.x = -Math.PI / 2 - 0.12; bico.position.set(0, -0.03, -0.5); g.add(bico);
+  bico.rotation.x = -Math.PI / 2; bico.position.set(0, 0, -.16); tuskBico.add(bico);
   const fs = new THREE.Shape(); fs.moveTo(0, 0.09); fs.quadraticCurveTo(0.3, 0.27, 0.66, 0.06); fs.quadraticCurveTo(0.48, -0.04, 0.58, -0.22); fs.quadraticCurveTo(0.26, -0.1, 0, -0.1); fs.closePath();
   const geoFolha = new THREE.ShapeGeometry(fs);
   for (const l of [1, -1]) {
-    const o = new THREE.Group(), f = new THREE.Mesh(geoFolha, matFolha); f.rotation.x = -Math.PI / 2; o.add(f); o.position.set(l * 0.1, 0.06, -0.25); o.scale.x = l; o.rotation.z = -0.4 * l; g.add(o);
+    const o = new THREE.Group(), f = new THREE.Mesh(geoFolha, matFolha); f.rotation.x = -Math.PI / 2; o.add(f); o.position.set(l * 0.1, 0.06, -0.25); o.scale.x = l; o.rotation.z = -0.4 * l; o.userData.lado=l;mosquito.add(o);tuskAsas.push(o);
     const pts = [V(0, 0, 0), V(0.06 * l, 0.1, 0.02), V(-0.02 * l, 0.2, 0.06), V(0.07 * l, 0.3, 0.1), V(0, 0.4, 0.16)], tb = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 18, 0.014, 6), matRosaE);
     tb.position.set(l * 0.06, 0.1, -0.26); g.add(tb);
     g.add(estrela(0.055, l * 0.178, 0.03, 0.04, l * Math.PI / 2));
@@ -1790,14 +1840,14 @@ function aplicarEvolucaoVisual() {
   const a = S.nv.asas, tr = S.nv.tromba, es = S.nv.estomago, co = S.nv.corpo;
 
   // CORPO: só tórax, cabeça, olhos, antenas, palpos e pernas (e reposiciona o que se prende neles)
-  const cs = 1 + Math.min(co, 20) * 0.15;
+  const cs = 1 + Math.min(co, CFG.UP_MAX) * 0.15;
   corpoG.scale.setScalar(cs);
   abdomen.position.z = 0.3 * cs;
   trompa.position.set(0, -0.03 * cs, -0.33 * cs);
   asas.forEach((p) => p.position.set(p.userData.lado * 0.1 * cs, 0.17 * cs, 0));
 
   // ASAS: só as asas (mais longas e largas, mais opacas, contorno brilhante no nv 3)
-  const comp = 1 + Math.min(a, 20) * 0.22, larg = 1 + Math.min(a, 20) * 0.12;
+  const comp = 1 + Math.min(a, CFG.UP_MAX) * 0.22, larg = 1 + Math.min(a, CFG.UP_MAX) * 0.12;
   asas.forEach((p) => p.scale.set(comp, 1, larg));
   matAsa.opacity = Math.min(0.65, 0.4 + a * 0.03);
   matAsa.color.setHex(a >= 6 ? 0xcfeaff : a >= 3 ? 0xf0d8ff : 0xd8e9ef);
@@ -1805,13 +1855,13 @@ function aplicarEvolucaoVisual() {
   brilhoAsas.forEach((l) => { l.visible = a >= 3; });
 
   // TROMBA: só a tromba (comprimento, espessura, ponta brilhante no nv 2, lâminas no nv 5)
-  const c = 1 + Math.min(tr, 20) * 0.3, e = 1 + Math.min(tr, 20) * 0.08;
+  const c = 1 + Math.min(tr, CFG.UP_MAX) * 0.3, e = 1 + Math.min(tr, CFG.UP_MAX) * 0.08;
   hasteGrupo.scale.set(e, e, c);
   ponta.position.z = -0.7 * c - 0.04; ponta.scale.setScalar(e);
   ponta.visible = tr >= 2 && S.skin !== "pixel"; laminas.visible = tr >= 5;
 
   // ESTÔMAGO: só o abdômen (incha e avermelha)
-  const abz = 1 + Math.min(es, 20) * 0.2, abx = 1 + Math.min(es, 20) * 0.12;
+  const abz = 1 + Math.min(es, CFG.UP_MAX) * 0.2, abx = 1 + Math.min(es, CFG.UP_MAX) * 0.12;
   abdomenCorpo.scale.set(abx, abx, abz);
   const k = Math.min(es / 8, 1);
   matAbd.color.setRGB(0.16 + k * 0.6, 0.1 * (1 - k) + 0.02, 0.12 * (1 - k) + 0.04);
@@ -1888,7 +1938,7 @@ function aplicarEvolucaoVisual() {
   // Skins com visual próprio: meio pintado, faixas de bombeiro, caminhão de som e raios
   if (sk && sk.meia) { const kc = sk.corpo + "-" + sk.meia; matCorpo.map = cacheTex[kc] = cacheTex[kc] || texMeia(sk.corpo, sk.meia); matAbd.map = cacheTex[kc + "a"] = cacheTex[kc + "a"] || texMeia(sk.abd, sk.meia); matCorpo.color.setHex(0xffffff); matAbd.color.setHex(0xffffff); }
   if (sk && sk.faixas) { matAbd.map = cacheTex.faixas = cacheTex.faixas || texFaixas(); matAbd.color.setHex(0xffffff); }
-  rigG.visible = !!(sk && sk.rig); raiosG.visible = !!(sk && sk.raios);
+  rigG.visible = !!(sk && sk.rig); rigG.scale.set(abx,abx,abz); raiosG.visible = !!(sk && sk.raios);
   cadG.visible = cadC.visible = !!(sk && sk.cadeado);
   encG.visible = encAbd.visible = encFerrão.visible = enc;
   if (enc) {
@@ -1916,6 +1966,8 @@ function aplicarEvolucaoVisual() {
     matBordaAsa.color.setHex(0x9cd73d);
   }
   { const ato = sk && sk.tusk ? Math.max(1, S.mantis.length) : 0;   // Tusk: cada Ato mostra o seu próprio visual; o Ato 4 ganha a órbita dourada
+    tuskBico.visible=ato===1;tuskBico.scale.set(e,e,c);
+    for(const asa of tuskAsas){const l=asa.userData.lado;asa.visible=ato===1;asa.position.set(l*.1*cs,.06*cs,-.25*cs);asa.scale.set(l*comp,1,larg);}
     tA.forEach((t, i) => { t.c.visible = t.a.visible = ato === i + 1; }); orbG.visible = ato >= 4 && S.auraTusk !== false; olhos.forEach((o) => { o.visible = ato < 2; }); }
   roboG.visible = roboAbdG.visible = roboBico.visible = robo;
   roboAsas.forEach((g) => { g.visible = robo; });
@@ -2058,13 +2110,15 @@ class Pool {
 // Física local dos frascos: passo fixo, gravidade, impulso, rotação e repouso.
 // Os 24 corpos continuam interativos em todos os modos gráficos.
 class LabPhysics {
-  constructor(world) {
+  constructor(world, opcoes = {}) {
     this.world = world; this.corpos = []; this.acumulador = 0;
+    this.tipo = opcoes.tipo || 'lab';
     this.anterior = null; this.up = V(0, 1, 0); this.ext = V(0, 0, 0);
     this.tmp = V(0, 0, 0); this.normal = V(0, 0, 0); this.q = new THREE.Quaternion();
     this.segmento = new THREE.Line3(); this.proximo = V(0, 0, 0);
-    const area = new THREE.Box3(V(41, CFG.YMIN - 1, -103), V(72, CFG.YMAX, 1));
+    const area = opcoes.area || new THREE.Box3(V(41, CFG.YMIN - 1, -103), V(72, CFG.YMAX, 1));
     this.obstaculos = world.col.filter(c => c.box.intersectsBox(area)).map(c => c.box);
+    if (opcoes.vazio) return;
     const cores = [0x66ffaa, 0xff6688, 0x66ccff, 0xffe066];
     for (const z of [-92, -82, -50, -40, -30, -20]) for (let i = 0; i < 4; i++) {
       const g = new THREE.Group(); g.position.set(49 + i * 4.5, CFG.YMIN + 4.75, z);
@@ -2102,9 +2156,11 @@ class LabPhysics {
     if (this.anterior.distanceToSquared(pos) > 100) this.anterior.copy(pos);
     this.segmento.set(this.anterior, pos);
     for (const b of this.corpos) {
+      if (!b.g.visible) continue;
       b.contato = Math.max(0, b.contato - dt); b.bossContato = Math.max(0, b.bossContato - dt);
       if (this.segmento.distanceSq() < 1e-10) this.proximo.copy(pos); else this.segmento.closestPointToPoint(b.g.position, true, this.proximo);
-      if (b.contato <= 0 && jogo.jogador.vel.lengthSq() > .3 && this.proximo.distanceToSquared(b.g.position) < 1.25) {
+      const alcance = Math.max(b.raio,b.meio) + (jogo.jogador.raio ?? .18);
+      if (b.contato <= 0 && jogo.jogador.vel.lengthSq() > .3 && this.proximo.distanceToSquared(b.g.position) < alcance*alcance) {
         this.impulso(b, jogo.jogador.vel, clamp(jogo.jogador.vel.length() * 1.6, 5, 16));
         b.contato = .3;
         this.world.audio.tom(850, 460, .07, 'triangle', .035);
@@ -2115,7 +2171,8 @@ class LabPhysics {
     const passo = 1 / 120;
     while (this.acumulador >= passo) { this.step(passo); this.acumulador -= passo; }
     for (const b of this.corpos) {
-      if (!b.caiu && b.g.position.y < CFG.YMIN + 2) { b.caiu = true; jogo.ganhar('pote_caido'); }
+      if (!b.g.visible) continue;
+      if (this.tipo === 'lab' && !b.caiu && b.g.position.y < CFG.YMIN + 2) { b.caiu = true; jogo.ganhar('pote_caido'); }
       const boss = this.world.chefe;
       if (boss && boss.ativo && b.bossContato <= 0 && b.v.lengthSq() > 5 && b.g.position.distanceToSquared(boss.alvo) < 3.5) {
         b.bossContato = 1; const abriu = boss.atordoar(2.6); b.v.multiplyScalar(-.3);
@@ -2125,11 +2182,11 @@ class LabPhysics {
   }
   step(dt) {
     for (const b of this.corpos) {
-      if (b.dormindo) continue;
+      if (!b.g.visible || b.dormindo) continue;
       b.v.y -= 15 * dt; b.g.position.addScaledVector(b.v, dt);
       const giro = b.w.length();
       if (giro > .001) { this.q.setFromAxisAngle(this.tmp.copy(b.w).normalize(), giro * dt); b.g.quaternion.premultiply(this.q).normalize(); }
-      const e = this.extensao(b), p = b.g.position; let apoiado = false;
+      const e = this.extensao(b), p = b.g.position; let apoiado = false;b.piso=false;
       for (const box of this.obstaculos) {
         if (p.x + e.x <= box.min.x || p.x - e.x >= box.max.x || p.y + e.y <= box.min.y || p.y - e.y >= box.max.y || p.z + e.z <= box.min.z || p.z - e.z >= box.max.z) continue;
         let penetracao = Infinity, eixo = 'y', sinal = 1;
@@ -2141,10 +2198,10 @@ class LabPhysics {
         p[eixo] += sinal * (penetracao + .0001);
         const velocidade = b.v[eixo] * sinal;
         if (velocidade < 0) b.v[eixo] = -b.v[eixo] * (velocidade < -1.5 ? .28 : 0);
-        if (eixo === 'y' && sinal === 1) apoiado = true;
+        if (eixo === 'y' && sinal === 1) { apoiado = true;if(box.max.y<=CFG.YMIN+.08)b.piso=true; }
       }
       // Piso de segurança: também cobre a soleira da porta do laboratório.
-      if (p.y - e.y < CFG.YMIN) { p.y = CFG.YMIN + e.y; b.v.y = Math.abs(b.v.y) > 1.5 ? Math.abs(b.v.y) * .25 : 0; apoiado = true; }
+      if (p.y - e.y < CFG.YMIN) { p.y = CFG.YMIN + e.y; b.v.y = Math.abs(b.v.y) > 1.5 ? Math.abs(b.v.y) * .25 : 0; apoiado = b.piso = true; }
       if (apoiado) {
         b.v.x *= Math.exp(-1.5 * dt); b.v.z *= Math.exp(-1.5 * dt);
         // Gravidade termina o tombamento; um corpo deitado não tenta ficar em pé.
@@ -2159,8 +2216,8 @@ class LabPhysics {
     }
     // Contato entre frascos: volume conservador e impulso de massas iguais.
     for (let i=0; i<this.corpos.length; i++) for (let j=i+1; j<this.corpos.length; j++) {
-      const a=this.corpos[i], b=this.corpos[j]; if (a.dormindo && b.dormindo) continue;
-      const n=this.normal.copy(b.g.position).sub(a.g.position), d=n.length(), limite=1.45;
+      const a=this.corpos[i], b=this.corpos[j]; if (!a.g.visible || !b.g.visible || (a.dormindo && b.dormindo)) continue;
+      const n=this.normal.copy(b.g.position).sub(a.g.position), d=n.length(), limite=(Math.max(a.raio,a.meio)+Math.max(b.raio,b.meio))*.90625;
       if (d >= limite) continue;
       if (d < .001) n.set(1,0,0); else n.divideScalar(d);
       const impacto = this.tmp.copy(b.v).sub(a.v).dot(n);
@@ -2171,6 +2228,64 @@ class LabPhysics {
         b.w.x += n.z * .4; b.w.z -= n.x * .4;
       }
     }
+  }
+}
+
+// Tintas de Artes: mesmos passos de física dos frascos, com líquido e manchas limitados.
+class PaintPhysics extends LabPhysics {
+  constructor(world) {
+    super(world,{tipo:'tinta',vazio:true,area:new THREE.Box3(V(-120,CFG.YMIN-1,-103),V(-68,CFG.YMAX,10))});
+    this.gotas=[];this.manchas=[];this.indiceMancha=0;this.materiais=new Map();
+    this.geoGota=new THREE.SphereGeometry(.045,6,4);
+    const forma=new THREE.Shape();for(let i=0;i<=24;i++){const a=i/24*Math.PI*2,r=1+.12*Math.sin(a*5)+.08*Math.cos(a*3);if(i===0)forma.moveTo(Math.cos(a)*r,Math.sin(a)*r);else forma.lineTo(Math.cos(a)*r,Math.sin(a)*r);}this.geoMancha=new THREE.ShapeGeometry(forma);
+    for(let i=0;i<96;i++){const m=new THREE.Mesh(this.geoGota,this.material(0xe0202a));m.visible=false;world.cena.add(m);this.gotas.push({m,v:V(),tempo:0});}
+    const cores=[0xe0202a,0x2a6fe0,0xf2c200,0x2fb34a,0x8a3fc0,0xff7a1a];
+    for(const z of [-86,-72,-46])for(const dx of [-14,14])for(let i=0;i<4;i++){
+      const cor=cores[(i+Math.abs(z))%6],g=new THREE.Group();g.name='pote-tinta';g.position.set(-94+dx-3.6+i*2.4,CFG.YMIN+3.77,z);
+      const casco=new THREE.Mesh(new THREE.CylinderGeometry(.28,.27,.6,12,1,true),new THREE.MeshStandardMaterial({color:cor,roughness:.4,side:THREE.DoubleSide}));g.add(casco);
+      const metal=new THREE.MeshStandardMaterial({color:0xc7cbd0,roughness:.35,metalness:.5});
+      for(const y of [-.29,.3]){const aro=new THREE.Mesh(new THREE.TorusGeometry(.28,.022,6,16),metal);aro.rotation.x=Math.PI/2;aro.position.y=y;g.add(aro);}
+      const fundo=new THREE.Mesh(new THREE.CircleGeometry(.27,12),metal);fundo.rotation.x=-Math.PI/2;fundo.position.y=-.29;g.add(fundo);
+      const liquido=new THREE.Mesh(new THREE.CircleGeometry(.255,16),this.material(cor));liquido.rotation.x=-Math.PI/2;liquido.position.y=.24;g.add(liquido);
+      const rotulo=new THREE.Mesh(new THREE.PlaneGeometry(.21,.22),new THREE.MeshStandardMaterial({color:0xffefd1,roughness:.8}));rotulo.position.set(0,0,.282);g.add(rotulo);
+      world.cena.add(g);this.adicionar(g,cor,.30,.32,{liquido});
+    }
+  }
+  material(cor){if(!this.materiais.has(cor))this.materiais.set(cor,new THREE.MeshStandardMaterial({color:cor,roughness:.23,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1}));return this.materiais.get(cor);}
+  adicionar(g,cor,raio,meio,extra={}){
+    const b={g,cor,raio,meio,v:V(),w:V(),dormindo:true,repouso:0,contato:0,bossContato:0,caiu:false,origem:g.position.clone(),restante:1,emissao:0,vazou:false,poca:false,...extra};this.corpos.push(b);return b;
+  }
+  mancha(pos,cor,raio){
+    let m;if(this.manchas.length<128){m=new THREE.Mesh(this.geoMancha,this.material(cor));m.rotation.x=-Math.PI/2;this.world.cena.add(m);this.manchas.push(m);}else m=this.manchas[this.indiceMancha++%128];
+    m.material=this.material(cor);m.position.copy(pos);m.rotation.z=(this.indiceMancha+this.manchas.length)*2.4;m.userData={raio,idade:0};m.scale.setScalar(.02);return m;
+  }
+  gota(b){
+    const d=this.gotas.find(d=>!d.m.visible);if(!d)return;
+    const boca=V(0,b.meio*.8,0).applyQuaternion(b.g.quaternion);
+    d.m.position.copy(b.g.position).add(boca);d.m.position.x+=(Math.random()-.5)*b.raio;d.m.position.z+=(Math.random()-.5)*b.raio;
+    d.m.material=this.material(b.cor);d.m.visible=true;d.m.scale.setScalar(b.raio>.4?1.6:1);d.cor=b.cor;d.tempo=2;
+    d.v.copy(b.v).multiplyScalar(.22);d.v.x+=(Math.random()-.5)*1.4;d.v.z+=(Math.random()-.5)*1.4;d.v.y-=.6;
+  }
+  step(dt){
+    super.step(dt);
+    for(const b of this.corpos){
+      if(!b.g.visible)continue;
+      if(!b.vazou&&b.g.position.y<b.origem.y-.45){b.vazou=true;if(b.tampa)b.tampa.visible=false;}
+      if(b.vazou&&b.restante>0){b.restante=Math.max(0,b.restante-dt*.65);b.emissao-=dt;if(b.emissao<=0){b.emissao+=.065;this.gota(b);}if(b.liquido)b.liquido.scale.setScalar(Math.sqrt(b.restante));}
+      if(b.vazou&&b.piso&&!b.poca){b.poca=true;this.mancha(V(b.g.position.x,CFG.YMIN+.078,b.g.position.z),b.cor,b.raio>.4?1.15:.65);}
+    }
+    for(const d of this.gotas){
+      if(!d.m.visible)continue;const p=d.m.position,antes=p.y;d.v.y-=15*dt;p.addScaledVector(d.v,dt);d.tempo-=dt;
+      let chao=CFG.YMIN+.075;
+      for(const box of this.obstaculos){
+        if(p.x<box.min.x||p.x>box.max.x||p.z<box.min.z||p.z>box.max.z)continue;
+        if(antes>=box.max.y&&p.y<=box.max.y)chao=Math.max(chao,box.max.y+.012);
+        else if(box.containsPoint(p)){d.m.visible=false;break;}
+      }
+      if(d.m.visible&&p.y<=chao){this.mancha(V(p.x,chao+.002,p.z),d.cor,.09+Math.random()*.12);d.m.visible=false;}
+      if(d.tempo<=0)d.m.visible=false;
+    }
+    for(const m of this.manchas){m.userData.idade=Math.min(1,m.userData.idade+dt*1.8);const t=m.userData.idade;m.scale.setScalar(m.userData.raio*(.25+.75*(1-(1-t)**3)));}
   }
 }
 
@@ -2401,7 +2516,7 @@ class RacketBoss {
       }
       this.linha.set(de,ate);
       if(trecho>1e-8)this.linha.closestPointToPoint(jogo.jogador.pos,true,this.proximo);else this.proximo.copy(de);
-      const raio=.55+.18*clamp(jogo.jogador.modelo?.zoom||1,1,2.5);
+      const raio=.55+(jogo.jogador.raio??.18*clamp(jogo.jogador.modelo?.zoom||1,1,2.5));
       const acertou=this.proximo.distanceToSquared(jogo.jogador.pos)<raio*raio&&de.distanceTo(this.proximo)<=parede;
       tiro.tempo-=dt;
       if(acertou||parede<=trecho+.15||tiro.tempo<=0){
@@ -2496,7 +2611,7 @@ class WorldManager {
     this.emPerigo = null; this.avisoGas = false;
     this.construirCenario(); this.criarSalaRaquete(); this.criarEnigmaSala3(); this.criarGotas(); this.criarParticulas(); this.criarPerigos(); this.criarHumanos(); this.criarCarteira(); this.criarLivroPerdido(); this.criarPingos();
     this.efeitosHabilidade = []; this.unhasTusk = [];
-    this.lab = new LabPhysics(this); this.chefe = new RacketBoss(this);
+    this.lab = new LabPhysics(this); this.tintas = new PaintPhysics(this); this.chefe = new RacketBoss(this);
 
   }
 
@@ -2920,12 +3035,12 @@ class WorldManager {
 
 
     // ARTES (x -118..-70): mesas de pintura, cavaletes com telas e a POÇA DE TINTA VERMELHA (easter egg)
-    { const cx = -94, tintas = [0xe0202a, 0x2a6fe0, 0xf2c200, 0x2fb34a, 0x8a3fc0, 0xff7a1a];
+    { const cx = -94;
       const tela2 = (k) => { const [c, g] = tela(128, 128); g.fillStyle = `hsl(${(k * 67) % 360},45%,82%)`; g.fillRect(0, 0, 128, 128);
         for (let i = 0; i < 7; i++) { g.fillStyle = `hsl(${(k * 67 + i * 51) % 360},75%,50%)`; g.beginPath(); g.arc(20 + ((i * 53 + k * 29) % 90), 20 + ((i * 37 + k * 17) % 90), 10 + ((i * 11) % 22), 0, 7); g.fill(); } return new THREE.MeshBasicMaterial({ map: tex(c) }); };
       for (const z of [-86, -72, -46]) for (const dx of [-14, 14]) {
         caixa(11, 0.5, 4.5, m.tampo, cx + dx, F + 3.2, z); for (const l of [-1, 1]) caixa(0.4, 3, 4, m.mad, cx + dx + l * 5, F + 1.5, z);
-        for (let i = 0; i < 4; i++) this.deco(new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.6, 10), M(tintas[(i + Math.abs(z)) % 6], 0.3)), cx + dx - 3.6 + i * 2.4, F + 3.75, z);
+        // Os quatro potes de cada mesa são criados por PaintPhysics.
         for (const l of [-1, 1]) caixa(2.2, 1.9, 2.2, m.cad, cx + dx + l * 3, F + 0.95, z + 3.6);   // banquinhos
       }
       [-108, -94, -80].forEach((x, i) => { caixa(4.4, 5.2, 0.3, M(0xe8e0d0, 0.8), x, F + 6.2, -94); caixa(0.3, 6, 0.3, m.mad, x - 1.6, F + 3, -92.6); caixa(0.3, 6, 0.3, m.mad, x + 1.6, F + 3, -92.6);
@@ -3441,52 +3556,62 @@ class WorldManager {
     }
 
 
-    // MOSQUITÃO DA RUA: estátua-gigante de enfeite no fundo do auditório (easter egg)
-    { const M2 = M(0x5a6f3c, 0.88), M3 = M(0x8aad41, 0.82), OL = M(0x220000, 0.2, { emissive: 0xff2244, emissiveIntensity: 0.85 }), mm = new THREE.Group();
-      mm.position.set(111, F + 2.8, 93); this.cena.add(mm); caixa(3.4, 0.9, 3.4, m.mad, 111, F + 2.45, 93);
-      const parte = (geo, mt, x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1, raiz = mm) => { const o = new THREE.Mesh(geo, mt); o.position.set(x, y, z); o.rotation.set(rx, ry, rz); o.scale.set(sx, sy, sz); raiz.add(o); return o; };
-      // Geometria local: 'tubo' pertence a construirMosquito() e não existe em WorldManager.
-      const haste = (a, b, raio, mt, raiz = mm) => {
-        const vetor = new THREE.Vector3().subVectors(b, a), comprimento = vetor.length();
-        if (comprimento < 0.0001) return null;
-        const o = new THREE.Mesh(new THREE.CylinderGeometry(raio, raio * 0.88, comprimento, 8), mt);
-        o.position.copy(a).addScaledVector(vetor, 0.5);
-        o.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), vetor.normalize());
-        raiz.add(o); return o;
-      };
-      const thorax = parte(new THREE.SphereGeometry(1.55, 20, 14), M2, 0, 6.2, 0, 0, 0, 0, 1.2, 0.95, 1.45);
-      const head = parte(new THREE.SphereGeometry(1.05, 18, 12), M2, 0, 6.45, -2.35, 0, 0, 0, 1.0, 0.88, 0.92);
-      parte(new THREE.CylinderGeometry(0.36, 0.48, 0.8, 10), M2, 0, 6.35, -1.2, Math.PI / 2, 0, 0);
-      const abdomen = new THREE.Group(); abdomen.position.set(0, 5.95, 1.55); mm.add(abdomen);
-      for (let i = 0; i < 6; i++) { const r = 1.18 - i * 0.12; const seg = parte(new THREE.SphereGeometry(r, 18, 12), i % 2 ? M3 : M2, 0, -i * 0.06, i * 0.92, 0, 0, 0, 1.0, 0.82, 1.08, abdomen); if (i < 5) { const aro = parte(new THREE.TorusGeometry(r * 0.82, 0.08, 6, 18), M3, 0, -i * 0.06, i * 0.92 - 0.36, Math.PI / 2, 0, 0, 1, 1, 1, abdomen); } }
-      const ferrao = parte(new THREE.ConeGeometry(0.18, 0.85, 8), M2, 0, -0.22, 5.72, Math.PI / 2, 0, 0, 1, 1, 1, abdomen);
-      const wingShape = new THREE.Shape(); wingShape.moveTo(0, 0); wingShape.quadraticCurveTo(1.1, 0.28, 2.3, 0.05); wingShape.quadraticCurveTo(2.55, -0.02, 2.8, -0.18); wingShape.quadraticCurveTo(1.9, -0.28, 0.55, -0.22); wingShape.quadraticCurveTo(0.08, -0.1, 0, 0); wingShape.closePath();
-      for (const l of [1, -1]) {
-        const baseX = l * 0.75;
-        for (const [oy, oz, jx, jy, jz, px, py, pz, p2x, p2y, p2z] of [[-0.05, -0.75, 0.95, -0.55, -0.55, 2.1, -1.55, -1.35, 2.95, -2.15, -2.35], [-0.08, 0.0, 1.12, -0.65, 0.0, 2.42, -1.82, 0.0, 3.22, -2.35, 0.0], [-0.03, 0.75, 1.0, -0.48, 0.48, 2.22, -1.42, 1.2, 2.98, -2.02, 2.08]]) {
-          haste(V(baseX, 5.75 + oy, oz), V(l * jx, jy + 5.75, jz), 0.11, M2);
-          haste(V(l * jx, jy + 5.75, jz), V(l * px, py + 5.75, pz), 0.075, M2);
-          haste(V(l * px, py + 5.75, pz), V(l * p2x, p2y + 5.75, p2z), 0.04, M2);
-          parte(new THREE.SphereGeometry(0.17, 10, 8), M3, l * jx, jy + 5.75, jz);
-          parte(new THREE.SphereGeometry(0.12, 10, 8), M3, l * p2x, p2y + 5.75, p2z, 0, 0, 0, 1, 1, 1.5);
+    // MOSQUITÃO DA RUA: miniatura sobre um expositor próprio, livre das caixas de som.
+    {
+      const mm=new THREE.Group();mm.name='mosquitao-rua';mm.userData={naoPicavel:true,estatico:true};
+      const x=103,z=91.8,topo=F+2.65;
+      const pedestal=caixa(2.1,.65,2.1,M(0x393e35,.85),x,F+2.325,z);pedestal.name='mosquitao-pedestal';
+      mm.position.set(x,topo,z);this.cena.add(mm);
+      const casca=M(0x4d652e,.72),faixa=M(0x94b84e,.65),patas=M(0x26301c,.8),claro=M(0xc2cb98,.65);
+      const olho=M(0x531d27,.25,{emissive:0x9f2438,emissiveIntensity:.2});
+      const asa=M(0xd4e6bb,.3,{transparent:true,opacity:.48,depthWrite:false,side:THREE.DoubleSide});
+      const nervura=new THREE.LineBasicMaterial({color:0x72935e,transparent:true,opacity:.8});
+      const bola=(sx,sy,sz,mt,px,py,pz)=>{const o=new THREE.Mesh(new THREE.SphereGeometry(1,16,12),mt);o.scale.set(sx,sy,sz);o.position.set(px,py,pz);mm.add(o);return o;};
+      const haste=(a,b,r,mt,raiz=mm)=>{const d=b.clone().sub(a),o=new THREE.Mesh(new THREE.CylinderGeometry(r*.75,r,d.length(),8),mt);o.position.copy(a).addScaledVector(d,.5);o.quaternion.setFromUnitVectors(V(0,1,0),d.normalize());raiz.add(o);return o;};
+      bola(.14,.16,.22,casca,0,.43,0); // tórax compacto, separado da cabeça e do abdômen
+      bola(.12,.055,.19,faixa,0,.55,.015);
+      bola(.105,.115,.12,casca,0,.48,-.26);
+      haste(V(0,.45,-.13),V(0,.47,-.23),.055,casca);
+      for(let i=0;i<7;i++){
+        const r=.108-i*.0105,seg=bola(r,r*.85,.072,i%2?faixa:casca,0,.41-i*.009,.19+i*.078);seg.name='mosquitao-abdomen-'+i;
+        if(i<6){const aro=new THREE.Mesh(new THREE.TorusGeometry(r*.92,.006,6,18),claro);aro.scale.y=.85;aro.position.set(0,.41-i*.009,.215+i*.078);mm.add(aro);}
+      }
+      // Duas asas finas, com nervuras dentro do contorno da membrana.
+      const forma=new THREE.Shape();forma.moveTo(0,0);forma.quadraticCurveTo(.2,.09,.57,-.13);forma.quadraticCurveTo(.87,-.33,.72,-.38);forma.quadraticCurveTo(.52,-.43,.17,-.12);forma.quadraticCurveTo(.04,-.03,0,0);
+      const geoAsa=new THREE.ShapeGeometry(forma,16),asas=[];
+      for(const l of [-1,1]){
+        const a=new THREE.Mesh(geoAsa,asa);a.name='mosquitao-asa';a.position.set(l*.085,.54,.015);a.rotation.x=-Math.PI/2;a.scale.x=l;mm.add(a);asas.push(a);
+        for(const pontos of [ [[0,0],[.26,-.08],[.73,-.33]], [[.09,-.02],[.35,-.02],[.57,-.13]], [[.25,-.08],[.46,-.24],[.65,-.34]] ]){
+          const linha=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pontos.map(([px,py])=>V(px,py,.002))),nervura);a.add(linha);
         }
-        const wing = parte(new THREE.ShapeGeometry(wingShape), new THREE.MeshStandardMaterial({ color: 0xc7d7a8, roughness: 0.4, transparent: true, opacity: 0.55, side: THREE.DoubleSide }), baseX, 7.0, -0.15, -Math.PI / 2, 0, 0, l, 1.0, 1.0);
-        wing.position.x = baseX; wing.position.y = 7.0; wing.position.z = -0.15;
-        const nerv = haste(V(baseX, 6.95, -0.1), V(l * 2.45, 6.96, -0.08), 0.04, M3);
-        const nerv2 = haste(V(l * 0.95, 6.95, -0.08), V(l * 2.12, 7.12, 0.11), 0.03, M3);
-        const nerv3 = haste(V(l * 0.85, 6.94, -0.08), V(l * 1.98, 6.76, -0.22), 0.03, M3);
       }
-      const olhos = [];
-      for (const l of [1, -1]) {
-        olhos.push(parte(new THREE.SphereGeometry(0.32, 12, 10), OL, l * 0.52, 6.42, -3.08));
-        haste(V(l * 0.18, 7.0, -2.55), V(l * 0.52, 8.25, -3.25), 0.05, M2);
-        haste(V(l * 0.52, 8.25, -3.25), V(l * 0.82, 9.1, -3.85), 0.03, M3);
+      // Três pares articulados, com todos os pés apoiados no tampo do expositor.
+      const pes=[];
+      for(const l of [-1,1])for(const [i,oz]of [-.1,.025,.14].entries()){
+        const raiz=new THREE.Group();raiz.name='mosquitao-pata-'+(l<0?'e':'d')+i;mm.add(raiz);
+        const joelho=V(l*(i===1?.36:.3),.34,oz+(i-1)*.12),pe=V(l*(i===1?.55:.46),.012,oz+(i-1)*.27);
+        haste(V(l*.09,.40,oz),joelho,.019,patas,raiz);haste(joelho,pe,.011,patas,raiz);
+        haste(pe,pe.clone().add(V(l*.06,0,-.055)),.008,claro,raiz);pes.push(pe);
+        bola(.025,.025,.025,faixa,...joelho.toArray());
       }
-      const trompa = parte(new THREE.CylinderGeometry(0.2, 0.055, 3.3, 8), M2, 0, 5.82, -4.72, Math.PI / 2.05);
-      parte(new THREE.CylinderGeometry(0.075, 0.02, 1.1, 6), M3, 0, 5.22, -6.18, Math.PI / 2.08);
-      for (let i = 0; i < 5; i++) { const esp = parte(new THREE.ConeGeometry(0.12 - i * 0.008, 0.58, 6), M3, 0, 7.55 + i * 0.1, -0.95 + i * 0.45); esp.rotation.x = -0.12; }
-      mm.scale.setScalar(0.18);
-      this.mosquito = { g: mm, olhos, trompa, centro: V(111, F + 2.8 + 1.25, 93) };
+      const olhos=[];
+      for(const l of [-1,1]){
+        olhos.push(bola(.066,.075,.052,olho,l*.075,.50,-.335));
+        bola(.018,.022,.009,claro,l*.085,.525,-.381);
+        const a=V(l*.045,.56,-.28),b=V(l*.09,.69,-.38),c=V(l*.16,.78,-.45);
+        haste(a,b,.009,patas);haste(b,c,.006,patas);
+        for(let i=1;i<4;i++){const p=b.clone().lerp(c,i/4);haste(p,p.clone().add(V(l*.035,.025,.02)),.0035,faixa);}
+        haste(V(l*.045,.44,-.34),V(l*.07,.40,-.49),.01,patas);
+      }
+      const trompa=new THREE.Group();trompa.name='mosquitao-tromba';mm.add(trompa);
+      haste(V(0,.445,-.35),V(0,.385,-.79),.016,patas,trompa);haste(V(0,.385,-.79),V(0,.373,-.88),.007,claro,trompa);
+      // Placa presa à frente do pedestal; nenhuma identificação flutua no cenário.
+      const [cv,ctx]=tela(512,128);ctx.fillStyle='#222a24';ctx.fillRect(0,0,512,128);ctx.fillStyle='#dfedbf';ctx.textAlign='center';ctx.font='bold 44px sans-serif';ctx.fillText('MOSQUITÃO DA RUA',256,57);ctx.font='25px sans-serif';ctx.fillText('Feira de ciências · aproxime-se',256,99);
+      this.deco(new THREE.Mesh(new THREE.PlaneGeometry(1.9,.47),new THREE.MeshBasicMaterial({map:tex(cv)})),x,topo-.32,z-1.057,Math.PI);
+      mm.updateMatrixWorld(true);mm.updateMatrix();mm.matrixAutoUpdate=false;
+      const limites=new THREE.Box3().setFromObject(mm),tam=limites.getSize(V()),centro=limites.getCenter(V());
+      const col=this.fixo(new THREE.Mesh(new THREE.BoxGeometry(tam.x,tam.y,tam.z),new THREE.MeshBasicMaterial({visible:false})),...centro.toArray());col.name='mosquitao-colisao';
+      this.mosquito={g:mm,olhos,trompa,asas,pes,pedestal,centro};
     }
     // Lâmpadas do teto nas salas
     for (const [x, z] of [[-94, -54], [-49, -54], [-7, -54], [28, -54], [56, -54], [94, -54], [17, 54], [58, 54], [94, 50], [94, 15]]) dbox(14, 0.3, 1.6, B(0xeaf6ff), x, YMAX - 0.15, z);
@@ -4058,7 +4183,7 @@ class WorldManager {
   dispararUnhaTusk(jogo, humano, ato, atraso = 0) {
     const origem = jogo.jogador.pos.clone();
     const direcao = humano.alvo.clone().sub(origem).normalize();
-    origem.addScaledVector(direcao, 0.65 * jogo.jogador.modelo.escala);
+    origem.addScaledVector(direcao, 0.65 * jogo.jogador.modelo.escala * CFG.ESCALA_JOGADOR);
     origem.y += 0.12;
     const g = new THREE.Group();
     const ouro = new THREE.MeshStandardMaterial({color: 0xffe28a, metalness: 0.65, roughness: 0.18,
@@ -4155,7 +4280,7 @@ class WorldManager {
     this.emPerigo = null; this.avisoGas = false;
     this.luz.intensity = (Math.sin(jogo.t * 3.1) * Math.sin(jogo.t * 17.3) > 0.93 ? 0.5 : 1.6) * (jogo.modoGrafico === 'ultra' ? 0.68 : 1);   // lâmpada falhando
     this.atualizarHumanos(dt * jogo.escalaTempo, jogo);   // tempo parado deixa humanos em câmera lenta
-    this.atualizarPortaSala3(dt);this.lab.update(dt, jogo); this.chefe.update(dt, jogo);
+    this.atualizarPortaSala3(dt);this.lab.update(dt, jogo);this.tintas.update(dt, jogo); this.chefe.update(dt, jogo);
     this.atualizarFXHabilidades(dt);
     if (this.relogio) { const d = new Date(), s = d.getSeconds() + d.getMilliseconds() / 1000, mi = d.getMinutes() + s / 60, h = (d.getHours() % 12) + mi / 60;
       this.relogio.s.rotation.z = -s / 60 * Math.PI * 2; this.relogio.m.rotation.z = -mi / 60 * Math.PI * 2; this.relogio.h.rotation.z = -h / 12 * Math.PI * 2; }
@@ -4241,7 +4366,7 @@ class WorldManager {
 class PlayerController {
   constructor(cena, camera, estado, mundo) {
     this.camera = camera; this.estado = estado; this.mundo = mundo;
-    this.modelo = construirMosquito(estado); this.obj = this.modelo.mosquito; this.obj.rotation.order = "YXZ"; cena.add(this.obj);
+    this.modelo = construirMosquito(estado); this.obj = this.modelo.mosquito; this.obj.rotation.order = "YXZ"; cena.add(this.obj);this.obj.scale.setScalar(this.modelo.escala*CFG.ESCALA_JOGADOR);
     this.vel = V(0, 0, 0); this.yaw = 0; this.pitch = 0; this.yawPrev = 0; this.taxaYaw = 0;
     this.yawV = 0; this.pitchV = 0; this.rollV = 0; this.abV = 0; this.pernaV = 0;
     this.stamina = estado.staminaMax; this.vida = estado.vidaMax; this.regenT = 0; this.invul = 0; this.shake = 0;
@@ -4252,6 +4377,7 @@ class PlayerController {
     this.rc = new THREE.Raycaster();
   }
   get pos() { return this.obj.position; }
+  get raio() { return .075 * clamp(this.modelo.zoom,1,2.5); }
   mirar(dx, dy) { this.yaw -= dx * 0.0025; this.pitch = clamp(this.pitch - dy * 0.0025, -1.2, 1.2); }
   tomarDano(v) { if (this.invul > 0 || this.escudo > 0) return false; this.vida = Math.max(0, this.vida - v); this.regenT = 5; return this.vida <= 0; }
   reaparecer() {
@@ -4277,9 +4403,9 @@ class PlayerController {
     this.vel.lerp(a, amort(mov ? 9 : 5, dt));
 
     // Integração em sub-passos: não atravessa paredes em alta velocidade
-    const passos = Math.max(1, Math.ceil(this.vel.length() * dt / 0.12)), h = dt / passos;
+    const passos = Math.max(1, Math.ceil(this.vel.length() * dt / Math.min(.12,this.raio*.8))), h = dt / passos;
     const fantasma = S.attr.intang;   // intangível: sem colisão, só os limites do prédio
-    for (let i = 0; i < passos; i++) { this.pos.addScaledVector(this.vel, h); if (fantasma) this.mundo.limitar(this.pos); else this.mundo.resolver(this.pos, 0.18 * clamp(this.modelo.zoom, 1, 2.5)); }
+    for (let i = 0; i < passos; i++) { this.pos.addScaledVector(this.vel, h); if (fantasma) this.mundo.limitar(this.pos); else this.mundo.resolver(this.pos, this.raio); }
 
     // Vida / invulnerabilidade
     this.invul = Math.max(0, this.invul - dt);
@@ -4296,7 +4422,7 @@ class PlayerController {
     this.rollV += (roll - this.rollV) * amort(7, dt); this.pitchV += (pit - this.pitchV) * amort(9, dt);
     this.obj.rotation.set(this.pitchV, this.yawV, this.rollV);
     this.modelo.punch = Math.max(0, this.modelo.punch - dt * 2.2);
-    this.obj.scale.setScalar(this.modelo.escala * (1 + this.modelo.punch * 0.3));
+    this.obj.scale.setScalar(this.modelo.escala * CFG.ESCALA_JOGADOR * (1 + this.modelo.punch * 0.3));
     this.obj.visible = this.invul <= 0 || Math.floor(this.invul * 12) % 2 === 0;
   }
 
@@ -4316,7 +4442,7 @@ class PlayerController {
   camera3p(dt) {
     this.foco.lerp(this.pos, amort(20, dt));
     this.eul.set(this.pitch * 0.5, this.yaw, 0, "YXZ");
-    this.zoomV += (this.modelo.zoom - this.zoomV) * amort(2.5, dt); const z = Math.pow(this.zoomV, 0.8);   // zoom suave conforme o mosquito cresce
+    this.zoomV += (this.modelo.zoom - this.zoomV) * amort(2.5, dt); const z = Math.pow(this.zoomV, 0.8) * .45;   // câmera próxima para a escala menor, acompanhando as evoluções
     const dist = (4 + Math.min(this.vel.length() * 0.06, 1.2)) * z, desejo = this.tmp.set(0, 0.9 * z, dist).applyEuler(this.eul);
     const len = desejo.length(), dn = this.tmp2.copy(desejo).normalize();
     desejo.add(this.foco);
@@ -4564,6 +4690,7 @@ class TouchControls {
   <button type="button" data-action="quadro">📝 Quadro</button>
   <button type="button" data-action="pistas">📄 Pistas</button>
   <button type="button" data-action="mapa">🗺 Mapa</button>
+  <button type="button" data-action="missoes">📋 Missões</button>
   <button type="button" data-action="backup">💾 Backup</button>
   <button type="button" data-action="tour">🗺 Tour</button>
   <button type="button" data-hold="f" class="mt-lock">🔓 Arrombar · segure perto do armário</button>
@@ -4590,6 +4717,7 @@ class TouchControls {
       skins: () => game.abrirColecao("skins"), conq: () => game.abrirColecao("conq"),
       dica: () => game.dica(), tour: () => game.tour(), pistas: () => game.abrirEnigmaSala3("pistas"),
       mapa: () => game.extras.abrirMapa(), backup: () => game.extras.abrirBackup(),
+      missoes: () => game.missoes.abrirDiario(),
       som: () => game.ui.toast(game.audio.alternarMudo() ? "Som desligado" : "Som ligado")
     };
     el.querySelectorAll('[data-action]').forEach(b => {
@@ -4678,6 +4806,157 @@ class TouchControls {
 }
 
 
+// Personagens de missão ficam fora da lista de humanos atacáveis e da IA de movimento.
+class QuestManager {
+  constructor(game){
+    this.g=game;this.ray=new THREE.Raycaster();this.timer=0;
+    this.npcs=MISSOES.map(q=>this.criarNPC(q));this.itens=ITENS_MISSAO.map(i=>this.criarItem(i));this.refresh();
+    $('hx-btn-missoes').onclick=()=>this.abrirDiario();
+  }
+  estado(id){return this.g.estado.missoes[id]||{aceita:false,entregue:false,itens:[]};}
+  progresso(q){
+    const m=this.estado(q.id),s=this.g.estado;if(!m.aceita)return 0;if(m.entregue)return q.meta;
+    if(q.id==='voo')return s.recordeVoo!=null?1:0;
+    if(q.id==='livro')return s.livroDevolvido?1:0;
+    if(q.id==='passeio')return Math.min(q.meta,new Set(s.salas.filter(x=>x!=='Corredor')).size);
+    return Math.min(q.meta,m.itens.length);
+  }
+  status(q){const m=this.estado(q.id);return m.entregue?'Concluída':!m.aceita?'Disponível':this.progresso(q)>=q.meta?'Volte para entregar':'Em andamento';}
+  criarNPC(q){
+    const humano=q.tipo==='humano'||q.tipo==='humana',escala=humano?1:q.escala;
+    const g=new THREE.Group();g.name='missao-npc-'+q.id;g.userData={missao:q.id,naoPicavel:true,estatico:true};
+    // As espécies têm tamanhos próprios. A folga do piso evita enterrar os pés e o aro.
+    g.position.set(q.pos[0],CFG.YMIN+(humano?0:.07),q.pos[1]);g.rotation.y=q.ry;g.scale.setScalar(escala);
+    const mats=new Map(),mat=c=>{if(!mats.has(c))mats.set(c,new THREE.MeshStandardMaterial({color:c,roughness:.8}));return mats.get(c);};
+    const mesh=(geo,c,x,y,z)=>{const m=new THREE.Mesh(geo,mat(c));m.position.set(x,y,z);g.add(m);return m;};
+    const bola=(x,y,z,sx,sy,sz,c)=>{const m=mesh(new THREE.SphereGeometry(1,14,10),c,x,y,z);m.scale.set(sx,sy,sz);return m;};
+    const box=(x,y,z,w,h,d,c)=>mesh(new THREE.BoxGeometry(w,h,d),c,x,y,z);
+    const haste=(a,b,r,c)=>{const va=V(...a),vb=V(...b),m=mesh(new THREE.CylinderGeometry(r,r,va.distanceTo(vb),8),c,...va.clone().add(vb).multiplyScalar(.5).toArray());m.quaternion.setFromUnitVectors(V(0,1,0),vb.sub(va).normalize());return m;};
+    if(humano){
+      const pele=q.id==='sensores'?0xb57b54:0xd89b76,roupa=q.id==='sensores'?0xe8eeea:0x376888;
+      for(const l of [-1,1]){haste([l*.3,.45,0],[l*.3,2.7,0],.24,0x263449);box(l*.3,.2,.15,.5,.4,.8,0x21232b);haste([l*.9,4.6,0],[l*.95,3.1,.1],.19,roupa);bola(l*.95,3.0,.13,.18,.22,.18,pele);}
+      box(0,2.8,0,1.3,.5,.7,0x263449);const t=mesh(new THREE.CylinderGeometry(.82,.65,1.9,16),roupa,0,3.95,0);t.scale.z=.65;
+      bola(0,5.65,0,.5,.59,.5,pele);haste([0,4.9,0],[0,5.25,0],.2,pele);
+      const cabelo=mesh(new THREE.SphereGeometry(.55,16,10,0,Math.PI*2,0,Math.PI*.52),0x262029,0,5.7,0);
+      if(q.id==='passeio'){cabelo.material=mat(0x243b55);box(0,5.8,.5,.95,.1,.5,0x243b55);haste([1.35,.3,.15],[1.2,4.1,.1],.065,0xa47b42);box(1.35,.17,.15,.95,.34,.38,0xb8a875);box(0,4.2,.54,.7,.8,.08,0x274f6b);}
+      else {box(-.35,3.9,.57,.38,.5,.07,0xbed2cc);box(.63,3.5,.55,.8,1.05,.1,0x967649);box(.63,3.5,.62,.63,.83,.03,0xf1e8cc);}
+      for(const l of [-1,1]){bola(l*.18,5.7,.45,.085,.085,.035,0xffffff);bola(l*.18,5.7,.49,.04,.05,.025,0x172332);if(q.id==='sensores')mesh(new THREE.TorusGeometry(.12,.022,6,14),0x28323b,l*.18,5.7,.51);}
+      box(0,5.38,.47,.2,.035,.035,0x794b40);
+    }else{
+      const cor={grilo:0x74a447,joaninha:0x34313b,mariposa:0xcdbb8e,formiga:0xa85e42}[q.tipo],perna=q.tipo==='grilo'?0x527b34:0x3b3433;
+      for(const l of [-1,1]){
+        haste([l*.4,1.6,0],[l*.95,.8,.1],.13,perna);haste([l*.95,.8,.1],[l*.7,.14,.4],.11,perna);bola(l*.7,.12,.5,.25,.12,.43,perna);
+        for(const y of [1.65,2.45]){haste([l*.5,y,0],[l*.95,y-.35,.2],.09,perna);haste([l*.95,y-.35,.2],[l*.7,y-.55,.65],.075,perna);}
+      }
+      bola(0,2,0,.63,.9,.48,cor);bola(0,3.35,.05,.67,.62,.53,cor);
+      for(const l of [-1,1]){bola(l*.27,3.45,.5,.22,.27,.11,0xf4f5d9);bola(l*.25,3.45,.6,.10,.15,.05,0x172332);haste([l*.25,3.85,.05],[l*.48,4.6,-.15],.045,perna);bola(l*.48,4.6,-.15,.09,.10,.09,cor);}
+      box(0,3.1,.56,.24,.04,.035,0x513c37);
+      if(q.tipo==='grilo'){
+        for(const l of [-1,1])bola(l*.32,2.05,-.35,.33,1.0,.2,0x426f35).rotation.z=l*.18;
+        box(0,2.4,.45,.75,.5,.12,0x203e59);bola(0,2.65,.61,.13,.16,.12,0xffca52);
+      }else if(q.tipo==='joaninha'){
+        bola(0,1.95,-.25,.92,1.02,.65,0xdf4355);haste([0,1.1,-.83],[0,2.8,-.8],.035,0x262332);
+        for(const l of [-1,1])for(const y of [1.5,2.3])bola(l*.64,y,-.65,.18,.2,.13,0x292433);
+        bola(0,3.85,0,.7,.18,.6,0x9f385e);bola(.85,1.8,.75,.55,.33,.08,0xc79861);
+        for(const [i,c]of [0xe94b59,0x4399f5,0xffd34f].entries())bola(.6+i*.25,1.85,.83,.09,.10,.03,c);
+      }else if(q.tipo==='mariposa'){
+        for(const l of [-1,1]){bola(l*.8,2.3,-.36,.8,1.15,.13,0xa18ec7).rotation.z=-l*.35;bola(l*.95,2.6,-.18,.32,.4,.07,0xe9c887);bola(l*.65,1.4,-.25,.55,.65,.12,0x74658e);}
+        box(0,1.9,.7,1.15,.8,.2,0x315878);box(0,1.9,.82,1.0,.63,.04,0xe8e3c9);
+        for(const l of [-1,1])mesh(new THREE.TorusGeometry(.25,.025,6,16),0x605141,l*.27,3.45,.64);
+      }else{
+        bola(0,1.2,-.45,.75,.65,.8,0x8b4537);box(0,2,.48,.8,1.0,.08,0xe6d8ae);box(0,1.5,.85,.65,.55,.55,0xddb16b);box(0,1.5,1.14,.13,.5,.02,0xf5e8cb);
+      }
+    }
+    const base=new THREE.Mesh(new THREE.TorusGeometry(humano?1.3:1.45,.045,6,36),new THREE.MeshBasicMaterial({color:0xffd84d}));base.rotation.x=-Math.PI/2;base.position.y=.07;g.add(base);
+    this.g.cena.add(g);g.updateMatrixWorld(true);g.updateMatrix();g.matrixAutoUpdate=false;
+    const colMesh=new THREE.Mesh(new THREE.BoxGeometry((humano?2.2:2.5)*escala,(humano?6.2:4.5)*escala,1.9*escala),new THREE.MeshBasicMaterial({side:THREE.DoubleSide}));
+    colMesh.position.copy(g.position).add(V(0,(humano?3.1:2.25)*escala,0));colMesh.updateMatrixWorld(true);
+    this.g.mundo.col.push({mesh:colMesh,box:new THREE.Box3().setFromObject(colMesh),questNPC:q.id});
+    // O alcance de conversa continua confortável; o ponto de interação acompanha a cabeça.
+    return {q,g,base,alvo:g.localToWorld(V(0,humano?5.6:3.4,0))};
+  }
+  criarItem(i){
+    const g=new THREE.Group();g.name='missao-item-'+i.id;g.position.set(...i.pos);
+    const material=c=>new THREE.MeshStandardMaterial({color:c,roughness:.6});
+    const add=(geo,mat,x,y,z)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);g.add(m);return m;};
+    let led,tampa;
+    if(i.missao==='tintas'){
+      add(new THREE.CylinderGeometry(.48,.43,1.25,14),material(i.cor),0,0,0);
+      tampa=add(new THREE.CylinderGeometry(.5,.5,.12,14),material(0xdde1d8),0,.68,0);
+      add(new THREE.BoxGeometry(.4,.4,.025),material(0xffe8a4),0,0,.46);
+    }else{
+      add(new THREE.CylinderGeometry(.1,.13,2.5,8),material(0x657785),0,-1.85,0);
+      add(new THREE.BoxGeometry(1.0,.17,.8),material(0x435b69),0,-3.4,0);
+      add(new THREE.BoxGeometry(.95,1.15,.55),material(0x354c64),0,0,0);
+      led=add(new THREE.SphereGeometry(.2,10,8),new THREE.MeshBasicMaterial({color:i.cor}),0,.15,.37);
+      add(new THREE.BoxGeometry(.55,.14,.04),material(0xd7e6e9),0,-.3,.3);
+    }
+    this.g.cena.add(g);const corpo=i.missao==='tintas'?this.g.mundo.tintas?.adicionar(g,i.cor,.5,.74,{tampa}):null;
+    return {...i,g,led,corpo,alvo:g.position};
+  }
+  refresh(){
+    for(const n of this.npcs){const m=this.estado(n.q.id);n.base.material.color.setHex(m.entregue?0x6b8188:!m.aceita?0xffd84d:this.progresso(n.q)>=n.q.meta?0x6ef2aa:0x62cfee);}
+    for(const i of this.itens){const m=this.estado(i.missao),feito=m.itens.includes(i.id);i.g.visible=i.missao==='sensores'||(m.aceita&&!m.entregue&&!feito);if(i.led)i.led.material.color.setHex(feito?0x6ef2aa:m.aceita?0x62cfee:0x69737f);}
+  }
+  visivel(alvo,ignorar){
+    const p=this.g.jogador.pos,dir=alvo.clone().sub(p),dist=dir.length();if(dist<.1)return true;
+    this.ray.set(p,dir.normalize());this.ray.near=.05;this.ray.far=Math.max(.05,dist-.2);
+    const ms=this.g.mundo.col.filter(c=>c.questNPC!==ignorar&&c.box.distanceToPoint(p)<dist).map(c=>c.mesh);
+    return this.ray.intersectObjects(ms,false).length===0;
+  }
+  perto(){
+    const p=this.g.jogador.pos,candidatos=[];
+    for(const n of this.npcs){const d=p.distanceToSquared(n.alvo);if(d<25)candidatos.push({npc:n,alvo:n.alvo,d,id:n.q.id});}
+    for(const i of this.itens){const m=this.estado(i.missao),d=p.distanceToSquared(i.alvo);if(d<20.25&&m.aceita&&!m.entregue&&!m.itens.includes(i.id))candidatos.push({item:i,alvo:i.alvo,d});}
+    return candidatos.sort((a,b)=>a.d-b.d).find(c=>this.visivel(c.alvo,c.id));
+  }
+  interagir(){
+    const c=this.perto();if(!c)return false;
+    if(c.npc)this.conversar(c.npc.q);else{
+      const i=c.item,m=this.estado(i.missao);m.itens.push(i.id);this.g.estado.salvar();this.refresh();this.g.audio.clique();
+      this.g.ui.toast((i.missao==='sensores'?'Inspecionado: ':'Recolhida: ')+i.nome+' · '+m.itens.length+'/3');
+    }return true;
+  }
+  dica(){const c=this.perto();return c?(c.npc?'💬 '+c.npc.q.nome+' · Pegar / B para conversar':'✨ '+c.item.nome+' · Pegar / B para '+(c.item.missao==='sensores'?'inspecionar':'recolher')):'';}
+  atualizar(dt){if((this.timer-=dt)<=0){this.timer=.5;this.refresh();}}
+  podeFalar(q){const n=this.npcs.find(n=>n.q.id===q.id);return n&&n.alvo.distanceToSquared(this.g.jogador.pos)<25&&this.visivel(n.alvo,q.id);}
+  aceitar(q){if(!this.podeFalar(q)||this.estado(q.id).aceita)return false;this.g.estado.missoes[q.id]={aceita:true,entregue:false,itens:[]};this.g.estado.salvar();this.refresh();return true;}
+  medalhasPendentes(){return [['circuito_bronze',120],['circuito_prata',45],['circuito_ouro',28]].filter(([id,t])=>this.g.estado.recordeVoo!=null&&this.g.estado.recordeVoo<=t&&!this.g.estado.conq.includes(id));}
+  entregar(q){
+    const m=this.estado(q.id);if(!this.podeFalar(q)||!m.aceita||m.entregue||this.progresso(q)<q.meta)return false;
+    m.entregue=true;this.g.estado.sangue+=q.premio;this.g.estado.salvar();this.g.ui.hud(this.g.estado);this.g.audio.egg();this.refresh();return true;
+  }
+  conversar(q){const body=this.g.extras.painel(q.nome+' · '+q.sala);if(body)this.dialogo(q,body);}
+  dialogo(q,body){
+    const e=this.g.extras,m=this.estado(q.id);body.replaceChildren();
+    e.parente(body,'p',({grilo:'🦗 Grilo treinador',joaninha:'🐞 Joaninha artista',mariposa:'🦋 Mariposa bibliotecária',formiga:'🐜 Formiga cozinheira',humano:'🧑‍🔬 Professor',humana:'🧹 Zeladora'})[q.tipo],'quest-personagem');
+    e.parente(body,'h3',q.titulo);e.parente(body,'p',q.fala);e.parente(body,'p',q.objetivo,'quest-objetivo');
+    e.parente(body,'p',this.status(q)+' · '+this.progresso(q)+'/'+q.meta+' · Recompensa: '+q.premio+' sangue.');
+    const redesenhar=()=>{this.dialogo(q,body);e.modal.querySelector('section').focus({preventScroll:true});};
+    if(!m.aceita)e.botao(body,'Aceitar missão',()=>{if(this.aceitar(q))redesenhar();});
+    else if(!m.entregue&&this.progresso(q)>=q.meta)e.botao(body,'Concluir missão · +'+q.premio,()=>{if(this.entregar(q))redesenhar();});
+    else if(m.entregue)e.parente(body,'p','Obrigado pela ajuda! Sua recompensa já foi recebida.','quest-concluida');
+    if(q.id==='entrega'&&m.aceita&&!m.itens.includes('dora'))e.parente(body,'p','📦 Pacote de açúcar na sua mochila. Dora está no corredor, perto dos armários centrais.');
+    if(q.id==='passeio'){
+      const entrega=this.estado('entrega');if(entrega.aceita&&!entrega.itens.includes('dora'))e.botao(body,'Entregar o açúcar de Mimi',()=>{if(!this.podeFalar(q))return;entrega.itens.push('dora');this.g.estado.salvar();e.parente(body,'p','Pacote entregue! Volte a Mimi na cantina.');this.refresh();redesenhar();});
+      else if(entrega.itens.includes('dora'))e.parente(body,'p','Mimi já pode receber a confirmação da entrega.');
+    }
+    if(q.id==='voo'&&m.aceita){
+      e.parente(body,'p','Recorde: '+e.tempo(this.g.estado.recordeVoo)+'. Medalhas: bronze até 120 s (+80), prata até 45 s (+140), ouro até 28 s (+240). Cada prêmio é pago uma vez.');
+      const pendentes=this.medalhasPendentes();if(pendentes.length)e.botao(body,'Receber medalhas do circuito',()=>{if(!this.podeFalar(q))return;for(const [id]of this.medalhasPendentes())this.g.ganhar(id);redesenhar();});
+      e.botao(body,e.corrida?'Recomeçar tentativa':m.entregue?'Treinar novamente':'Iniciar desafio de Tico',()=>{if(!this.podeFalar(q))return;this.g.fecharColecao();e.iniciarCorrida();});
+      if(e.corrida)e.botao(body,'Encerrar tentativa',()=>{e.cancelarCorrida();redesenhar();});
+      e.parente(body,'p','O treino começa após 3 segundos na largada. Cruze os aros dourados na ordem; sprint e habilidades estão liberados. Sair do ginásio encerra a tentativa.');
+    }
+    e.botao(body,'Voltar ao jogo',()=>this.g.fecharColecao());
+  }
+  abrirDiario(){
+    const e=this.g.extras,body=e.painel('Missões da escola');if(!body)return;
+    e.parente(body,'p','Converse com os personagens usando Pegar/B. Aceite a missão, cumpra o objetivo e volte para receber a recompensa.');
+    for(const q of MISSOES){const card=e.parente(body,'article',undefined,'quest-card');e.parente(card,'h3',q.titulo);e.parente(card,'p',q.nome+' · '+q.sala+' · '+this.status(q));e.parente(card,'p',q.objetivo);e.parente(card,'small',this.progresso(q)+'/'+q.meta+' · '+q.premio+' sangue');}
+  }
+}
+
 // Mapa, circuito de voo e backups: recursos opcionais, fora do HUD permanente.
 class SchoolActivities {
   constructor(game) {
@@ -4694,10 +4973,7 @@ class SchoolActivities {
     return new THREE.CanvasTexture(c);
   }
   criarCircuito() {
-    const cena=this.g.cena,base=new THREE.Mesh(new THREE.TorusGeometry(2.8,.1,8,40),new THREE.MeshBasicMaterial({color:0x5de6ff}));
-    base.rotation.x=-Math.PI/2;base.position.set(17,CFG.YMIN+.15,14);cena.add(base);
-    const placa=new THREE.Mesh(new THREE.PlaneGeometry(7,1.75),new THREE.MeshBasicMaterial({map:this.placa('CIRCUITO · B / PEGAR'),side:THREE.DoubleSide}));
-    placa.position.set(17,4.7,12.5);placa.rotation.y=Math.PI;cena.add(placa);
+    const cena=this.g.cena;
     const geo=new THREE.TorusGeometry(2.35,.12,8,40);
     this.aros=this.pontos.map((p,i)=>{
       const normal=p.clone().sub(i?this.pontos[i-1]:this.largada).normalize();
@@ -4735,7 +5011,7 @@ class SchoolActivities {
   abrirMapa(){
     const body=this.painel('Mapa da escola');if(!body)return;
     const g=this.g,S=g.estado,p=g.jogador.pos,ns='http://www.w3.org/2000/svg';
-    this.parente(body,'p','Norte em cima · azul: visitada · cinza: a explorar · ponto rosa: você.');
+    this.parente(body,'p','Norte em cima · azul: visitada · cinza: a explorar · rosa: você · pontos dourados: personagens de missão.');
     const svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','-125 -108 290 216');svg.setAttribute('role','img');svg.setAttribute('aria-label','Planta da escola, salas visitadas e sua posição');svg.classList.add('school-map');body.appendChild(svg);
     const el=(tag,attrs,text)=>{const n=document.createElementNS(ns,tag);for(const [k,v]of Object.entries(attrs))n.setAttribute(k,v);if(text)n.textContent=text;svg.appendChild(n);return n;};
     CFG.SALAS.forEach(([nome,x0,x1,z0,z1],i)=>{
@@ -4746,6 +5022,7 @@ class SchoolActivities {
     for(const x of [-94,-49,-7,28,56,94])el('line',{x1:x-5,x2:x+5,y1:-8,y2:-8,stroke:'#c0eaff','stroke-width':1.5});
     for(const x of [-40,17,57,94])el('line',{x1:x-5,x2:x+5,y1:8,y2:8,stroke:'#c0eaff','stroke-width':1.5});
     el('line',{x1:118,x2:118,y1:-5,y2:5,stroke:S.portaSala3Aberta?'#67edaf':'#ffad66','stroke-width':2});
+    for(const q of MISSOES){const dot=el('circle',{cx:q.pos[0],cy:q.pos[1],r:2,fill:'#ffd84d',stroke:'#171d29','stroke-width':.6});const title=document.createElementNS(ns,'title');title.textContent=q.nome+' — '+q.sala;dot.appendChild(title);}
     el('circle',{cx:p.x,cy:p.z,r:3,fill:'#ff5077',stroke:'#fff','stroke-width':1});
     const atual=CFG.SALAS.find(s=>p.x>=s[1]&&p.x<=s[2]&&p.z>=s[3]&&p.z<=s[4]);
     this.parente(body,'p','Você está: '+(atual?atual[0]:'Corredor')+' · '+S.salas.length+'/'+CFG.SALAS.length+' salas visitadas.','school-location');
@@ -4754,19 +5031,20 @@ class SchoolActivities {
     const itens=[
       S.portaSala3Aberta?'🔓 Sala 3 aberta.':'🔒 Sala 3: '+S.pistasSala3.length+'/4 pistas anotadas. Procure os bilhetes na Sala 1, Biblioteca, Laboratório e Cantina.',
       S.conq.includes('boss_raquete')?'⚡ Garoto da raquete derrotado.':'⚡ Vença o garoto da raquete para ganhar a skin dele.',
-      '🏁 Ginásio: circuito de 8 aros. Recorde: '+this.tempo(S.recordeVoo)+'.',
+      '🦗 Tico, no ginásio, oferece o circuito de voo. Recorde: '+this.tempo(S.recordeVoo)+'.',
       S.livroDevolvido?'📚 Livro devolvido à biblioteca.':'📚 Há um livro perdido na cantina. Leve-o à biblioteca.'
     ];itens.forEach(t=>this.parente(metas,'p',t));
+    this.parente(metas,'h3','Personagens de missão');for(const q of MISSOES)this.parente(metas,'p',q.nome+' · '+q.sala+' · '+(g.missoes?.status(q)||'Disponível'));
     if(this.corrida)this.botao(body,'Encerrar circuito atual',()=>{this.cancelarCorrida();g.fecharColecao();});
   }
   exportar(estado=this.g.estado,nome='mosquito-progresso.json') {
-    const dados={jogo:'mosquito-evolution',versao:1,salvoEm:new Date().toISOString(),progresso:estado.dados()};
+    const dados={jogo:'mosquito-evolution',versao:2,salvoEm:new Date().toISOString(),progresso:estado.dados()};
     const url=URL.createObjectURL(new Blob([JSON.stringify(dados,null,2)],{type:'application/json'}));
     const a=document.createElement('a');a.href=url;a.download=nome;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);
   }
   abrirBackup(){
     const body=this.painel('Backup do progresso');if(!body)return;
-    this.parente(body,'p','Guarde seu progresso para trocar de navegador ou atualizar o site. O arquivo inclui evoluções, skins, conquistas, pistas e recorde do circuito.');
+    this.parente(body,'p','Guarde seu progresso para trocar de navegador ou atualizar o site. O arquivo inclui evoluções, skins, conquistas, pistas, missões e recorde do circuito.');
     this.botao(body,'Baixar meu progresso (.json)',()=>{try{this.exportar();status.textContent='Backup preparado para download.';}catch(_){status.textContent='Não foi possível baixar. Tente novamente neste navegador.';}});
     const input=this.parente(body,'input');input.type='file';input.accept='.json,application/json';input.hidden=true;input.setAttribute('aria-label','Escolher backup do jogo');
     this.botao(body,'Escolher arquivo para importar',()=>input.click());
@@ -4795,31 +5073,20 @@ class SchoolActivities {
   restaurarBackup(estado,status){
     if(!estado)return;const g=this.g,jogando=g.jogando;
     try{
-      const anterior=JSON.stringify({jogo:'mosquito-evolution',versao:1,progresso:g.estado.dados()});
+      const anterior=JSON.stringify({jogo:'mosquito-evolution',versao:2,progresso:g.estado.dados()});
       // Pausar antes de gravar evita que visibilitychange sobrescreva a importação ao recarregar.
       g.jogando=false;localStorage.setItem(CFG.SAVE+'-antes-importar',anterior);localStorage.setItem(CFG.SAVE,JSON.stringify(estado.dados()));
       g.limparEntrada();location.reload();
     }catch(_){g.jogando=jogando;status.textContent='Não foi possível gravar o backup. Libere o armazenamento do navegador e tente novamente.';}
   }
-  pertoLargada(){return this.g.jogador.pos.distanceToSquared(this.largada)<30;}
-  interagir(){
-    if(!this.pertoLargada())return false;
-    const body=this.painel('Circuito de voo — Ginásio');if(!body)return true;
-    this.parente(body,'p','Atravesse os 8 aros na ordem. O próximo fica dourado. Use a câmera para subir e descer; sprint e habilidades estão liberados.');
-    this.parente(body,'p','🥉 Até 120 s: +80 sangue · 🥈 Até 45 s: +140 · 🥇 Até 28 s: +240. Cada medalha paga uma única vez.');
-    this.parente(body,'p','Recorde: '+this.tempo(this.g.estado.recordeVoo)+'. Pausar ou abrir o mapa também pausa o relógio. Sair do ginásio ou morrer encerra a tentativa.');
-    this.botao(body,this.corrida?'Recomeçar da largada':'Começar circuito',()=>{this.g.fecharColecao();this.iniciarCorrida();});
-    if(this.corrida)this.botao(body,'Encerrar tentativa',()=>{this.cancelarCorrida();this.g.fecharColecao();});
-    return true;
-  }
   iniciarCorrida(){
-    const g=this.g;g.jogador.pos.copy(this.largada);g.jogador.vel.set(0,0,0);g.jogador.yaw=Math.PI;g.jogador.pitch=0;g.jogador.foco.copy(this.largada);
+    const g=this.g;if(!g.estado.missoes.voo?.aceita||!g.jogando||g.menuAberto)return false;
+    g.jogador.pos.copy(this.largada);g.jogador.vel.set(0,0,0);g.jogador.yaw=Math.PI;g.jogador.pitch=0;g.jogador.foco.copy(this.largada);
     this.corrida={tempo:0,indice:0,contagem:3,anterior:this.largada.clone()};this.colorirAros();
   }
   colorirAros(){this.aros.forEach((a,i)=>{const r=this.corrida;a.obj.visible=!!r&&i>=r.indice;if(r){a.obj.material.color.setHex(i===r.indice?0xffd84d:0x5de6ff);a.obj.material.opacity=i===r.indice?1:.22;}});}
   cancelarCorrida(msg){this.corrida=null;this.colorirAros();if(msg)this.g.ui.toast(msg);}
   aviso(){const r=this.corrida;return r?(r.contagem>0?'🏁 Prepare-se: '+Math.ceil(r.contagem):'🏁 Aro '+(r.indice+1)+'/8 · '+r.tempo.toFixed(1).replace('.',',')+' s · siga o dourado'):'';}
-  dica(){return !this.corrida&&this.pertoLargada()?'🏁 Circuito de voo · Pegar / B para começar':'';}
   atualizar(dt){
     const r=this.corrida;if(!r)return;const p=this.g.jogador.pos;
     if(p.x<-9||p.x>44||p.z<8.5||p.z>98){this.cancelarCorrida('Circuito encerrado: você saiu do ginásio.');return;}
@@ -4840,14 +5107,12 @@ class SchoolActivities {
   }
   concluirCorrida(tempo){
     const g=this.g,S=g.estado;this.cancelarCorrida();const novo=S.recordeVoo==null||tempo<S.recordeVoo;
-    if(novo)S.recordeVoo=tempo;let premio=0;
-    for(const [id,limite]of [['circuito_bronze',120],['circuito_prata',45],['circuito_ouro',28]])if(tempo<=limite&&!S.conq.includes(id)){premio+=CFG.CONQ.find(c=>c.id===id).premio;g.ganhar(id);}
+    if(novo)S.recordeVoo=tempo;
     S.salvar();g.ui.hud(S);g.audio.egg();
     const body=this.painel('Circuito concluído!');if(!body)return;
     this.parente(body,'p',(tempo<=28?'🥇 Ouro':tempo<=45?'🥈 Prata':'🥉 Bronze')+' · '+this.tempo(tempo),'school-result');
     this.parente(body,'p',(novo?'Novo recorde! ':'Recorde: ')+this.tempo(S.recordeVoo));
-    this.parente(body,'p',premio?'Medalhas conquistadas: +'+premio+' sangue.':'Você já recebeu as recompensas desta medalha. Tente melhorar seu tempo!');
-    this.botao(body,'Tentar novamente',()=>{g.fecharColecao();this.iniciarCorrida();});
+    this.parente(body,'p','Volte a Tico, perto da entrada do ginásio, para concluir a missão e receber as medalhas pendentes. Ele também oferece novas tentativas.');
     this.botao(body,'Continuar explorando',()=>g.fecharColecao());
   }
 }
@@ -4857,7 +5122,7 @@ class GameManager {
     this.modoControle = lerControles();
     this.estado = new GameState(); this.audio = new AudioSystem(); this.ui = new UIManager();
     this.cena = new THREE.Scene(); this.cena.background = new THREE.Color(0x0e0c18); this.cena.fog = new THREE.Fog(0x0e0c18, 60, 170);
-    this.camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 500);
+    this.camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.03, 500);
     this.modoGrafico = lerGraficos();
     this.render = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'default' });
     this.ultraFX = null;
@@ -4912,6 +5177,8 @@ class GameManager {
     }
     this.jogador.modelo.aplicar(); this.jogador.zoomV = this.jogador.modelo.zoom; this.ui.hud(this.estado); this.ui.saveInfo(this.estado); this.ui.habilidade(this.estado.skin, 0, 1, 0);
     this.extras=new SchoolActivities(this);
+    this.missoes=new QuestManager(this);
+    this.ganhar('ze_picada');
     this.laco();
   }
 
@@ -5014,6 +5281,7 @@ class GameManager {
         return;
       }
       if (k === "v" && !this.menuAberto) { this.extras?.abrirMapa(); return; }
+      if (k === "j" && !this.menuAberto) { this.missoes?.abrirDiario(); return; }
       if (k === "k") { this.abrirColecao("skins"); return; }
       if (k === "c") { this.abrirColecao("conq"); return; }
       if (this.menuAberto) return;
@@ -5494,9 +5762,11 @@ class GameManager {
   ganhar(id) {
     const S = this.estado, c = CFG.CONQ.find((x) => x.id === id);
     if (!c || S.conq.includes(id)) return;
+    if(id==='ze_picada'){const p=progressoPlatina(S);if(p.v!==p.max)return;}
     S.conq.push(id); S.sangue += c.premio || 0; S.salvar(); this.ui.hud(S);
-    this.audio.egg(); if (c.r === "o") this.ui.evolucao(`🏆 ${c.nome}`);
+    this.audio.egg(); if (c.r === "o" || c.r === "pl") this.ui.evolucao(`🏆 ${c.nome}`);
     this.ui.toast(`🏆 ${c.nome} · +${c.premio} sangue · ${S.conq.length}/${CFG.CONQ.length}`); this.mostrarConquista(c);
+    if(id!=='ze_picada'){const p=progressoPlatina(S);if(p.v===p.max)this.ganhar('ze_picada');}
   }
   mostrarConquista(c) {
     const r = CFG.RAR[c.r], e = document.createElement("div"), pos = this.pilhaConq = (this.pilhaConq || 0) + 1;
@@ -5508,6 +5778,7 @@ class GameManager {
     setTimeout(() => { e.style.transition = "opacity .5s"; e.style.opacity = "0"; setTimeout(() => { e.remove(); this.pilhaConq = Math.max(0, this.pilhaConq - 1); }, 600); }, 3600);
   }
   progresso(id) {
+    if(id==='ze_picada')return progressoPlatina(this.estado);
     if (/^fase\d+$/.test(id)) { const min = +id.slice(4); return { v: Math.min(this.estado.total, min), max: min }; }
     const S = this.estado, k = this.kills, n = Object.keys(CFG.SKINS).length;
     const m = { sangue500: [S.sangue, 500], sangue5000: [S.sangue, 5000], nivel10: [S.total, 10], nivel40: [S.total, 40], asas10: [S.nv.asas, 10], tromba10: [S.nv.tromba, 10], estomago10: [S.nv.estomago, 10], corpo10: [S.nv.corpo, 10],
@@ -5539,7 +5810,7 @@ class GameManager {
   // ---- Itens perdidos do mapa (tecla B): carteira e livro perdido ----
   interagirComPerdidos() {
     if(!this.jogando||this.menuAberto)return;
-    if(this.extras?.interagir())return;
+    if(this.missoes?.interagir())return;
     if(this.interagirEnigmaSala3())return;
     const S = this.estado, p = this.jogador.pos, c = this.mundo.carteira, L = this.mundo.livroPerdido;
     if (L && !L.entregue) {
@@ -5568,7 +5839,7 @@ class GameManager {
       "NORTE: Artes · Sala 1 · Sala 2 · Biblioteca (estante de devolução, B) · Laboratório · Enfermaria\n" +
       "SUL: Cantina (livro perdido em uma mesa, B) · Ginásio · Banheiro · Auditório (palco e estátua)\n\n" +
       "LABORATÓRIO: voe contra os frascos para derrubá-los.\nSALA 3: a porta no fim direito do corredor pede uma senha. Procure quatro bilhetes na Sala 1, Biblioteca, Laboratório e Cantina. Use Pegar/B para ler e o painel para digitar. Vença o chefe para ganhar a skin Mosquito da Raquete!\n\n" +
-      "GINÁSIO: circuito de 8 aros. Use Pegar/B na largada para tentar bater seu recorde.\nV abre o mapa · E pica · R habilidade · K skins · C conquistas\n" +
+      "GINÁSIO: circuito de 8 aros. Converse com Tico (Pegar/B) para aceitar o desafio. Há outros cinco personagens de missão pela escola; J abre o diário.\nV abre o mapa · E pica · R habilidade · K skins · C conquistas\n" +
       `Há ${Object.keys(CFG.SKINS).length} skins para achar. Devolver o livro libera o Mosquito Encadernado.`,
       "Feche com = ou clique aqui", 12000);
   }
@@ -5580,7 +5851,7 @@ class GameManager {
   }
   morrer() {
     this.extras?.cancelarCorrida();
-    this.limparEntrada(); this.mundo.chefe.reiniciar(); this.mundo.lab.anterior = null;
+    this.limparEntrada(); this.mundo.chefe.reiniciar(); this.mundo.lab.anterior = null;this.mundo.tintas.anterior = null;
     const S = this.estado, perda = Math.floor(S.sangue * 0.25); S.sangue -= perda;
     this.combo = 0; this.comboT = 0; this.boost = 0; this.egg.morte++; this.egg.vida = 0; this.jogador.reaparecer();
     this.audio.dano(); this.ui.flash("rgba(232,41,75,.9)"); this.ui.toast(`Você foi pego! −${perda} sangue`); this.ui.hud(S); S.salvar();
@@ -5607,9 +5878,10 @@ class GameManager {
     j.update(dt, this.teclas, this.modoControle === "mobile" ? this.toque : null);
     w.update(dt, this);
     this.extras?.atualizar(dt);
+    this.missoes?.atualizar(dt);
     this.eggMsg = ""; this.checarEggs(dt); this.fxSkin(dt);
     if(!this.eggMsg)this.eggMsg=this.mundo.dicaSala3(j.pos);
-    if(!this.eggMsg)this.eggMsg=this.extras?.dica()||'';
+    const dicaMissao=this.missoes?.dica();if(dicaMissao)this.eggMsg=dicaMissao;
     if (this.comboT > 0 && (this.comboT -= dt) <= 0) this.combo = 0;
     if (this.boost > 0) this.boost -= dt;
     this.ui.combo(this.combo, this.comboT, this.boost);
@@ -5622,9 +5894,8 @@ class GameManager {
     // Mosquitão da rua: falas conforme a distância
     const mo = w.mosquito;
     if (mo) {
-      const d = j.pos.distanceTo(mo.g.position);
+      const d = j.pos.distanceTo(mo.centro);
       if (d < 7) { this.falaT = (this.falaT || 0) - dt; if (this.falaT <= 0) { this.falaT = 9; w.falar(moFrases[(this.egg.falas = (this.egg.falas || 0) + 1) % moFrases.length]); } }
-      mo.trompa.rotation.y = Math.sin(this.t * 0.8) * 0.25; mo.g.rotation.y = Math.sin(this.t * 0.25) * 0.08;
       if (d < 3.5) { this.egg.fala = true; if (!S.skins.includes("mosquito")) this.desbloquear("mosquito"); }
     }
     if (this.salvarT > 0 && (this.salvarT -= dt) <= 0) S.salvar();
