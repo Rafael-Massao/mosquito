@@ -2396,7 +2396,7 @@ class RacketBoss {
   }
   dentro(p){const a=CFG.ARENA;return p.x>a.x0+2&&p.x<a.x1-.5&&p.z>a.z0+.5&&p.z<a.z1-.5;}
   visivel(jogo){
-    this.hud.hidden=!(this.ativo||this.fase==='caindo')||!jogo.jogando||jogo.menuAberto;
+    this.hud.hidden=!(this.ativo||this.fase==='caindo')||!jogo.jogando||jogo.menuAberto||(jogo.online?.active&&!this.dentro(jogo.jogador.pos));
     document.body.classList.toggle('boss-active',!this.hud.hidden);
   }
   atualizarHUD(){
@@ -2416,6 +2416,7 @@ class RacketBoss {
     this.aviso.visible=false;this.limparDescargas();this.atualizarHUD();return true;
   }
   picar(jogo) {
+    if(jogo.online?.active)return jogo.online.bite();
     if(!this.ativo||this.derrotado||this.alvo.distanceTo(jogo.jogador.pos)>Math.min(3.2,jogo.estado.raioColeta+.9))return false;
     if(this.fase!=='cansado'){jogo.ui.toast('⚡ Espere o fim do combo e pique quando ele cansar!');return true;}
     if(this.picadaCD>0){jogo.ui.toast('Espere um instante para picar novamente.');return true;}
@@ -2527,6 +2528,7 @@ class RacketBoss {
     }
   }
   update(dt,jogo){
+    if(jogo.online?.active)return;
     const p=jogo.jogador.pos;
     this.visivel(jogo);if(!jogo.jogando||jogo.menuAberto)return;
     if(this.derrotado){
@@ -5175,10 +5177,12 @@ class GameManager {
       }
       if (mudou) this.estado.salvar();
     }
-    this.jogador.modelo.aplicar(); this.jogador.zoomV = this.jogador.modelo.zoom; this.ui.hud(this.estado); this.ui.saveInfo(this.estado); this.ui.habilidade(this.estado.skin, 0, 1, 0);
+    this.jogador.modelo.aplicar(); this.jogador.zoomV = this.jogador.modelo.zoom; this.ui.hud(this.estado); this.ui.habilidade(this.estado.skin, 0, 1, 0);
     this.extras=new SchoolActivities(this);
     this.missoes=new QuestManager(this);
-    this.ganhar('ze_picada');
+    this.recuperarConquistasSalvas();
+    this.ui.saveInfo(this.estado);
+    this.online=window.MosquitoOnline?new window.MosquitoOnline(this,{THREE,GameState,construirMosquito,CFG}):null;
     this.laco();
   }
 
@@ -5447,7 +5451,7 @@ class GameManager {
   multSangue() { return Math.min(4, (this.boost > 0 ? 2 : 1) * (this.buff.sangue > 0 ? 2 : 1) * (this.buff.frenesi > 0 ? 2 : 1)); } // limita empilhamento de bônus
   fatorGas() { return this.buff.gas > 0 ? 0 : this.estado.attr.gas; }
   fatorColeta() { return this.buff.scan > 0 ? 2.5 : 1; }
-  atordoar(r, seg) { const p = this.jogador.pos; if (this.mundo.chefe.alvo.distanceTo(p) < r) this.mundo.chefe.atordoar(seg); for (const h of this.mundo.humanos) if (h.alvo.distanceTo(p) < r) { h.atord = Math.max(h.atord || 0, seg); h.raiva = 0; } }
+  atordoar(r, seg) { const p = this.jogador.pos; if (this.online?.active) this.online.send({type:'stun'}); else if (this.mundo.chefe.alvo.distanceTo(p) < r) this.mundo.chefe.atordoar(seg); for (const h of this.mundo.humanos) if (h.alvo.distanceTo(p) < r) { h.atord = Math.max(h.atord || 0, seg); h.raiva = 0; } }
   rajadaTusk() {   // Unhas fisicas voam ate humanos e acertam so no impacto
     const S=this.estado, ato=Math.max(1,S.mantis.length), p=this.jogador.pos;
     const alcance=ato>=4?25:22;
@@ -5759,6 +5763,16 @@ class GameManager {
   // ---------------------------------------------------------
   // CONQUISTAS: categorias, raridade (bronze/prata/ouro), prêmio em sangue e segredos; aparecem no menu C
   // ---------------------------------------------------------
+  recuperarConquistasSalvas() {
+    // Saves anteriores aos troféus já têm as partes coletadas e não podem coletá-las de novo.
+    // Também roda após importar um backup, pois a restauração recarrega o jogo.
+    const S = this.estado, partes = ['cabeca', 'foices', 'torax', 'abdomen'];
+    for (const id of partes) if (S.mantis.includes(id)) this.ganhar('mantis_' + id);
+    if (partes.every(id => S.mantis.includes(id))) this.ganhar('mantis');
+    for (const id of S.skins) this.ganhar('skin_' + id);
+    // ganhar() salva e premia apenas os troféus que ainda faltavam.
+    this.ganhar('ze_picada');
+  }
   ganhar(id) {
     const S = this.estado, c = CFG.CONQ.find((x) => x.id === id);
     if (!c || S.conq.includes(id)) return;
@@ -5851,7 +5865,7 @@ class GameManager {
   }
   morrer() {
     this.extras?.cancelarCorrida();
-    this.limparEntrada(); this.mundo.chefe.reiniciar(); this.mundo.lab.anterior = null;this.mundo.tintas.anterior = null;
+    this.limparEntrada(); if(!this.online?.active)this.mundo.chefe.reiniciar(); this.mundo.lab.anterior = null;this.mundo.tintas.anterior = null;
     const S = this.estado, perda = Math.floor(S.sangue * 0.25); S.sangue -= perda;
     this.combo = 0; this.comboT = 0; this.boost = 0; this.egg.morte++; this.egg.vida = 0; this.jogador.reaparecer();
     this.audio.dano(); this.ui.flash("rgba(232,41,75,.9)"); this.ui.toast(`Você foi pego! −${perda} sangue`); this.ui.hud(S); S.salvar();
@@ -5910,6 +5924,7 @@ class GameManager {
     this.audio.tocarMusicaCarreta(this.jogando && !this.menuAberto && !document.hidden && this.estado.skin === "carreta", this.estado.skin === "carreta");
     this.jogador.animar(dt, this.t, this.jogando);
     this.jogador.modelo.tick(this.t, dt, this.estado.skin === "fantasma" && this.buff.invis > 0); this.jogador.camera3p(dt); this.ui.atualizar(dt);
+    this.online?.tick(dt);
     if (this.modoGrafico === 'ultra') {
       // O mosquito mantem seus detalhes neon, mas nao ilumina o ambiente como um vaga-lume.
       this.jogador.modelo.luzSkin.intensity = Math.min(this.jogador.modelo.luzSkin.intensity, 0.10);

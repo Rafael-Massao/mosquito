@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: mosquito-evolution
+    runtime: node
+    branch: main
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
