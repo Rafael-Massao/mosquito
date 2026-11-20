@@ -1,6 +1,7 @@
 'use strict';
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path');
 const {WebSocketServer,WebSocket}=require('ws');
+const {protocol}=require('../campus-rules.js');
 const {RoomService}=require('./rooms.cjs');
 function createGameServer({root=path.resolve(__dirname,'..'),allowedOrigins=process.env.ALLOWED_ORIGINS||''}={}){
  const allowed=new Set(allowedOrigins.split(',').map(s=>s.trim()).filter(Boolean));
@@ -8,7 +9,7 @@ function createGameServer({root=path.resolve(__dirname,'..'),allowedOrigins=proc
  const server=http.createServer((req,res)=>{
   if(!['GET','HEAD'].includes(req.method)){res.writeHead(405);return res.end();}
   let pathname;try{pathname=decodeURIComponent(new URL(req.url,'http://local').pathname);}catch{res.writeHead(400);return res.end();}
-  if(pathname==='/health'){res.writeHead(200,{'content-type':'application/json'});return res.end(JSON.stringify({ok:true,protocol:1}));}
+  if(pathname==='/health'){res.writeHead(200,{'content-type':'application/json'});return res.end(JSON.stringify({ok:true,protocol}));}
   // Servir apenas os arquivos públicos; nunca código do servidor, testes ou segredos.
   const publicPath=pathname==='/'?'index.html':pathname.slice(1);
   if(!['index.html','script.js','style.css','multiplayer.js','multiplayer.css','campus.js','campus-rules.js','campus-scenery.js'].includes(publicPath)&&!/^((icons|sound)\/[a-zA-Z0-9_ /.-]+)$/.test(publicPath)){res.writeHead(404);return res.end('Não encontrado');}

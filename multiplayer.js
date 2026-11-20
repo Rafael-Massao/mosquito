@@ -47,7 +47,7 @@
    this.el('create').disabled=this.el('join').disabled=true;this.status('Conectando ao servidor…');
    const ws=new WebSocket(endpoint);this.ws=ws;
    this.timeout=setTimeout(()=>{if(this.ws===ws&&!this.active){this.disconnect();this.status('O servidor não respondeu. Confira o endereço ou tente novamente após ele iniciar.');}},20000);
-   ws.onopen=()=>{if(this.ws===ws)this.send({type,protocol:1,name:this.el('name').value,code});};
+   ws.onopen=()=>{if(this.ws===ws)this.send({type,protocol:window.EscolaCampus.protocol,name:this.el('name').value,code});};
    ws.onmessage=e=>{if(this.ws!==ws)return;let m;try{m=JSON.parse(e.data);}catch{return;}this.receive(m);};
    ws.onerror=()=>{if(this.ws===ws)this.status('Não foi possível conectar. Confira se o servidor online está hospedado e ativo.');};
    ws.onclose=()=>{if(this.ws!==ws)return;this.disconnect();this.status('Conexão encerrada. Seu progresso está salvo; você pode entrar novamente pelo código.');};
@@ -60,7 +60,7 @@
   }
   receive(m){
    if(m.type==='welcome'){
-    if(m.protocol!==1){this.disconnect();return this.status('Atualize o jogo para usar este servidor.');}
+    if(m.protocol!==window.EscolaCampus.protocol){this.disconnect();return this.status('Atualize o jogo para usar este servidor.');}
     clearTimeout(this.timeout);this.g.campus?.resetProps();this.active=true;this.id=m.id;this.room=m.code;this.lastSnapshot=performance.now();this.resetBoss();this.sendState();this.renderMembers();this.status('Sala pronta. Compartilhe o código e clique em Jogar na sala.');
    }else if(m.type==='error'){const text=m.message;if(!this.active)this.disconnect();this.status(text);}
    else if(m.type==='snapshot'&&this.active){

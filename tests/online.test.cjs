@@ -3,6 +3,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict');
 const {RoomService,sanitizeState}=require('../server/rooms.cjs');
 const {createGameServer}=require('../server/index.cjs');
 const WebSocket=require('ws');
+const {protocol}=require('../campus-rules.js');
 function fixture(){let clock=10000;const service=new RoomService({now:()=>clock,send:(p,m)=>p.messages.push(structuredClone(m))});return {service,peer:()=>({messages:[]}),advance(n){clock+=n;}};}
 const state=(over={})=>({pos:[144,3.167,2],rot:[0,0,0,1],nv:{asas:0,tromba:30,estomago:0,corpo:0},mantis:[],skin:null,active:true,door:true,health:1,...over});
 test('salas isoladas, lotação, código inválido, saída do criador e limpeza',()=>{
@@ -47,8 +48,10 @@ test('HTTP público e WebSocket real: conexão, entrada, isolamento e dados inv�
  const until=async fn=>{for(let i=0;i<100;i++){if(fn())return;await new Promise(r=>setTimeout(r,10));}throw Error('Timeout');};
  try{
   assert.equal((await fetch(base+'/health')).status,200);assert.equal((await fetch(base+'/server/index.cjs')).status,404);assert.equal((await fetch(base+'/.env')).status,404);
-  const a=await connect();a.send(JSON.stringify({type:'create',protocol:1,name:'A'}));await until(()=>a.messages.some(m=>m.type==='welcome'));const code=a.messages.find(m=>m.type==='welcome').code;
-  const b=await connect();b.send(JSON.stringify({type:'join',protocol:1,code,name:'B'}));await until(()=>b.messages.some(m=>m.type==='welcome'));
+  const old=await connect();old.send(JSON.stringify({type:'create',protocol:1,name:'Antigo'}));
+  await until(()=>old.messages.some(m=>m.type==='error'&&m.message.includes('Atualize')));old.close();
+  const a=await connect();a.send(JSON.stringify({type:'create',protocol,name:'A'}));await until(()=>a.messages.some(m=>m.type==='welcome'));const code=a.messages.find(m=>m.type==='welcome').code;
+  const b=await connect();b.send(JSON.stringify({type:'join',protocol,code,name:'B'}));await until(()=>b.messages.some(m=>m.type==='welcome'));
   a.send(JSON.stringify({type:'state',state:state()}));await until(()=>b.messages.some(m=>m.type==='snapshot'&&m.players.some(p=>p.name==='A'&&p.state?.pos[0]===144)));
   a.close();await until(()=>b.messages.some(m=>m.type==='snapshot'&&m.players.length===1));
   const bad=await connect();const closed=new Promise(r=>bad.once('close',r));bad.send('{broken');assert.equal(await closed,1007);

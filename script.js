@@ -2966,7 +2966,9 @@ class WorldManager {
     const cy = (YMAX + F) / 2, H = YMAX - F + 4, T = 1;
     caixa(MX * 2, 2, MZ * 2, m.piso, 0, F - 1, 0); caixaParede(MX * 2 + 4, 2, MZ * 2 + 4, m.teto, 0, YMAX + 1, 0);
     caixaParede(MX * 2 + 4, H, 4, m.par, 0, cy, -MZ - 2); caixaParede(MX * 2 + 4, H, 4, m.par, 0, cy, MZ + 2);
-    caixaParede(2, H, MZ * 2, m.par, -MX - 1, cy, 0);
+    // A varanda continua o corredor para oeste. As salas laterais mantêm a parede externa.
+    for(const lado of [-1,1])caixaParede(2,H,MZ-3.8,m.par,-MX-1,cy,lado*(MZ+3.8)/2);
+    caixaParede(2,YMAX-3.65,7.6,m.par,-MX-1,(YMAX+3.65)/2,0);
     // A parede leste agora tem um vão de 10 m no final do corredor.
     for (const lado of [-1,1]) caixaParede(2,H,MZ-5,m.par,MX+1,cy,lado*(MZ+5)/2);
     caixaParede(2,YMAX-F-9.5,10,m.par,MX+1,F+9.5+(YMAX-F-9.5)/2,0);
@@ -3066,8 +3068,6 @@ class WorldManager {
       if (livre(PN) && x !== -23) armarioCorredor(x, -6.85, M(0x7089aa, 0.55, { metalness: 0.16 }), M(0x87a0c2, 0.42, { metalness: 0.08 }));   // x = -23: armário trancado (easter egg)
       if (livre(PS)) armarioCorredor(x, 6.85, M(0x58729a, 0.56, { metalness: 0.18 }), M(0x7090bf, 0.42, { metalness: 0.08 }));
     }
-    // A janela leste deu lugar à entrada da Sala 3.
-    janela(-MX + 0.05, 0, Math.PI / 2);
     for (let x = -110; x <= 110; x += 20) dbox(14, 0.3, 1.6, B(0xeaf6ff), x, YMAX - 0.15, 0);
 
     // ARMÁRIO TRANCADO (easter egg Mosquito Cadeado): arrombe segurando F; a posição fica em this.armario
@@ -5073,13 +5073,13 @@ class SchoolActivities {
   abrirMapa(){
     const body=this.painel('Mapa da escola');if(!body)return;
     const g=this.g,S=g.estado,p=g.jogador.pos;
-    const campus=window.EscolaCampus?.areaAt(p.x);
+    const campus=window.EscolaCampus?.areaAt(p.x,p.z);
     const room=CFG.SALAS.find(s=>p.x>=s[1]&&p.x<=s[2]&&p.z>=s[3]&&p.z<=s[4]);
     const location=campus?.name||room?.[0]||'Corredor';
-    this.parente(body,'p','Você está em '+location+' · '+S.salas.length+'/'+CFG.SALAS.length+' salas visitadas.','school-location');
+    this.parente(body,'p','Você está em '+location+' · '+S.salas.length+'/'+CFG.SALAS.length+' salas do prédio principal visitadas.','school-location');
     const tabs=this.parente(body,'div',undefined,'school-map-tabs');
-    const tabSchool=this.botao(tabs,'Prédio principal',()=>draw(false));
-    const tabCampus=this.botao(tabs,'Ala oeste',()=>draw(true));
+    const tabSchool=this.botao(tabs,'Escola inteira',()=>draw(false));
+    const tabCampus=this.botao(tabs,'Ampliar ala oeste',()=>draw(true));
     const frame=this.parente(body,'div',undefined,'school-map-frame');
     const note=this.parente(body,'p',undefined,'school-map-note');
     const ns='http://www.w3.org/2000/svg';
@@ -5087,8 +5087,8 @@ class SchoolActivities {
       tabSchool.setAttribute('aria-pressed',String(!west));tabCampus.setAttribute('aria-pressed',String(west));
       frame.replaceChildren();
       const svg=document.createElementNS(ns,'svg');svg.classList.add('school-map');
-      svg.setAttribute('viewBox',west?'173 -37 155 69':'-130 -112 300 224');
-      svg.setAttribute('role','img');svg.setAttribute('aria-label',(west?'Planta da ala oeste':'Planta do prédio principal')+'. Você está em '+location);frame.appendChild(svg);
+      svg.setAttribute('viewBox',west?'-215 -25 104 92':'-218 -108 381 216');
+      svg.setAttribute('role','img');svg.setAttribute('aria-label',(west?'Planta da ala oeste':'Planta de toda a escola')+'. Você está em '+location);frame.appendChild(svg);
       const el=(name,attrs,text)=>{
         const n=document.createElementNS(ns,name);for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);
         if(text)n.textContent=text;svg.appendChild(n);return n;
@@ -5097,36 +5097,37 @@ class SchoolActivities {
       const line=(x1,y1,x2,y2,color,width=.9)=>el('line',{x1,y1,x2,y2,stroke:color,'stroke-width':width});
       const label=(x,y,text,size,attrs={})=>el('text',{x,y,fill:'#263e42','font-size':size,'font-weight':700,'text-anchor':'middle',...attrs},text);
       const mark=(x,z,r,col)=>el('circle',{cx:x,cy:z,r,fill:col,stroke:'#fff6df','stroke-width':.8});
-      if(west){
-        rect(216,-3.45,18,6.9,'#d4b59a');rect(266,-3.45,18,6.9,'#9dabb0');
-        for(let x=270;x<281;x+=2)line(x,-3.1,x,3.1,'#65737a',.48);
-        const fills=['#a9c4a2','#e1c5a4','#acbec9'];
-        window.EscolaCampus.areas.forEach((a,i)=>{rect(a.x-18,-16,36,32,fills[i]);label(a.x,3,a.name,3.95);});
-        label(225,11,'Galeria',3.3);label(275,11,'Escada',3.3);
-        const opened=!!g.campus?.shared?.gate;
-        el('path',{d:'M200 -15 V-23 H300 V-15',fill:'none',stroke:opened?'#427e5f':'#86745f','stroke-width':.85,'stroke-dasharray':'2 1.7'});
-        label(250,-26,opened?'Atalho aberto':'Atalho dos relés',3.6);
-        for(const [x,,z] of window.EscolaCampus.switches)rect(x-1,z-1,2,2,'#d79239');
-        for(const x of [200,300])mark(x,-14,.98,opened?'#34845e':'#8c725c');
-        line(176,-3,182,-3,'#477875',1.2);label(190,23,'Entrada oeste',3.25);
-        note.textContent='A galeria e a escada ficam abertas no solo. Para abrir o atalho, recupere a pasta da Sala 1 com um amigo e acionem os dois relés do pátio.';
-      }else{
-        CFG.SALAS.forEach(([nome,x0,x1,z0,z1])=>{
-          const cx=(x0+x1)/2,cz=(z0+z1)/2;
-          rect(x0,z0,x1-x0,z1-z0,nome==='Corredor'?'#e7d3ad':S.salas.includes(nome)?'#a9c9c1':'#ced0c3');
-          const vertical=(z1-z0)>70&&(x1-x0)<53;
-          label(cx,cz+2,nome,nome==='Sala 3'?5.8:6.9,vertical?{transform:'rotate(-90 '+cx+' '+cz+')'}:{});
-        });
-        for(const x of [-94,-49,-7,28,56,94])line(x-5,-8,x+5,-8,'#f9edcf',2.4);
-        for(const x of [-40,17,57,94])line(x-5,8,x+5,8,'#f9edcf',2.4);
-        line(118,-5,118,5,S.portaSala3Aberta?'#469171':'#aa6d40',2.2);
-        line(-118,-5,-118,5,'#467d73',2.2);
-        for(const q of MISSOES)mark(q.pos[0],q.pos[1],2.6,'#bd7b21').appendChild(document.createElementNS(ns,'title')).textContent=q.nome+' · '+q.sala;
-        note.textContent='Verde indica sala visitada. Os pontos dourados marcam personagens de missão. A saída para o pátio fica na ponta oeste do corredor.';
+      const rules=window.EscolaCampus,open=!!g.campus?.shared?.gate;
+      if(rules){
+        for(const zone of rules.zones){
+          const [x0,x1,z0,z1]=zone.box;
+          rect(x0,z0,x1-x0,z1-z0,zone===rules.bridge&&open?'#9cc5a8':zone.fill);
+        }
+        for(let z=17;z<30;z+=2)line(-201,z,-195,z,'#647976',.42);
+        line(-144.4,rules.gateZ,-139.6,rules.gateZ,open?'#43835e':'#a64637',1.25);
+        for(const a of [rules.courtyard,rules.kitchen,rules.roof])label(a.x,a.z+1,a.name,west?4.2:5);
+        for(const [x,,z] of rules.switches)mark(x,z,1.1,'#bf862c');
+        if(west){
+          label(-166.8,-6,'Galeria',2.9);label(-188,48.8,'Passarela',2.85);
+          label(-202.2,30,'Escada',2.85,{transform:'rotate(-90 -202.2 30)'});
+          label(-133,22,'Rampa',2.8);
+        }
       }
-      if(west===Boolean(campus))mark(p.x,p.z,west?1.8:3.2,'#c73755').appendChild(document.createElementNS(ns,'title')).textContent='Você';
+      CFG.SALAS.forEach(([nome,x0,x1,z0,z1])=>{
+        const cx=(x0+x1)/2,cz=(z0+z1)/2;
+        rect(x0,z0,x1-x0,z1-z0,nome==='Corredor'?'#e7d3ad':S.salas.includes(nome)?'#a9c9c1':'#ced0c3');
+        const vertical=(z1-z0)>70&&(x1-x0)<53;
+        label(cx,cz+2,nome,nome==='Sala 3'?5.8:6.9,vertical?{transform:'rotate(-90 '+cx+' '+cz+')'}:{});
+      });
+      for(const x of [-94,-49,-7,28,56,94])line(x-5,-8,x+5,-8,'#f9edcf',2.4);
+      for(const x of [-40,17,57,94])line(x-5,8,x+5,8,'#f9edcf',2.4);
+      line(118,-5,118,5,S.portaSala3Aberta?'#469171':'#aa6d40',2.2);
+      line(-118,-5,-118,5,'#467d73',2.2);
+      for(const q of MISSOES)mark(q.pos[0],q.pos[1],2.6,'#bd7b21').appendChild(document.createElementNS(ns,'title')).textContent=q.nome+' · '+q.sala;
+      note.textContent=west?(open?'A grade dos relés está aberta. A rampa liga o pátio diretamente ao telhado.':'A galeria, a cozinha e a escada estão abertas. Em dupla, recuperem a pasta na Sala 1 e acionem os relés para abrir a rampa.'):'A saída oeste do corredor dá no pátio. Os pontos dourados no prédio indicam personagens de missão.';
+      if(!west||campus||p.x<=-111)mark(p.x,p.z,west?1.8:3.2,'#c73755').appendChild(document.createElementNS(ns,'title')).textContent='Você';
     };
-    draw(Boolean(campus));
+    draw(false);
     const metas=this.parente(body,'div',undefined,'school-objectives');this.parente(metas,'h3','O que explorar');
     const itens=[
       S.portaSala3Aberta?'🔓 Sala 3 aberta.':'🔒 Sala 3: '+S.pistasSala3.length+'/4 pistas anotadas. Procure os bilhetes na Sala 1, Biblioteca, Laboratório e Cantina.',

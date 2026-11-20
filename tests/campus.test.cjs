@@ -27,8 +27,8 @@ test('missões exigem dois jogadores distintos ativos e posições simultâneas'
   place(a,campus.switches[0]);task(a,'left');place(b,campus.switches[1]);task(b,'right');assert.equal(room.campus.gate,true);
 });
 test('resgate exige aliado próximo; prazo e desconexão nunca duplicam a morte',()=>{
-  const {a,b,room,place,act,join,step}=setup();join();place(a,[200,1,0]);act(a,'fall');
-  act(b,'rescue',{id:a.id});assert.ok(a.downUntil);place(b,[200,1,1]);act(b,'rescue',{id:a.id});
+  const {a,b,room,place,act,join,step}=setup();join();place(a,[-142,1,0]);act(a,'fall');
+  act(b,'rescue',{id:a.id});assert.ok(a.downUntil);place(b,[-142,1,1]);act(b,'rescue',{id:a.id});
   assert.equal(a.downUntil,0);act(b,'rescue',{id:a.id});assert.equal(a.log.filter(m=>m.type==='revived').length,1);
   act(a,'fall');step(13);step(.1);assert.equal(a.log.filter(m=>m.type==='respawn').length,1);
   assert.equal(room.players.size,2);
@@ -45,24 +45,35 @@ test('poderes, pote, mancha e faxineira pertencem à sala',()=>{
   step(1.7);assert.ok(b.log.some(m=>m.type==='cleaner-hit'));act(b,'cleaner-bite');assert.equal(room.campus.cleaner.hp,160);act(b,'cleaner-bite');assert.equal(room.campus.cleaner.hp,160);
 });
 
-test('galeria e escada conectam as três áreas com a mesma posição válida no cliente e na sala',()=>{
+test('corredor, ala oeste e telhado aceitam o voo contínuo nas duas direções',()=>{
   const {sanitizeState}=require('../server/rooms.cjs');
-  const pos={x:185,y:-2.9,z:0},seen=new Set();
-  function move(step,count){
+  const path=[[-114,0],[-198,0],[-198,42],[-150,42]],seen=new Set();
+  const pos={x:-114,y:.9,z:0};
+  function fly(target){
+    const dx=target[0]-pos.x,dz=target[1]-pos.z,count=Math.ceil(Math.hypot(dx,dz)/.1);
     for(let i=0;i<count;i++){
-      pos.x+=step;
-      assert.ok(campus.constrain(pos,.18));
-      seen.add(campus.areaAt(pos.x).name);
-      const xyz=[pos.x,pos.y,pos.z];
-      assert.ok(sanitizeState({pos:xyz,rot:[0,0,0,1]}));
+      pos.x+=dx/count;pos.z+=dz/count;campus.constrain(pos,.18);
+      const room=campus.areaAt(pos.x,pos.z);if(room)seen.add(room.name);
+      assert.ok(sanitizeState({pos:[pos.x,pos.y,pos.z],rot:[0,0,0,1]}));
     }
+    assert.ok(Math.hypot(pos.x-target[0],pos.z-target[1])<.01);
   }
-  move(.25,500);assert.equal(pos.x,310);assert.ok(pos.y>1);
-  move(-.25,500);assert.equal(pos.x,185);
-  assert.deepEqual([...seen],['Pátio','Galeria coberta','Cozinha','Escada de serviço','Telhado']);
-  for(const invalid of [[225,0,9],[275,0,12],[300,-2,4],[250,9,0]]){
-    assert.equal(sanitizeState({pos:invalid,rot:[0,0,0,1]}),null);
+  path.slice(1).forEach(fly);assert.ok(pos.y>1);
+  path.slice(0,-1).reverse().forEach(fly);
+  assert.deepEqual([...seen],['Varanda do corredor','Pátio','Galeria coberta','Cozinha','Escada de serviço','Passarela','Telhado']);
+});
+test('a grade da rampa vale nos dois sentidos, inclusive para Fantasma e Glitch',()=>{
+  const {sanitizeState}=require('../server/rooms.cjs');
+  for(const dir of [-1,1]){
+    const p={x:-142,y:2,z:21-dir*4};
+    for(let i=0;i<10;i++){p.z+=dir;campus.constrain(p,.18);}
+    assert.ok(dir*(p.z-21)<-1);
+    for(let i=0;i<8;i++){p.z+=dir;campus.constrain(p,.18,true);}
+    assert.ok(dir*(p.z-21)>4);
   }
-  const blocked={x:220,y:1,z:10};campus.constrain(blocked,.18);
-  assert.ok(blocked.x<218 && blocked.z===10);
+  const state={pos:[-142,1,21],rot:[0,0,0,1]};
+  assert.equal(sanitizeState(state),null);assert.ok(sanitizeState(state,true));
+  for(const pos of [[250,1,0],[-121,0,14],[-185,1,30],[-144,-2,40],[-192,9,0]])
+    assert.equal(sanitizeState({...state,pos}),null);
+  const wall={x:-119,y:1,z:-20};campus.constrain(wall,.18);assert.ok(wall.x>-118);
 });

@@ -8,10 +8,13 @@ const PARTS=['cabeca','foices','torax','abdomen'];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const finite=v=>typeof v==='number'&&Number.isFinite(v);
 const dist=(a,b)=>Math.hypot(...a.map((n,i)=>n-b[i]));
-function sanitizeState(s){
+function sanitizeState(s,gate=false){
  if(!s||!Array.isArray(s.pos)||s.pos.length!==3||!s.pos.every(finite)||!Array.isArray(s.rot)||s.rot.length!==4||!s.rot.every(finite))return null;
  const norm=Math.hypot(...s.rot);if(norm<.9||norm>1.1)return null;
- if(s.pos[0]<-120||(s.pos[0]>159 && !rules.validPosition(s.pos))||s.pos[1]<-4||(s.pos[0]<=159&&s.pos[1]>14)||Math.abs(s.pos[2])>110)return null;
+ const [x,y,z]=s.pos;
+ if(x< -118){
+   if(!rules.validPosition(s.pos,gate))return null;
+ }else if(x>159||y< -4||y>14||Math.abs(z)>110)return null;
  const nv={};for(const k of ['asas','tromba','estomago','corpo'])nv[k]=clamp(Math.floor(Number(s.nv?.[k])||0),0,30);
  if(Object.values(nv).some(v=>!finite(v)))return null;
  return {pos:s.pos,rot:s.rot.map(v=>v/norm),nv,skin:SKINS.has(s.skin)?s.skin:null,mantis:PARTS.filter(id=>Array.isArray(s.mantis)&&s.mantis.includes(id)),pixelCor:/^#[\da-f]{6}$/i.test(s.pixelCor)?s.pixelCor:'#e8294b',auraTusk:s.auraTusk!==false,active:s.active===true,door:s.door===true,speed:finite(s.speed)?clamp(s.speed,0,80):0,health:finite(s.health)?clamp(s.health,0,1):1};
@@ -34,18 +37,18 @@ class RoomService{
   const label=String(name||'Mosquito').replace(/[\x00-\x1f\x7f]/g,'').trim().slice(0,20)||'Mosquito';
   peer.id=randomUUID();peer.room=room;peer.name=label;peer.state=null;peer.lastState=0;peer.lastBite=0;peer.lastStun=0;
   room.players.set(peer.id,peer);room.emptySince=0;
-  this.send(peer,{type:'welcome',id:peer.id,code:room.code,maxPlayers:4,protocol:1});this.snapshot(room);
+  this.send(peer,{type:'welcome',id:peer.id,code:room.code,maxPlayers:4,protocol:rules.protocol});this.snapshot(room);
  }
  leave(peer){const room=peer.room;if(!room)return;room.players.delete(peer.id);peer.room=null;if(!room.players.size)room.emptySince=this.now();else this.snapshot(room);}
  message(peer,m){
   if(!m||typeof m!=='object')return;
   if(m.type==='create'||m.type==='join'){
    if(peer.room)return this.error(peer,'Você já está em uma sala.');
-   if(m.protocol!==1)return this.error(peer,'Versão incompatível. Atualize o jogo.');
+   if(m.protocol!==rules.protocol)return this.error(peer,'Versão incompatível. Atualize o jogo.');
    return m.type==='create'?this.create(peer,m.name):this.join(peer,m.code,m.name);
   }
   const room=peer.room;if(!room)return;
-  if(m.type==='state'){const s=sanitizeState(m.state);if(!s)return;if(peer.downUntil && peer.state){s.pos=peer.state.pos;s.health=0;}peer.state=s;peer.lastState=this.now();if(s.door)room.door=true;}
+  if(m.type==='state'){const s=sanitizeState(m.state,room.campus.gate);if(!s)return;if(peer.downUntil && peer.state){s.pos=peer.state.pos;s.health=0;}peer.state=s;peer.lastState=this.now();if(s.door)room.door=true;}
   else if(m.type==='bite')this.bite(peer);
   else if(m.type==='stun')this.stun(peer);
   else room.campus.act(peer,m);

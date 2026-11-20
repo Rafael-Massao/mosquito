@@ -102,7 +102,7 @@ class Campus {
       }
       pot.angle+=Math.hypot(v[0],v[2])*dt*1.1;
     }
-    const targets=players.filter(p=>rules.areaAt(p.state.pos[0])?.name==='Cozinha').map(p=>({p,pos:p.state.pos}));
+    const targets=players.filter(p=>rules.areaAt(p.state.pos[0],p.state.pos[2])?.name==='Cozinha').map(p=>({p,pos:p.state.pos}));
     rules.stepCleaner(this.cleaner,dt,targets,({p},damage)=>{
       if(now<(p.wetUntil||0))return;p.wetUntil=now+950;this.service.send(p,{type:'cleaner-hit',damage});
     });

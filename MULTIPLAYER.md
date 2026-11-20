@@ -11,7 +11,7 @@ O jogo agora tem salas de até **4 jogadores**, com código de 6 caracteres. O m
 
 Na Sala 1, um jogador usa Pegar junto à professora enquanto outro recolhe a pasta da chamada. No pátio, dois jogadores acionam relés diferentes para abrir o atalho do telhado. O diário mostra o andamento dessas missões durante a sessão.
  
-Um aliado próximo pode usar Pegar para reanimar quem caiu em até 12 segundos. A tinta cura amigos na poça, o Cadeado concede escudo aos aliados próximos e o som da Carreta atordoa os inimigos. A cozinha abriga a faxineira e suas poças perigosas. A porta na ponta oeste do corredor leva ao pátio. Atravesse a galeria coberta para chegar à cozinha e suba pela escada de serviço até o telhado. Esse percurso e as três skins secretas ficam disponíveis no solo. A aba Ala oeste do mapa mostra as passagens, os relés e a sua posição.
+Um aliado próximo pode usar Pegar para reanimar quem caiu em até 12 segundos. A tinta cura amigos na poça, o Cadeado concede escudo aos aliados próximos e o som da Carreta atordoa os inimigos. A cozinha abriga a faxineira e suas poças perigosas. O corredor desemboca no pátio pela varanda oeste. Atravesse a galeria coberta para chegar à cozinha e suba pela escada de serviço até o telhado. Esse percurso e as três skins secretas ficam disponíveis no solo. A planta mostra a escola inteira. Ampliar ala oeste revela a escada e a rampa entre o pátio e a cobertura. A grade dessa rampa abre para a sala quando a dupla completa a missão dos relés.
  
 Cada jogador mantém seu próprio sangue, upgrades, inventário, missões e conquistas no navegador. A sala compartilha os trajetos dos humanos, os potes do laboratório e da sala de artes e as poças derramadas. As coletas das missões individuais pertencem ao respectivo jogador. Não há combate entre jogadores.
 
@@ -31,7 +31,7 @@ Uma opção é o Render; o repositório já inclui `render.yaml`:
 
 O servidor entrega o site e a conexão online pelo mesmo endereço; nesse caso, deixe o campo **Endereço do servidor** em branco. Serviços gratuitos podem suspender quando ficam ociosos e demorar para iniciar; aguarde o serviço acordar e tente conectar novamente.
 
-Se preferir manter o site em outra hospedagem, atualize `index.html`, `script.js`, `multiplayer.js` e `multiplayer.css`, incluindo também `campus.js` e `campus-rules.js` e mantendo o `style.css` atual. No menu online, informe a URL HTTPS do servidor. Todos precisam usar o mesmo servidor para encontrar o código da sala.
+Se preferir manter o site em outra hospedagem, atualize `index.html`, `script.js`, `multiplayer.js` e `multiplayer.css`, incluindo também `campus.js`, `campus-scenery.js` e `campus-rules.js` e mantendo o `style.css` atual. No menu online, informe a URL HTTPS do servidor. Todos precisam usar o mesmo servidor para encontrar o código da sala.
 
 Os arquivos de áudio e ícones originais, se usados, devem continuar nas pastas `sound/` e `icons/`. Eles não são adicionados por esta atualização.
 
