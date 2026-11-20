@@ -205,6 +205,14 @@ const HABS = {
     return true;
   } },
 };
+// O conjunto original determina as metas de coleção da platina.
+const skinsDaPlatina = Object.keys(CFG.SKINS);
+const poderesDaPlatina = Object.keys(HABS);
+for (const [id,nome,corpo,brilho,dica] of window.EscolaCampus?.secrets || []) {
+  CFG.SKINS[id]={nome,corpo,abd:corpo,perna:0x423c35,brilho,asa:brilho,ei:.18,dica,attr:{}};
+  SKIN_ICO[id]={folhagem:'🍃',cobre:'🟠',ardosia:'🪶'}[id];
+  HABS[id]=HABS.padrao;
+}
 const $ = (id) => document.getElementById(id);
 const { clamp } = THREE.MathUtils;
 const amort = (k, dt) => 1 - Math.exp(-k * dt);   // amortecimento independente de FPS
@@ -3801,7 +3809,7 @@ class WorldManager {
   // Só raycasta contra malhas cuja AABB está perto (poda por bounding box)
   malhasPerto(p, r) { this.perto.length = 0; for (const c of this.col) if (c.box.distanceToPoint(p) < r) this.perto.push(c.mesh); return this.perto; }
   resolver(pos, raio = 0.18) {
-    this.limitarSala3(pos,raio);
+    if(!this.campus?.bound(pos,raio))this.limitarSala3(pos,raio);
     const ms = this.malhasPerto(pos, raio + 0.4);
     if (!ms.length) return;
     this.raycaster.far = raio;
@@ -3924,6 +3932,7 @@ class WorldManager {
     }
   }
   limitar(p) {
+    if(this.campus?.bound(p,.18))return;
     this.limitarSala3(p);
     const a=CFG.ARENA;
     p.x=clamp(p.x,-CFG.MX+1,a.x1-1);p.z=clamp(p.z,-CFG.MZ+1,CFG.MZ-1);
@@ -4042,7 +4051,9 @@ class WorldManager {
     const p = jogo.jogador.pos, F = CFG.YMIN, rc = jogo.estado.raioColeta + 0.9;
     const virar = (g, ang, k) => { g.rotation.y += Math.atan2(Math.sin(ang - g.rotation.y), Math.cos(ang - g.rotation.y)) * amort(k, dt); };
     this.humanoPerto = null; let melhor = rc * rc;
-    for (const h of this.humanos) {
+    for (const [index,h] of this.humanos.entries()) {
+      const shared=jogo.online?.active && jogo.online.campus?.humans[index];
+      if(shared){h.g.position.x=shared[0];h.g.position.z=shared[1];h.g.rotation.y=shared[2];if(shared[3])h.atord=Math.max(h.atord||0,.2);}
       const g = h.g;
       h.pronto = Math.max(0, h.pronto - dt); h.raiva = Math.max(0, h.raiva - dt); h.tapa = Math.max(0, h.tapa - dt);
       if (h.atord > 0) {   // atordoado ou dançando: não anda, não se irrita e rende mais sangue
@@ -4078,6 +4089,7 @@ class WorldManager {
         h.cab.rotation.y = Math.sin(jogo.t * 0.7 + h.passo * 0.1) * 0.3;
         g.position.y = F + h.yo + Math.abs(Math.cos(h.passo)) * 0.08;
       }
+      if(shared){g.position.x=shared[0];g.position.z=shared[1];g.rotation.y=shared[2];}
       const jaPicadasFrenesi = jogo.buff.frenesi > 0 ? (jogo.alvosFrenesi.get(h)?.qtd || 0) : 0;
       h.marca.visible = h.pronto <= 0 && jaPicadasFrenesi < 2;
       h.marca.rotation.z += dt * 2; h.marca.position.y = 6.75 + Math.sin(jogo.t * 3 + h.passo) * 0.1;
@@ -4282,7 +4294,7 @@ class WorldManager {
     this.emPerigo = null; this.avisoGas = false;
     this.luz.intensity = (Math.sin(jogo.t * 3.1) * Math.sin(jogo.t * 17.3) > 0.93 ? 0.5 : 1.6) * (jogo.modoGrafico === 'ultra' ? 0.68 : 1);   // lâmpada falhando
     this.atualizarHumanos(dt * jogo.escalaTempo, jogo);   // tempo parado deixa humanos em câmera lenta
-    this.atualizarPortaSala3(dt);this.lab.update(dt, jogo);this.tintas.update(dt, jogo); this.chefe.update(dt, jogo);
+    this.atualizarPortaSala3(dt);if(!jogo.online?.active){this.lab.update(dt, jogo);this.tintas.update(dt, jogo);} this.chefe.update(dt, jogo);
     this.atualizarFXHabilidades(dt);
     if (this.relogio) { const d = new Date(), s = d.getSeconds() + d.getMilliseconds() / 1000, mi = d.getMinutes() + s / 60, h = (d.getHours() % 12) + mi / 60;
       this.relogio.s.rotation.z = -s / 60 * Math.PI * 2; this.relogio.m.rotation.z = -mi / 60 * Math.PI * 2; this.relogio.h.rotation.z = -h / 12 * Math.PI * 2; }
@@ -4955,6 +4967,12 @@ class QuestManager {
   abrirDiario(){
     const e=this.g.extras,body=e.painel('Missões da escola');if(!body)return;
     e.parente(body,'p','Converse com os personagens usando Pegar/B. Aceite a missão, cumpra o objetivo e volte para receber a recompensa.');
+    if(this.g.online?.active){
+      const room=this.g.online.campus;
+      e.parente(body,'h3','Missões da equipe');
+      e.parente(body,'p',room?.file?'✓ Pasta recuperada':'Pasta da chamada · na Sala 1, use Pegar perto da professora. Enquanto ela estiver distraída, um amigo deve pegar a pasta amarela.');
+      e.parente(body,'p',room?.gate?'✓ Atalho de serviço aberto':'Relés do pátio · depois da pasta, acionem A e B em até cinco segundos. Cada jogador fica ao lado do seu relé.');
+    }
     for(const q of MISSOES){const card=e.parente(body,'article',undefined,'quest-card');e.parente(card,'h3',q.titulo);e.parente(card,'p',q.nome+' · '+q.sala+' · '+this.status(q));e.parente(card,'p',q.objetivo);e.parente(card,'small',this.progresso(q)+'/'+q.meta+' · '+q.premio+' sangue');}
   }
 }
@@ -5026,8 +5044,9 @@ class SchoolActivities {
     el('line',{x1:118,x2:118,y1:-5,y2:5,stroke:S.portaSala3Aberta?'#67edaf':'#ffad66','stroke-width':2});
     for(const q of MISSOES){const dot=el('circle',{cx:q.pos[0],cy:q.pos[1],r:2,fill:'#ffd84d',stroke:'#171d29','stroke-width':.6});const title=document.createElementNS(ns,'title');title.textContent=q.nome+' — '+q.sala;dot.appendChild(title);}
     el('circle',{cx:p.x,cy:p.z,r:3,fill:'#ff5077',stroke:'#fff','stroke-width':1});
+    this.parente(body,'p','Ala de serviço · entrada na ponta oeste do corredor → pátio → cozinha → escada do telhado.');
     const atual=CFG.SALAS.find(s=>p.x>=s[1]&&p.x<=s[2]&&p.z>=s[3]&&p.z<=s[4]);
-    this.parente(body,'p','Você está: '+(atual?atual[0]:'Corredor')+' · '+S.salas.length+'/'+CFG.SALAS.length+' salas visitadas.','school-location');
+    this.parente(body,'p','Você está: '+(atual?atual[0]:window.EscolaCampus?.areaAt(p.x)?.name||'Corredor')+' · '+S.salas.length+'/'+CFG.SALAS.length+' salas visitadas.','school-location');
     const lista=this.parente(body,'ol',undefined,'school-rooms');CFG.SALAS.forEach((s,i)=>this.parente(lista,'li',(i+1)+'. '+s[0]+(S.salas.includes(s[0])?' ✓':'')));
     const metas=this.parente(body,'div',undefined,'school-objectives');this.parente(metas,'h3','O que explorar');
     const itens=[
@@ -5182,6 +5201,8 @@ class GameManager {
     this.missoes=new QuestManager(this);
     this.recuperarConquistasSalvas();
     this.ui.saveInfo(this.estado);
+    this.campus=window.SchoolCampus?new window.SchoolCampus(this):null;
+    this.mundo.campus=this.campus;
     this.online=window.MosquitoOnline?new window.MosquitoOnline(this,{THREE,GameState,construirMosquito,CFG}):null;
     this.laco();
   }
@@ -5423,16 +5444,19 @@ class GameManager {
   // ---- Picar humanos: muito sangue (pontos de evolução), mas eles revidam ----
   // ---- Habilidades especiais (tecla R) ----
   usarHabilidade() {
+    if(this.online?.fallen)return;
     if (!this.jogando || this.menuAberto) return;
     const S = this.estado, id = S.skin || "padrao", H = HABS[id];
     if (this.hab.cd > 0) { this.ui.toast(`⏳ ${H.nome} recarregando (${Math.ceil(this.hab.cd)}s)`); return; }
     if (H.usar(this) === false) return;
+    if(this.online?.active && ['pintado','cadeado','carreta'].includes(id)){this.online.sendState();this.online.send({type:'team-power'});}
     this.mundo.fxHabilidade(id, this);
     const cd = id === "tusk" ? [10, 8, 6, 4][Math.max(1, S.mantis.length) - 1] : H.cd;
     this.hab.cd = this.hab.cdTotal = cd; this.hab.ativo = H.dur || 0;
     this.audio.tom(520, 880, 0.18, "triangle", 0.18); this.audio.tom(880, 1320, 0.2, "sine", 0.12, 0.08);
     this.ui.toast(`${H.ico} ${H.nome}!`); this.jogador.modelo.punch = 0.6;
-    if (!S.habs.includes(id)) { S.habs.push(id); S.salvar(); this.ganhar("poder1"); if (S.habs.length >= Object.keys(HABS).length) this.ganhar("poderes"); }
+    const poderRegistrado = poderesDaPlatina.includes(id) ? id : 'padrao';
+    if (!S.habs.includes(poderRegistrado)) { S.habs.push(poderRegistrado); S.salvar(); this.ganhar("poder1"); if (poderesDaPlatina.every(k=>S.habs.includes(k))) this.ganhar("poderes"); }
   }
   atualizarHab(dt) {   // recargas, duração dos efeitos, poça de cura e stamina infinita
     for (const k in this.buff) if (this.buff[k] > 0) this.buff[k] = Math.max(0, this.buff[k] - dt);
@@ -5477,6 +5501,7 @@ class GameManager {
 
   picar() {
     if (!this.jogando || this.menuAberto) return;
+    if(this.online?.fallen || this.campus?.bite())return;
     if (this.mundo.chefe.picar(this)) return;
     const h = this.mundo.encontrarHumanoParaPicar(this);
     if (!h) return;
@@ -5794,14 +5819,14 @@ class GameManager {
   progresso(id) {
     if(id==='ze_picada')return progressoPlatina(this.estado);
     if (/^fase\d+$/.test(id)) { const min = +id.slice(4); return { v: Math.min(this.estado.total, min), max: min }; }
-    const S = this.estado, k = this.kills, n = Object.keys(CFG.SKINS).length;
+    const S = this.estado, k = this.kills, n = skinsDaPlatina.length;
     const m = { sangue500: [S.sangue, 500], sangue5000: [S.sangue, 5000], nivel10: [S.total, 10], nivel40: [S.total, 40], asas10: [S.nv.asas, 10], tromba10: [S.nv.tromba, 10], estomago10: [S.nv.estomago, 10], corpo10: [S.nv.corpo, 10],
       picada25: [S.picadas, 25], picada100: [S.picadas, 100], tapas: [k.tapasRecebidos, 5], gas3: [k.gas, 3], sobreviver: [this.egg.vida, 180],
-      colecionador: [S.skins.length, 5], poderes: [S.habs.length, Object.keys(HABS).length], mantis: [S.mantis.length, 4], todas: [S.skins.length, n], dez: [S.conq.length, 10], explorador: [S.salas.length, CFG.SALAS.length] }[id];
+      colecionador: [S.skins.length, 5], poderes: [poderesDaPlatina.filter(k=>S.habs.includes(k)).length, poderesDaPlatina.length], mantis: [S.mantis.length, 4], todas: [skinsDaPlatina.filter(k=>S.skins.includes(k)).length, n], dez: [S.conq.length, 10], explorador: [S.salas.length, CFG.SALAS.length] }[id];
     return m ? { v: Math.min(m[0], m[1]), max: m[1] } : null;
   }
   checarConquistas(dt) {
-    const S = this.estado, e = this.egg, k = this.kills, n = Object.keys(CFG.SKINS).length;
+    const S = this.estado, e = this.egg, k = this.kills, n = skinsDaPlatina.length;
     if (S.sangue >= 500) this.ganhar("sangue500");
     if (S.sangue >= 5000) this.ganhar("sangue5000");
     if (S.total >= 10) this.ganhar("nivel10");
@@ -5817,13 +5842,14 @@ class GameManager {
     if (e.fala) this.ganhar("fala");
     e.vida += dt; if (e.vida > 180) this.ganhar("sobreviver");   // morrer zera o relógio (veja morrer())
     if (S.skins.length >= 5) this.ganhar("colecionador");
-    if (S.skins.length >= n) this.ganhar("todas");
+    if (skinsDaPlatina.every(k=>S.skins.includes(k))) this.ganhar("todas");
     if (S.conq.length >= 10) this.ganhar("dez");
   }
 
   // ---- Itens perdidos do mapa (tecla B): carteira e livro perdido ----
   interagirComPerdidos() {
     if(!this.jogando||this.menuAberto)return;
+    if(this.online?.fallen || this.campus?.interact())return;
     if(this.missoes?.interagir())return;
     if(this.interagirEnigmaSala3())return;
     const S = this.estado, p = this.jogador.pos, c = this.mundo.carteira, L = this.mundo.livroPerdido;
@@ -5864,6 +5890,13 @@ class GameManager {
     if (!continuo) { this.ui.flash("rgba(232,41,75,.8)"); this.audio.dano(); }
   }
   morrer() {
+    if(this.online?.active){
+      if(!this.online.fallen){this.online.fallen=true;this.jogador.vida=0;this.jogador.vel.set(0,0,0);this.limparEntrada();this.online.send({type:'fall'});}
+      return;
+    }
+    this.reaparecerAposQueda();
+  }
+  reaparecerAposQueda() {
     this.extras?.cancelarCorrida();
     this.limparEntrada(); if(!this.online?.active)this.mundo.chefe.reiniciar(); this.mundo.lab.anterior = null;this.mundo.tintas.anterior = null;
     const S = this.estado, perda = Math.floor(S.sangue * 0.25); S.sangue -= perda;
@@ -5887,6 +5920,7 @@ class GameManager {
 
   atualizar(dt) {
     const j = this.jogador, S = this.estado, w = this.mundo;
+    if(this.online?.fallen){this.ui.alerta('Aguarde o resgate • '+Math.max(0,Math.ceil(((this.online.rescueEnd||performance.now())-performance.now())/1000))+' s','#ffd84d');return;}
     this.atualizarHab(dt);
     j.fator = (w.emPerigo === "gas" ? 0.65 : 1) * (this.buff.vel > 0 ? 1.7 : 1) * (this.buff.pesado > 0 ? 0.45 : 1);
     j.update(dt, this.teclas, this.modoControle === "mobile" ? this.toque : null);
@@ -5896,11 +5930,12 @@ class GameManager {
     this.eggMsg = ""; this.checarEggs(dt); this.fxSkin(dt);
     if(!this.eggMsg)this.eggMsg=this.mundo.dicaSala3(j.pos);
     const dicaMissao=this.missoes?.dica();if(dicaMissao)this.eggMsg=dicaMissao;
+    this.campus?.tick(dt);
     if (this.comboT > 0 && (this.comboT -= dt) <= 0) this.combo = 0;
     if (this.boost > 0) this.boost -= dt;
     this.ui.combo(this.combo, this.comboT, this.boost);
     this.ui.barras(j.stamina, S.staminaMax, j.vida, S.vidaMax);
-    this.ui.alerta(w.chefe.ativo ? "" : w.emPerigo === "gas" ? "☣ GÁS TÓXICO — saia!" : w.emPerigo === "poca" ? "☣ Poça tóxica — suba!" : w.avisoGas ? "⚠ INSETICIDA a caminho!" : this.extras?.aviso() ? this.extras.aviso() : w.humanoPerto ? `🩸 Aperte E para picar ${w.humanoPerto.nome}` : this.eggMsg ? this.eggMsg : (w.livroPerdido && !w.livroPerdido.entregue && !w.livroPerdido.carregando && j.pos.distanceToSquared(w.livroPerdido.g.position) < 36) ? "📘 Aperte B para pegar o livro perdido" : (w.livroPerdido && w.livroPerdido.carregando && w.livroPerdido.shelf && j.pos.distanceToSquared(w.livroPerdido.shelf.position) < 49) ? "📚 Aperte B para devolver o livro à estante" : (w.carteira && w.carteira.visivel && j.pos.distanceToSquared(w.carteira.g.position) < 36) ? "🎒 Aperte B para pegar a carteira" : "",
+    this.ui.alerta(w.chefe.ativo ? "" : w.emPerigo === "gas" ? "☣ GÁS TÓXICO — saia!" : w.emPerigo === "poca" ? "☣ Poça tóxica — suba!" : w.avisoGas ? "⚠ INSETICIDA a caminho!" : this.extras?.aviso() ? this.extras.aviso() : this.campus?.prompt ? this.eggMsg : w.humanoPerto ? `🩸 Aperte E para picar ${w.humanoPerto.nome}` : this.eggMsg ? this.eggMsg : (w.livroPerdido && !w.livroPerdido.entregue && !w.livroPerdido.carregando && j.pos.distanceToSquared(w.livroPerdido.g.position) < 36) ? "📘 Aperte B para pegar o livro perdido" : (w.livroPerdido && w.livroPerdido.carregando && w.livroPerdido.shelf && j.pos.distanceToSquared(w.livroPerdido.shelf.position) < 49) ? "📚 Aperte B para devolver o livro à estante" : (w.carteira && w.carteira.visivel && j.pos.distanceToSquared(w.carteira.g.position) < 36) ? "🎒 Aperte B para pegar a carteira" : "",
       w.emPerigo ? "#8dff6a" : w.avisoGas ? "#ffd84d" : this.eggMsg ? "#ff8ad8" : "#ff6b8a");
     this.ui.perigo("rgba(120,255,80,.7)", w.emPerigo ? 0.35 : 0);
     this.audio.zumbir(clamp(j.vel.length() / (S.velMax * 2), 0, 1), j.corre);

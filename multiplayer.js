@@ -18,7 +18,7 @@
    <div id="mp-setup"><div class="mp-fields"><label>Seu nome<input id="mp-name" maxlength="20" autocomplete="nickname" placeholder="Mosquito"></label><label>Código da sala<input id="mp-code" maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ABC234"></label></div>
    <div class="mp-actions"><button id="mp-create" class="mp-primary" type="button">Criar sala</button><button id="mp-join" type="button">Entrar com código</button></div>
    <details><summary>Endereço do servidor</summary><label>Servidor online<input id="mp-server" type="url" placeholder="https://seu-jogo.onrender.com" autocomplete="off"></label><small>Se o jogo estiver hospedado com o servidor, deixe em branco. Em outro site, informe o endereço fornecido por quem hospeda a sala.</small></details></div>
-   <div id="mp-room" hidden><p>Sala <strong class="mp-code" id="mp-room-code"></strong> · <span id="mp-count"></span></p><ul id="mp-members"></ul><div class="mp-actions"><button id="mp-play" class="mp-primary" type="button">Jogar na sala</button><button id="mp-copy" type="button">Copiar código</button><button id="mp-leave" type="button">Sair da sala</button></div><small>A escola online continua enquanto você abre menus. Seu mosquito fica em pausa e não recebe ataques do chefe. Missões, coletas, NPCs comuns e potes são individuais nesta versão.</small></div>
+   <div id="mp-room" hidden><p>Sala <strong class="mp-code" id="mp-room-code"></strong> · <span id="mp-count"></span></p><ul id="mp-members"></ul><div class="mp-actions"><button id="mp-play" class="mp-primary" type="button">Jogar na sala</button><button id="mp-copy" type="button">Copiar código</button><button id="mp-leave" type="button">Sair da sala</button></div><small>A escola online continua enquanto você abre menus. Seu mosquito fica em pausa e não recebe ataques do chefe. Na Sala 1, um amigo distrai a professora e outro pega a pasta. Levem-na aos dois relés do pátio. Use Pegar perto de um amigo caído para reanimá-lo.</small></div>
    <p id="mp-status" class="mp-status" role="status" aria-live="polite">Solo disponível sem conexão.</p>`;
    document.querySelector('#hx-painel-inicio').appendChild(box);this.box=box;
    this.el=id=>box.querySelector('#mp-'+id);
@@ -61,16 +61,22 @@
   receive(m){
    if(m.type==='welcome'){
     if(m.protocol!==1){this.disconnect();return this.status('Atualize o jogo para usar este servidor.');}
-    clearTimeout(this.timeout);this.active=true;this.id=m.id;this.room=m.code;this.lastSnapshot=performance.now();this.resetBoss();this.sendState();this.renderMembers();this.status('Sala pronta. Compartilhe o código e clique em Jogar na sala.');
+    clearTimeout(this.timeout);this.g.campus?.resetProps();this.active=true;this.id=m.id;this.room=m.code;this.lastSnapshot=performance.now();this.resetBoss();this.sendState();this.renderMembers();this.status('Sala pronta. Compartilhe o código e clique em Jogar na sala.');
    }else if(m.type==='error'){const text=m.message;if(!this.active)this.disconnect();this.status(text);}
    else if(m.type==='snapshot'&&this.active){
-    this.lastSnapshot=performance.now();this.boss=m.boss;
+    this.lastSnapshot=performance.now();this.boss=m.boss;this.campus=m.campus;
     const key=m.players.map(p=>p.id+p.name+!!p.state?.active).join('|');this.members=m.players;
     if(key!==this.memberKey){this.memberKey=key;this.renderMembers();}
     const present=new Set(m.players.map(p=>p.id));for(const [id,r]of this.remotes)if(!present.has(id)){this.disposeRemote(r);this.remotes.delete(id);}
     for(const p of m.players)if(p.id!==this.id&&p.state)this.remote(p);
     if(m.door&&!this.g.estado.portaSala3Aberta){this.g.estado.portaSala3Aberta=true;this.g.estado.salvar();this.g.mundo.abrirSala3();this.g.ui.toast('🔓 Um amigo abriu a Sala 3 para o grupo!');}
-   }else if(m.type==='notice')this.g.ui.toast(m.message);
+   }else if(m.type==='down' && this.active){this.fallen=true;this.rescueEnd=performance.now()+m.seconds*1000;this.g.ui.toast('Você caiu! Um amigo pode reanimar você com Pegar.');}
+   else if(m.type==='respawn' && this.active && this.fallen){this.fallen=false;this.g.reaparecerAposQueda();}
+   else if(m.type==='revived' && this.active && this.fallen){this.fallen=false;this.g.jogador.vida=this.g.estado.vidaMax*.45;this.g.jogador.invul=3;this.g.ui.toast('Seu amigo te reanimou!');}
+   else if(m.type==='shield' && this.active){this.g.jogador.escudo=Math.max(this.g.jogador.escudo,5);this.g.ui.toast('Cadeado aliado • escudo por 5 s');}
+   else if(m.type==='lab-fall' && this.active)this.g.ganhar('pote_caido');
+   else if(m.type==='cleaner-hit' && this.active && this.g.jogando && !this.g.menuAberto)this.g.campus.hurt(m.damage);
+   else if(m.type==='notice')this.g.ui.toast(m.message);
    else if(m.type==='hit'&&this.active&&this.g.jogando&&!this.g.menuAberto&&!document.hidden){
     this.g.mundo.chefe.ferir(this.g,m.damage,new this.THREE.Vector3(...m.origin));
    }else if(m.type==='bite-ok'&&this.active){
@@ -91,13 +97,13 @@
     const label=document.createElement('span');label.className='mp-name';this.names.appendChild(label);this.g.cena.add(model.mosquito);
     r={key,model,label,pos:new T.Vector3(...s.pos),rot:new T.Quaternion(...s.rot),project:new T.Vector3()};model.mosquito.position.copy(r.pos);model.mosquito.quaternion.copy(r.rot);this.remotes.set(p.id,r);
    }
-   r.pos.fromArray(s.pos);r.rot.fromArray(s.rot);r.active=s.active;r.label.textContent=p.name+(s.active?'':' · pausa');
+   r.pos.fromArray(s.pos);r.rot.fromArray(s.rot);r.active=s.active;r.label.textContent=p.name+(p.down?' · SOS':s.active?'':' · pausa');
   }
   disposeRemote(r){this.g.cena.remove(r.model.mosquito);r.label.remove();r.model.mosquito.traverse(o=>{o.geometry?.dispose();if(o.material)for(const m of [].concat(o.material))m.dispose();});}
   resetBoss(){const b=this.g.mundo.chefe;b.derrotado=false;b.reiniciar();this.lastBossPhase='espera';this.fall=false;}
   disconnect(){
    const ws=this.ws;this.ws=null;clearTimeout(this.timeout);if(ws)ws.close();const was=this.active;this.active=false;this.boss=null;this.members=[];this.memberKey='';this.room='';
-   for(const r of this.remotes.values())this.disposeRemote(r);this.remotes.clear();if(was)this.resetBoss();this.renderMembers();
+   for(const r of this.remotes.values())this.disposeRemote(r);this.remotes.clear();if(was){this.resetBoss();this.g.campus?.resetProps();if(this.fallen)this.g.reaparecerAposQueda();}this.fallen=false;this.campus=null;this.renderMembers();
   }
   bite(){
    const b=this.g.mundo.chefe;if(!this.active||!this.boss||this.boss.life<=0||this.boss.phase==='espera'||b.alvo.distanceTo(this.g.jogador.pos)>Math.min(3.2,this.g.estado.raioColeta+.9))return false;

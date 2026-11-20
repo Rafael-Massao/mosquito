@@ -1,6 +1,9 @@
 'use strict';
 const {randomInt,randomUUID}=require('node:crypto');
 const SKINS=new Set('pixel dengue relojoeiro radioativo jogador fantasma vampiro mosquito carreta eletrizado pintado extintor cadeado tusk mosquito8000 encadernado raquete'.split(' '));
+const Campus = require('./campus.cjs');
+const rules = require('../campus-rules.js');
+for (const [id] of rules.secrets) SKINS.add(id);
 const PARTS=['cabeca','foices','torax','abdomen'];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const finite=v=>typeof v==='number'&&Number.isFinite(v);
@@ -8,7 +11,7 @@ const dist=(a,b)=>Math.hypot(...a.map((n,i)=>n-b[i]));
 function sanitizeState(s){
  if(!s||!Array.isArray(s.pos)||s.pos.length!==3||!s.pos.every(finite)||!Array.isArray(s.rot)||s.rot.length!==4||!s.rot.every(finite))return null;
  const norm=Math.hypot(...s.rot);if(norm<.9||norm>1.1)return null;
- if(s.pos[0]<-120||s.pos[0]>159||s.pos[1]<-4||s.pos[1]>14||Math.abs(s.pos[2])>110)return null;
+ if(s.pos[0]<-120||(s.pos[0]>159 && !(rules.areaAt(s.pos[0]) && Math.abs(s.pos[2])<16.5))||s.pos[1]<-4||s.pos[1]>14||Math.abs(s.pos[2])>110)return null;
  const nv={};for(const k of ['asas','tromba','estomago','corpo'])nv[k]=clamp(Math.floor(Number(s.nv?.[k])||0),0,30);
  if(Object.values(nv).some(v=>!finite(v)))return null;
  return {pos:s.pos,rot:s.rot.map(v=>v/norm),nv,skin:SKINS.has(s.skin)?s.skin:null,mantis:PARTS.filter(id=>Array.isArray(s.mantis)&&s.mantis.includes(id)),pixelCor:/^#[\da-f]{6}$/i.test(s.pixelCor)?s.pixelCor:'#e8294b',auraTusk:s.auraTusk!==false,active:s.active===true,door:s.door===true,speed:finite(s.speed)?clamp(s.speed,0,80):0,health:finite(s.health)?clamp(s.health,0,1):1};
@@ -21,7 +24,7 @@ class RoomService{
   if(this.rooms.size>=this.maxRooms)return this.error(peer,'Servidor cheio. Tente novamente mais tarde.');
   const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let code;
   do{code=Array.from({length:6},()=>chars[randomInt(chars.length)]).join('');}while(this.rooms.has(code));
-  this.rooms.set(code,{code,players:new Map(),door:false,boss:freshBoss(),emptySince:this.now()});this.join(peer,code,name);
+  this.rooms.set(code,{code,players:new Map(),door:false,campus:new Campus(this),boss:freshBoss(),emptySince:this.now()});this.join(peer,code,name);
  }
  join(peer,code,name){
   if(peer.room)return this.error(peer,'Você já está em uma sala.');
@@ -42,11 +45,12 @@ class RoomService{
    return m.type==='create'?this.create(peer,m.name):this.join(peer,m.code,m.name);
   }
   const room=peer.room;if(!room)return;
-  if(m.type==='state'){const s=sanitizeState(m.state);if(!s)return;peer.state=s;peer.lastState=this.now();if(s.door)room.door=true;}
+  if(m.type==='state'){const s=sanitizeState(m.state);if(!s)return;if(peer.downUntil && peer.state){s.pos=peer.state.pos;s.health=0;}peer.state=s;peer.lastState=this.now();if(s.door)room.door=true;}
   else if(m.type==='bite')this.bite(peer);
   else if(m.type==='stun')this.stun(peer);
+  else room.campus.act(peer,m);
  }
- active(p){return p.state?.active&&p.state.health>0&&this.now()-p.lastState<2000;}
+ active(p){return !p.downUntil&&p.state?.active&&p.state.health>0&&this.now()-p.lastState<2000;}
  arena(p){const a=p.state?.pos;return this.active(p)&&a[0]>120&&a[0]<157.5&&Math.abs(a[2])<17.5;}
  bite(p){
   const r=p.room,b=r.boss,s=p.state;if(!r.door||!this.arena(p)||b.phase==='espera'||b.life<=0)return;
@@ -71,6 +75,7 @@ class RoomService{
  tick(dt){
   for(const r of this.rooms.values()){
    if(!r.players.size&&this.now()-r.emptySince>90000){this.rooms.delete(r.code);continue;}
+   r.campus.tick(r,dt);
    const b=r.boss,players=[...r.players.values()].filter(p=>this.arena(p));
    if(!players.length||!r.door){b.idle+=dt;if(b.idle>15)r.boss=freshBoss();continue;}b.idle=0;
    if(b.life<=0){b.timer=Math.max(0,b.timer-dt);if(!b.timer)b.phase='derrotado';continue;}
@@ -95,7 +100,7 @@ class RoomService{
  }
  prepare(b,pos){b.combo++;b.attack++;b.phase='preparar';b.timer=b.furia?.85:1.05;b.aim=[...pos];b.kind=dist(b.pos,pos)<7?'varredura':'descarga';b.radius=b.furia?2.3:1.9;}
  snapshot(r){
-  const b=r.boss,packet={type:'snapshot',code:r.code,door:r.door,players:[...r.players.values()].map(p=>({id:p.id,name:p.name,state:p.state?{...p.state,active:!!this.active(p)}:null})),boss:{pos:b.pos,yaw:b.yaw,phase:b.phase,timer:b.timer,life:b.life,max:b.max,furia:b.furia,combo:b.combo,aim:b.aim,kind:b.kind,attack:b.attack,radius:b.radius}};
+  const b=r.boss,packet={type:'snapshot',campus:r.campus.snapshot(),code:r.code,door:r.door,players:[...r.players.values()].map(p=>({id:p.id,name:p.name,down:!!p.downUntil,state:p.state?{...p.state,active:!!this.active(p)}:null})),boss:{pos:b.pos,yaw:b.yaw,phase:b.phase,timer:b.timer,life:b.life,max:b.max,furia:b.furia,combo:b.combo,aim:b.aim,kind:b.kind,attack:b.attack,radius:b.radius}};
   for(const p of r.players.values())this.send(p,packet);
  }
  broadcast(){for(const r of this.rooms.values())if(r.players.size)this.snapshot(r);}

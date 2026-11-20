@@ -11,7 +11,7 @@ function createGameServer({root=path.resolve(__dirname,'..'),allowedOrigins=proc
   if(pathname==='/health'){res.writeHead(200,{'content-type':'application/json'});return res.end(JSON.stringify({ok:true,protocol:1}));}
   // Servir apenas os arquivos públicos; nunca código do servidor, testes ou segredos.
   const publicPath=pathname==='/'?'index.html':pathname.slice(1);
-  if(!['index.html','script.js','style.css','multiplayer.js','multiplayer.css'].includes(publicPath)&&!/^((icons|sound)\/[a-zA-Z0-9_ /.-]+)$/.test(publicPath)){res.writeHead(404);return res.end('Não encontrado');}
+  if(!['index.html','script.js','style.css','multiplayer.js','multiplayer.css','campus.js','campus-rules.js'].includes(publicPath)&&!/^((icons|sound)\/[a-zA-Z0-9_ /.-]+)$/.test(publicPath)){res.writeHead(404);return res.end('Não encontrado');}
   const file=path.resolve(root,publicPath);if(!file.startsWith(root+path.sep)||publicPath.split('/').some(part=>part.startsWith('.'))||!mime[path.extname(file)]){res.writeHead(404);return res.end();}
   fs.stat(file,(err,stat)=>{if(err||!stat.isFile()){res.writeHead(404);return res.end();}res.writeHead(200,{'content-type':mime[path.extname(file)]||'application/octet-stream','content-length':stat.size,'cache-control':'no-cache','x-content-type-options':'nosniff'});if(req.method==='HEAD')return res.end();const stream=fs.createReadStream(file);stream.on('error',()=>res.destroy());stream.pipe(res);});
  });

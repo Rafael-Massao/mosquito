@@ -9,7 +9,11 @@ O jogo agora tem salas de até **4 jogadores**, com código de 6 caracteres. O m
 - Vida, fases, alvo e ataques do chefe. No online, os golpes atingem a área indicada pelo aviso; saiam dela antes do ataque.
 - Vitória contra o chefe: quem participou da luta e continua conectado recebe a conquista e a skin. Recompensas já obtidas não são pagas novamente.
 
-Cada jogador mantém seu próprio sangue, upgrades, inventário, missões e conquistas no navegador. NPCs comuns, coletas, potes e tinta continuam individuais nesta primeira versão. Não há combate entre jogadores.
+Na Sala 1, um jogador usa Pegar junto à professora enquanto outro recolhe a pasta da chamada. No pátio, dois jogadores acionam relés diferentes para abrir o atalho do telhado. O diário mostra o andamento dessas missões durante a sessão.
+ 
+Um aliado próximo pode usar Pegar para reanimar quem caiu em até 12 segundos. A tinta cura amigos na poça, o Cadeado concede escudo aos aliados próximos e o som da Carreta atordoa os inimigos. A cozinha abriga a faxineira e suas poças perigosas. As áreas e as três skins secretas também são acessíveis no solo pela entrada oeste do corredor.
+ 
+Cada jogador mantém seu próprio sangue, upgrades, inventário, missões e conquistas no navegador. A sala compartilha os trajetos dos humanos, os potes do laboratório e da sala de artes e as poças derramadas. As coletas das missões individuais pertencem ao respectivo jogador. Não há combate entre jogadores.
 
 Abrir menus pausa o seu mosquito, mas a sala continua para os amigos. O chefe não ataca jogadores em menus ou com a aba oculta. Se a conexão cair, o jogo volta ao modo solo; entre novamente com o código. Salas vazias ficam disponíveis por até 90 segundos. O servidor mantém as salas em memória: reiniciá-lo encerra as sessões, sem apagar os saves dos navegadores.
 
@@ -27,7 +31,7 @@ Uma opção é o Render; o repositório já inclui `render.yaml`:
 
 O servidor entrega o site e a conexão online pelo mesmo endereço; nesse caso, deixe o campo **Endereço do servidor** em branco. Serviços gratuitos podem suspender quando ficam ociosos e demorar para iniciar; aguarde o serviço acordar e tente conectar novamente.
 
-Se preferir manter o site em outra hospedagem, atualize `index.html`, `script.js`, `multiplayer.js` e `multiplayer.css`, mantendo o `style.css` atual. No menu online, informe a URL HTTPS do servidor. Todos precisam usar o mesmo servidor para encontrar o código da sala.
+Se preferir manter o site em outra hospedagem, atualize `index.html`, `script.js`, `multiplayer.js` e `multiplayer.css`, incluindo também `campus.js` e `campus-rules.js` e mantendo o `style.css` atual. No menu online, informe a URL HTTPS do servidor. Todos precisam usar o mesmo servidor para encontrar o código da sala.
 
 Os arquivos de áudio e ícones originais, se usados, devem continuar nas pastas `sound/` e `icons/`. Eles não são adicionados por esta atualização.
 
