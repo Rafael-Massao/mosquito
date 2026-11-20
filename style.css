@@ -381,3 +381,10 @@ body.boss-active:not(.hx-mobile) #hx .hx-combo{top:110px}
  .hx-mobile #mt-panel{top:calc(env(safe-area-inset-top) + 110px);max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 122px)}
  .hx-mobile .boss-hud{top:auto;bottom:calc(env(safe-area-inset-bottom) + 110px);width:min(300px,44vw)}
 }
+
+.school-map-tabs{display:flex;flex-wrap:wrap;gap:.45rem;margin:.75rem 0 .55rem}
+.school-map-tabs button{padding:.48rem .85rem;border:1px solid #566267;border-radius:.55rem;background:#25313a;color:#ece7d8;cursor:pointer;font:600 .87rem Figtree,sans-serif}
+.school-map-tabs button[aria-pressed="true"]{background:#e4d4ae;border-color:#e4d4ae;color:#253c3d}
+.school-map-frame{overflow:hidden;border-radius:.75rem;background-color:#ece5d4;background-image:linear-gradient(#667c7212 1px,transparent 1px),linear-gradient(90deg,#667c7212 1px,transparent 1px);background-size:16px 16px}
+.school-map-frame .school-map{margin:0;border:0;background:transparent;border-radius:0;font-family:Figtree,system-ui,sans-serif;width:100%;height:auto;max-height:42vh}
+.school-map-note{line-height:1.4}

@@ -2894,8 +2894,16 @@ class WorldManager {
     const janela = (x, z, ry) => this.deco(new THREE.Mesh(new THREE.PlaneGeometry(7, 8), B(0x1b2750)), x, F + 8, z, ry);
 
     // Texturas desenhadas em canvas
-    const [cp, gp] = tela(64, 64); gp.fillStyle = "#b9b29a"; gp.fillRect(0, 0, 64, 64); gp.fillStyle = "#8f8a76"; gp.fillRect(0, 0, 32, 32); gp.fillRect(32, 32, 32, 32);
-    const tPiso = tex(cp); tPiso.wrapS = tPiso.wrapT = THREE.RepeatWrapping; tPiso.repeat.set(MX / 4, MZ / 4);
+    // Granilite da escola: junta discreta, agregado mineral e faixas de orientação no corredor.
+    const [cp,gp]=tela(128,128);
+    gp.fillStyle='#c5bbaa';gp.fillRect(0,0,128,128);
+    const pedras=['#a59e90','#e0d7c4','#b6ad9c','#d2c8b7'];
+    for(let i=0;i<340;i++){
+      const x=(i*43+i*i*7)%128,y=(i*79+Math.floor(i/5)*13)%128;
+      gp.fillStyle=pedras[i%4];gp.fillRect(x,y,1+i%3,1+i%2);
+    }
+    gp.fillStyle='#aaa395';gp.fillRect(0,0,128,1);gp.fillRect(0,0,1,128);
+    const tPiso=tex(cp);tPiso.wrapS=tPiso.wrapT=THREE.RepeatWrapping;tPiso.repeat.set(MX/3,MZ/3);
     const [cb, gb] = tela(128, 128); gb.fillStyle = "#3a2a1c"; gb.fillRect(0, 0, 128, 128);
     for (let r = 0; r < 4; r++) for (let x = 0; x < 128; x += 6) { gb.fillStyle = `hsl(${(Math.random() * 360) | 0},55%,45%)`; gb.fillRect(x, r * 32 + 4 + Math.random() * 6, 5, 24 - Math.random() * 4); }
     const [cq, gq] = tela(400, 260); gq.fillStyle = "#c8782f"; gq.fillRect(0, 0, 400, 260); gq.strokeStyle = "#fff"; gq.lineWidth = 4; gq.strokeRect(6, 6, 388, 248);
@@ -2921,7 +2929,7 @@ class WorldManager {
       letreiro.userData.semSombraUltra = true;
       letreiro.castShadow = false; letreiro.receiveShadow = false;
     };
-    const m = { piso: M(0xffffff, 0.55, { map: tPiso }), par: M(0x6f8f7a, 0.9), teto: M(0xcfd3d8, 0.9), mad: M(0x8a5a2e, 0.6), metal: M(0x4a5560, 0.4), cad: M(0x2f6fb5, 0.6),
+    const m = { piso: M(0xaaa89c, 0.55, { map: tPiso }), par: M(0xc4c3ae, 0.9), teto: M(0xcfd3d8, 0.9), mad: M(0x8a5a2e, 0.6), metal: M(0x4a5560, 0.4), cad: M(0x2f6fb5, 0.6),
       l1: M(0x3a5f8a), l2: M(0x2e4d70), tampo: M(0xd9c7a0, 0.5), estante: M(0xffffff, 0.8, { map: tex(cb) }), mesa: M(0xc9a36a, 0.6), banco: M(0xa0522d, 0.7),
       azul: M(0xe3edf2, 0.4), porc: M(0xf4f4f4, 0.2), bancada: M(0x2d3b44, 0.4), vidro: M(0x66ffaa, 0.2, { emissive: 0x22aa66, transparent: true, opacity: 0.4 }), laranja: M(0xff7a1a, 0.5) };
     // Materiais compartilhados: o Ultra pode ajustar suas superficies sem
@@ -2973,6 +2981,40 @@ class WorldManager {
     };
     const PN = [-94, -49, -7, 28, 56, 94], PS = [-40, 17, 57, 94];   // artes, sala 1, sala 2, biblioteca, lab, enfermaria / cantina, ginásio, banheiro, auditório
     parede("x", -8, -MX, MX, PN); parede("x", 8, -MX, MX, PS);
+    const lambril=M(0x608b83),friso=M(0xd8b47f),rodape=M(0x485e60);
+    // Preserva a largura das portas e prolonga o acabamento até o encontro das paredes.
+    for(const [lado,entradas] of [[-1,PN],[1,PS]]){
+      let inicio=-MX;
+      for(const fim of [...entradas.map(x=>x-5.2),MX]){
+        const meio=(inicio+fim)/2,largura=fim-inicio,z=lado*7.46;
+        if(largura>0){
+          dbox(largura,3.0,.12,lambril,meio,F+1.54,z);
+          dbox(largura,.16,.19,friso,meio,F+3.08,z-lado*.04);
+          dbox(largura,.34,.17,rodape,meio,F+.19,z-lado*.04);
+        }
+        inicio=fim+10.4;
+      }
+      chao(2*MX-.7,.22,lambril,0,lado*4.8,.033);
+      chao(2*MX-.7,.08,friso,0,lado*4.49,.034);
+    }
+    const tabua=M(0x815e4d),pintura=M(0x63827a);
+    const destinos=(texto)=>{
+      const [canvas,ctx]=tela(512,96);ctx.fillStyle='#25594f';ctx.fillRect(0,0,512,96);
+      ctx.fillStyle='#f5dfa9';ctx.fillRect(9,12,5,72);ctx.font='bold 47px sans-serif';
+      ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(texto,256,49,460);
+      return new THREE.MeshBasicMaterial({map:tex(canvas)});
+    };
+    const volta=destinos('PÁTIO   ↑'),ida=destinos('SALA 3   ↑');
+    for(const x of [-67,5,75]){
+      dbox(.72,.49,15.1,tabua,x,YMAX-.28,0);
+      for(const lado of [-1,1]){
+        dbox(.62,2.85,.32,pintura,x,YMAX-1.82,lado*7.35);
+        dbox(.16,.72,.14,m.metal,x,YMAX-.91,lado*2);
+      }
+      dbox(.28,1.21,5.92,tabua,x,YMAX-1.77,0);
+      this.deco(new THREE.Mesh(new THREE.PlaneGeometry(5.72,1.08),volta),x+.15,YMAX-1.77,0,Math.PI/2);
+      this.deco(new THREE.Mesh(new THREE.PlaneGeometry(5.72,1.08),ida),x-.15,YMAX-1.77,0,-Math.PI/2);
+    }
     for (const x of [-70, -28, 14, 42, 71]) parede("z", x, -MZ, -8);
     for (const x of [-10, 45, 71]) parede("z", x, 8, MZ);
     const piso = (x1, x2, z1, z2, cor) => chao(x2 - x1 - 0.6, z2 - z1 - 0.6, M(cor, 0.85), (x1 + x2) / 2, (z1 + z2) / 2, 0.075);   // piso próprio de cada sala
@@ -5030,24 +5072,61 @@ class SchoolActivities {
   botao(el,txt,fn){const b=this.parente(el,'button',txt);b.type='button';b.onclick=fn;return b;}
   abrirMapa(){
     const body=this.painel('Mapa da escola');if(!body)return;
-    const g=this.g,S=g.estado,p=g.jogador.pos,ns='http://www.w3.org/2000/svg';
-    this.parente(body,'p','Norte em cima · azul: visitada · cinza: a explorar · rosa: você · pontos dourados: personagens de missão.');
-    const svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','-125 -108 290 216');svg.setAttribute('role','img');svg.setAttribute('aria-label','Planta da escola, salas visitadas e sua posição');svg.classList.add('school-map');body.appendChild(svg);
-    const el=(tag,attrs,text)=>{const n=document.createElementNS(ns,tag);for(const [k,v]of Object.entries(attrs))n.setAttribute(k,v);if(text)n.textContent=text;svg.appendChild(n);return n;};
-    CFG.SALAS.forEach(([nome,x0,x1,z0,z1],i)=>{
-      el('rect',{x:x0,y:z0,width:x1-x0,height:z1-z0,rx:1,fill:S.salas.includes(nome)?'#204d63':'#20293c',stroke:'#71849c','stroke-width':.8});
-      // Números grandes remetem à lista abaixo, sem espremer nomes nas salas estreitas.
-      el('text',{x:(x0+x1)/2,y:(z0+z1)/2+3,'text-anchor':'middle',fill:'#f2f5fc','font-size':9,'font-weight':700},String(i+1));
-    });
-    for(const x of [-94,-49,-7,28,56,94])el('line',{x1:x-5,x2:x+5,y1:-8,y2:-8,stroke:'#c0eaff','stroke-width':1.5});
-    for(const x of [-40,17,57,94])el('line',{x1:x-5,x2:x+5,y1:8,y2:8,stroke:'#c0eaff','stroke-width':1.5});
-    el('line',{x1:118,x2:118,y1:-5,y2:5,stroke:S.portaSala3Aberta?'#67edaf':'#ffad66','stroke-width':2});
-    for(const q of MISSOES){const dot=el('circle',{cx:q.pos[0],cy:q.pos[1],r:2,fill:'#ffd84d',stroke:'#171d29','stroke-width':.6});const title=document.createElementNS(ns,'title');title.textContent=q.nome+' — '+q.sala;dot.appendChild(title);}
-    el('circle',{cx:p.x,cy:p.z,r:3,fill:'#ff5077',stroke:'#fff','stroke-width':1});
-    this.parente(body,'p','Ala de serviço · entrada na ponta oeste do corredor → pátio → cozinha → escada do telhado.');
-    const atual=CFG.SALAS.find(s=>p.x>=s[1]&&p.x<=s[2]&&p.z>=s[3]&&p.z<=s[4]);
-    this.parente(body,'p','Você está: '+(atual?atual[0]:window.EscolaCampus?.areaAt(p.x)?.name||'Corredor')+' · '+S.salas.length+'/'+CFG.SALAS.length+' salas visitadas.','school-location');
-    const lista=this.parente(body,'ol',undefined,'school-rooms');CFG.SALAS.forEach((s,i)=>this.parente(lista,'li',(i+1)+'. '+s[0]+(S.salas.includes(s[0])?' ✓':'')));
+    const g=this.g,S=g.estado,p=g.jogador.pos;
+    const campus=window.EscolaCampus?.areaAt(p.x);
+    const room=CFG.SALAS.find(s=>p.x>=s[1]&&p.x<=s[2]&&p.z>=s[3]&&p.z<=s[4]);
+    const location=campus?.name||room?.[0]||'Corredor';
+    this.parente(body,'p','Você está em '+location+' · '+S.salas.length+'/'+CFG.SALAS.length+' salas visitadas.','school-location');
+    const tabs=this.parente(body,'div',undefined,'school-map-tabs');
+    const tabSchool=this.botao(tabs,'Prédio principal',()=>draw(false));
+    const tabCampus=this.botao(tabs,'Ala oeste',()=>draw(true));
+    const frame=this.parente(body,'div',undefined,'school-map-frame');
+    const note=this.parente(body,'p',undefined,'school-map-note');
+    const ns='http://www.w3.org/2000/svg';
+    const draw=west=>{
+      tabSchool.setAttribute('aria-pressed',String(!west));tabCampus.setAttribute('aria-pressed',String(west));
+      frame.replaceChildren();
+      const svg=document.createElementNS(ns,'svg');svg.classList.add('school-map');
+      svg.setAttribute('viewBox',west?'173 -37 155 69':'-130 -112 300 224');
+      svg.setAttribute('role','img');svg.setAttribute('aria-label',(west?'Planta da ala oeste':'Planta do prédio principal')+'. Você está em '+location);frame.appendChild(svg);
+      const el=(name,attrs,text)=>{
+        const n=document.createElementNS(ns,name);for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);
+        if(text)n.textContent=text;svg.appendChild(n);return n;
+      };
+      const rect=(x,y,w,h,fill,stroke='#485a5b')=>el('rect',{x,y,width:w,height:h,rx:1.1,fill,stroke,'stroke-width':.75});
+      const line=(x1,y1,x2,y2,color,width=.9)=>el('line',{x1,y1,x2,y2,stroke:color,'stroke-width':width});
+      const label=(x,y,text,size,attrs={})=>el('text',{x,y,fill:'#263e42','font-size':size,'font-weight':700,'text-anchor':'middle',...attrs},text);
+      const mark=(x,z,r,col)=>el('circle',{cx:x,cy:z,r,fill:col,stroke:'#fff6df','stroke-width':.8});
+      if(west){
+        rect(216,-3.45,18,6.9,'#d4b59a');rect(266,-3.45,18,6.9,'#9dabb0');
+        for(let x=270;x<281;x+=2)line(x,-3.1,x,3.1,'#65737a',.48);
+        const fills=['#a9c4a2','#e1c5a4','#acbec9'];
+        window.EscolaCampus.areas.forEach((a,i)=>{rect(a.x-18,-16,36,32,fills[i]);label(a.x,3,a.name,3.95);});
+        label(225,11,'Galeria',3.3);label(275,11,'Escada',3.3);
+        const opened=!!g.campus?.shared?.gate;
+        el('path',{d:'M200 -15 V-23 H300 V-15',fill:'none',stroke:opened?'#427e5f':'#86745f','stroke-width':.85,'stroke-dasharray':'2 1.7'});
+        label(250,-26,opened?'Atalho aberto':'Atalho dos relés',3.6);
+        for(const [x,,z] of window.EscolaCampus.switches)rect(x-1,z-1,2,2,'#d79239');
+        for(const x of [200,300])mark(x,-14,.98,opened?'#34845e':'#8c725c');
+        line(176,-3,182,-3,'#477875',1.2);label(190,23,'Entrada oeste',3.25);
+        note.textContent='A galeria e a escada ficam abertas no solo. Para abrir o atalho, recupere a pasta da Sala 1 com um amigo e acionem os dois relés do pátio.';
+      }else{
+        CFG.SALAS.forEach(([nome,x0,x1,z0,z1])=>{
+          const cx=(x0+x1)/2,cz=(z0+z1)/2;
+          rect(x0,z0,x1-x0,z1-z0,nome==='Corredor'?'#e7d3ad':S.salas.includes(nome)?'#a9c9c1':'#ced0c3');
+          const vertical=(z1-z0)>70&&(x1-x0)<53;
+          label(cx,cz+2,nome,nome==='Sala 3'?5.8:6.9,vertical?{transform:'rotate(-90 '+cx+' '+cz+')'}:{});
+        });
+        for(const x of [-94,-49,-7,28,56,94])line(x-5,-8,x+5,-8,'#f9edcf',2.4);
+        for(const x of [-40,17,57,94])line(x-5,8,x+5,8,'#f9edcf',2.4);
+        line(118,-5,118,5,S.portaSala3Aberta?'#469171':'#aa6d40',2.2);
+        line(-118,-5,-118,5,'#467d73',2.2);
+        for(const q of MISSOES)mark(q.pos[0],q.pos[1],2.6,'#bd7b21').appendChild(document.createElementNS(ns,'title')).textContent=q.nome+' · '+q.sala;
+        note.textContent='Verde indica sala visitada. Os pontos dourados marcam personagens de missão. A saída para o pátio fica na ponta oeste do corredor.';
+      }
+      if(west===Boolean(campus))mark(p.x,p.z,west?1.8:3.2,'#c73755').appendChild(document.createElementNS(ns,'title')).textContent='Você';
+    };
+    draw(Boolean(campus));
     const metas=this.parente(body,'div',undefined,'school-objectives');this.parente(metas,'h3','O que explorar');
     const itens=[
       S.portaSala3Aberta?'🔓 Sala 3 aberta.':'🔒 Sala 3: '+S.pistasSala3.length+'/4 pistas anotadas. Procure os bilhetes na Sala 1, Biblioteca, Laboratório e Cantina.',

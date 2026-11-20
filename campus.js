@@ -31,84 +31,60 @@ window.SchoolCampus = class SchoolCampus {
   ball(x,y,z,r,color,parent=null){
     return this.mesh(new THREE.SphereGeometry(r,12,8),color,x,y,z,false,parent);
   }
-  sign(text,x,y,z,width=6){
-    const canvas=document.createElement('canvas');canvas.width=512;canvas.height=96;
-    const ctx=canvas.getContext('2d');ctx.fillStyle='#223b43';ctx.fillRect(0,0,512,96);
-    ctx.fillStyle='#ffe9a5';ctx.fillRect(0,0,8,96);ctx.font='bold 37px sans-serif';
-    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,256,48,480);
-    const sign=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(canvas)}));
-    sign.position.set(x,y,z);sign.scale.set(width,width*96/512,1);this.g.cena.add(sign);return sign;
-  }
-  door(label,at,dest,gate=false){
-    const [x,y,z]=at;
-    const panel=this.box(x,y,z,2.7,4,.32,gate?0xb45638:0x367b79);
-    this.box(x-1.5,y,z,.25,4.4,.5,0x304850);
-    this.box(x+1.5,y,z,.25,4.4,.5,0x304850);
-    this.box(x,y+2.15,z,3.25,.25,.5,0x304850);
-    this.ball(x+.85,y-.25,z+.23,.14,0xfacc70);this.sign(label,x,y+2.9,z);
-    this.points.push({label,at,dest,gate,panel});
-  }
   createRooms(){
-    for(const area of this.rules.areas){
-      const x=area.x;
-      this.box(x,-3.8,0,36,.6,32,area.color,true);
-      for(const z of [-16,16])this.box(x,-2.5,z,36,2,.4,0x68777b,true);
-      for(const dx of [-18,18])this.box(x+dx,-2.5,0,.4,2,32,0x68777b,true);
-      const light=new THREE.PointLight(0xffebce,.8,36);light.position.set(x,6,0);this.g.cena.add(light);
-    }
-    this.door('PÁTIO • B',[-114,2,0],[186,1,0]);
-    this.door('Corredor',[184,1,-3],[-111,2,0]);
-    this.door('Cozinha',[215,1,0],[236,1,0]);
-    this.door('Pátio',[234,1,-3],[212,1,0]);
-    this.door('Escada do telhado',[265,1,0],[286,1,0]);
-    this.door('Cozinha',[284,1,-3],[262,1,0]);
-    this.door('Atalho • Telhado',[200,1,-14],[303,1,-11],true);
-    this.door('Atalho • Pátio',[300,1,-14],[200,1,-11],true);
-    for(const [x,z] of [[188,9],[210,9],[186,-9]]){
-      this.box(x,-.8,z,.75,5.4,.75,0x85583a,true);this.ball(x,2.6,z,2.6,0x548656);
-      this.box(x+3,-2.25,z,4,.3,1.2,0x98623d,true);
-      for(const d of [1.5,4.5])this.box(x+d,-2.95,z,.35,1.1,.75,0x344948);
-    }
-    for(const [i,at] of this.rules.switches.entries()){
-      this.box(...at,1.4,1.8,.7,0x344950);this.ball(at[0],at[1],at[2]+.5,.39,this.orange);
-      this.sign(i?'RELÉ B':'RELÉ A',at[0],at[1]+1.8,at[2],3);
-    }
+    const art=this.art=new CampusScenery(this.g), roof=this.rules.floorAt(300);
+    art.skybox();art.surroundings();art.courtyard();art.gallery();art.kitchen();art.stairs();art.roof();
+    art.entry(-117.48,-3.5,0,Math.PI/2,'PÁTIO');
+    this.points.push(
+      {label:'Sair para o pátio',at:[-114.9,1,0],dest:[186,1,0],yaw:-Math.PI/2},
+      {label:'Voltar ao corredor',at:[184,1,-3],dest:[-111,2,0],yaw:-Math.PI/2},
+      {label:'Atalho para o telhado',at:[200,.4,-13.9],dest:[300,roof+2.1,-10.5],yaw:Math.PI,gate:true,panel:art.courtyardGate},
+      {label:'Atalho para o pátio',at:[300,roof+3.3,-13.9],dest:[200,.6,-10.7],yaw:Math.PI,gate:true,panel:art.roofGate});
+    this.relays=this.rules.switches.map(([x,y,z],i)=>{
+      // Conduítes ligam os dois comandos ao portão, inclusive vistos do ar.
+      art.block(x,-1.27,z,.51,4.45,.56,0x637678,true);
+      art.block(x,y,z,1.38,1.72,.68,0x345756,true);
+      art.block(x,y+.55,z+.36,1.04,.28,.06,0x718479);
+      art.sign(i?'RELÉ B':'RELÉ A',x,y+.56,z+.40,1.0);
+      art.block(x,-3.40,-12.08,.14,.13,4.35,0x8c7253);
+      art.block((x+200)/2,-3.40,-14.21,8,.13,.15,0x8c7253);
+      const light=this.ball(x,y-.14,z+.43,.26,this.orange);
+      light.material=light.material.clone();light.material.emissiveIntensity=.22;
+      return light;
+    });
     this.fileMesh=this.box(...this.rules.folder,1.4,.25,.95,0xffbe59);
-    this.sprinkler=this.mesh(new THREE.CylinderGeometry(.45,.65,.6,12),0x418377,200,-3.1,2);
-    this.water=this.mesh(new THREE.ConeGeometry(1.4,4,12,1,true),0x82d7de,200,-1,2);
-    this.water.material=new THREE.MeshBasicMaterial({color:0x83d8ec,wireframe:true,transparent:true,opacity:.55});
-    for(const z of [-12,12]){
-      this.box(250,-2,z,19,3,2.2,0x647b78,true);this.box(250,-.42,z,19.4,.18,2.4,0xd3dedb,true);
-      for(let x=244;x<=256;x+=4)this.box(x,-2,z-Math.sign(z)*1.14,3.5,2.5,.12,0x879c91);
-    }
-    for(const z of [-15.8,15.8]){
-      this.box(250,1.4,z,36,9.8,.32,0xa4b5ab,true);
-      for(const dx of [-10,0,10]){
-        this.box(250+dx,3.5,z-Math.sign(z)*.24,7.2,3.2,.15,0x506b70);
-        this.box(250+dx,3.5,z-Math.sign(z)*.35,6.8,2.8,.12,0xaccfd0);
-        this.box(250+dx,3.5,z-Math.sign(z)*.45,.14,2.9,.12,0x506b70);
+    art.drum(200,-3.38,2,2.7,.21,2.7,0x788c7e);
+    art.drum(200,-3.14,2,.59,.48,.59,0x477f7c);
+    this.water=new THREE.Group();this.water.position.set(200,-2.91,2);this.g.cena.add(this.water);
+    const jets=[];
+    for(let j=0;j<5;j++){
+      const angle=j*2*Math.PI/5;
+      for(let k=0;k<14;k++){
+        const t=k/14,u=(k+.73)/14;
+        for(const phase of [t,u])jets.push(1.52*phase*Math.cos(angle),12.7*phase*(1-phase)-.55*phase,1.52*phase*Math.sin(angle));
       }
     }
-    for(const x of [232.1,267.9])this.box(x,1.4,0,.3,9.8,32,0xb7c5b9,true);
-    this.box(250,7,0,36,.45,32,0xd8d7c6,true);
-    for(const x of [242,258])this.box(x,6.7,0,4,.12,.8,0xffefc6);
-    this.steam=this.mesh(new THREE.ConeGeometry(1.5,4,12,1,true),0xffffff,246,1.8,-10);
-    this.steam.material=new THREE.MeshBasicMaterial({color:0xffecdb,wireframe:true,transparent:true,opacity:.65});
-    this.mesh(new THREE.CylinderGeometry(1.2,1,1.3,14),0x879399,246,-.8,-10);
-    for(const x of [289,309])for(const z of [-8,9]){
-      this.box(x,-1.8,z,2.2,3.4,2.2,0xb67d60,true);this.box(x,.05,z,2.6,.3,2.6,0x77594c,true);
+    const waterGeo=new THREE.BufferGeometry();waterGeo.setAttribute('position',new THREE.Float32BufferAttribute(jets,3));
+    this.water.add(new THREE.LineSegments(waterGeo,new THREE.LineBasicMaterial({color:0x9ae8e7,transparent:true,opacity:.85})));
+    this.steam=new THREE.Group();this.steam.position.set(246,.4,-10.7);this.g.cena.add(this.steam);
+    const puff=new THREE.IcosahedronGeometry(1,1);
+    for(let i=0;i<5;i++){
+      const cloud=new THREE.Mesh(puff,new THREE.MeshBasicMaterial({color:0xfff4df,transparent:true,depthWrite:false,opacity:.25}));
+      this.steam.add(cloud);
     }
-    for(const dx of [-14,-7,0,7,14]){
-      for(const z of [-15.5,15.5])this.box(300+dx,-1.1,z,.14,4,.14,0x5f656d);
+    this.vane=new THREE.Group();this.vane.position.set(300,roof+5.5,3);this.g.cena.add(this.vane);
+    this.box(0,0,0,3.8,.13,.12,0x8c6958,false,this.vane);
+    this.box(-1.34,.23,0,.87,.61,.12,0xcf8558,false,this.vane);
+    this.mesh(new THREE.ConeGeometry(.37,.82,3),0xe2a663,1.93,0,0,false,this.vane).rotation.z=-Math.PI/2;
+    // O duto é aberto nos dois extremos. Os outros esconderijos usam o próprio mobiliário.
+    art.block(199,-.78,9,4,.22,2.85,0x779384,true);
+    for(const dz of [-1.4,1.4])art.block(199,-2.13,9+dz,4,2.58,.21,0x688778,true);
+    for(const dx of [-1.9,0,1.9]){
+      art.block(199+dx,-.61,9,.18,.13,3.12,0x4e7169);
+      for(const dz of [-1.52,1.52])art.block(199+dx,-2.12,9+dz,.18,2.93,.14,0x4e7169);
     }
-    for(const z of [-15.5,15.5])this.box(300,.75,z,33,.15,.15,0x858e9c);
-    for(let i=0;i<8;i++){
-      const h=5+i%3*4;this.box(277+i*7,-11+h/2,34+i%2*7,5,h,5,0x536273);
-    }
-    this.vane=this.box(300,2,3,5,.32,.55,0xe39750);this.box(300,-.6,3,.25,5,.25,0x44546b,true);
-    this.hideSkin(0,[199,-2,9],'duct');
-    this.hideSkin(1,[255,-1.9,14.45],'locker');
-    this.hideSkin(2,[309,-1.9,4],'crack');
+    this.hideSkin(0,[199,-2,9]);this.hideSkin(1,[255,-1.9,14.45]);this.hideSkin(2,[309,roof+1.65,4]);
+    art.finish();
     this.cleanerGroup=new THREE.Group();this.cleanerGroup.position.set(252,-3.5,2);this.g.cena.add(this.cleanerGroup);
     const g=this.cleanerGroup;
     for(const x of [-.36,.36]){this.box(x,1.2,0,.55,2.4,.58,0x334660,false,g);this.box(x,.22,.18,.66,.4,.9,0x303342,false,g);}
@@ -126,14 +102,8 @@ window.SchoolCampus = class SchoolCampus {
     this.mist=Array.from({length:10},()=>{const drop=this.ball(0,0,0,.13,0x83ddd9);drop.visible=false;return drop;});
     this.warning.rotation.x=-Math.PI/2;this.warning.visible=false;
   }
-  hideSkin(index,pos,type){
+  hideSkin(index,pos){
     const [x,y,z]=pos,color=this.rules.secrets[index][2];
-    if(type==='duct'){
-      this.box(x,y+1.25,z,4,.25,3,0x739b7d,true);
-      for(const dz of [-1.5,1.5])this.box(x,y,z+dz,4,2.6,.25,0x739b7d,true);
-    }else if(type==='crack'){
-      for(const dx of [-1.3,1.3])this.box(x+dx,y+.2,z,1.3,3.2,4,0xbd866c,true);
-    }
     const mesh=this.mesh(new THREE.OctahedronGeometry(.4),color,x,y,z);
     this.secrets.push({id:this.rules.secrets[index][0],pos,mesh});
   }
@@ -142,12 +112,7 @@ window.SchoolCampus = class SchoolCampus {
   get shared(){return this.online?.campus;}
   nearby(pos,r){return this.rules.distance(this.player,pos)<r;}
   bound(pos,radius){
-    if(pos.x<175)return false;
-    const a=this.rules.areas.reduce((a,b)=>Math.abs(pos.x-a.x)<Math.abs(pos.x-b.x)?a:b);
-    pos.x=THREE.MathUtils.clamp(pos.x,a.x-17.6+radius,a.x+17.6-radius);
-    pos.z=THREE.MathUtils.clamp(pos.z,-15.6+radius,15.6-radius);
-    pos.y=THREE.MathUtils.clamp(pos.y,-3.46+radius,(a.name==='Cozinha'?6.7:10)-radius);
-    return true;
+    return this.rules.constrain(pos,radius);
   }
   action(){
     const peers=this.online?.members||[];
@@ -157,6 +122,8 @@ window.SchoolCampus = class SchoolCampus {
     if(portal)return {text:portal.gate&&!this.shared?.gate?'Atalho trancado • dois relés':portal.label,run:()=>{
       if(portal.gate&&!this.shared?.gate)return this.g.ui.toast('Atalho cooperativo. Use a escada da cozinha para chegar ao telhado.');
       const j=this.g.jogador;j.pos.fromArray(portal.dest);j.vel.set(0,0,0);j.foco.copy(j.pos);
+      j.yaw=j.yawV=j.yawPrev=portal.yaw;j.pitch=j.pitchV=0;
+      this.g.camera.position.copy(j.pos);j.olhar.copy(j.pos);j.camera3p(1);
       this.online?.sendState();this.g.ui.toast(this.rules.areaAt(j.pos.x)?.name||'Corredor');
     }};
     const secret=this.secrets.find(s=>s.mesh.visible&&this.nearby(s.pos,1.25));
@@ -164,7 +131,7 @@ window.SchoolCampus = class SchoolCampus {
       return {text:'Armário vigiado pela faxineira',run:()=>this.g.ui.toast('Vença a faxineira para recuperar o Cobre Polido.')};
     }
     if(secret)return {text:'Descoberta • '+this.rules.secrets.find(s=>s[0]===secret.id)[1],run:()=>this.g.desbloquear(secret.id)};
-    if(!this.online)return null;
+    if(!this.online || peers.filter(p=>p.state?.active&&!p.down).length<2)return null;
     let task,text;
     if(!this.shared?.file && this.nearby(this.rules.folder,3)){task='folder';text='Pegar a pasta enquanto um amigo distrai a professora';}
     else if(!this.shared?.file && this.nearby(this.g.mundo.humanos[0].alvo.toArray(),3.8)){task='distract';text='Distrair a professora para um amigo pegar a pasta';}
@@ -207,10 +174,10 @@ window.SchoolCampus = class SchoolCampus {
         circle.material=new THREE.MeshBasicMaterial({color:0xf35589,transparent:true,opacity:.38,depthWrite:false});
         circle.rotation.x=-Math.PI/2;this.healMeshes.push(circle);
       }
-      this.healMeshes[i].position.set(h.pos[0],-3.39,h.pos[2]);
+      this.healMeshes[i].position.set(h.pos[0],this.rules.floorAt(h.pos[0])+.11,h.pos[2]);
     });
     this.healMeshes.forEach((mesh,i)=>mesh.visible=i<allied.length);
-    if(data.heals.some(h=>h.owner!==this.online.id&&Math.hypot(h.pos[0]-g.jogador.pos.x,h.pos[2]-g.jogador.pos.z)<5&&g.jogador.pos.y<2.5)){
+    if(data.heals.some(h=>h.owner!==this.online.id&&Math.hypot(h.pos[0]-g.jogador.pos.x,h.pos[2]-g.jogador.pos.z)<5&&g.jogador.pos.y<this.rules.floorAt(h.pos[0])+6)){
       g.jogador.vida=Math.min(g.estado.vidaMax,g.jogador.vida+12*dt);
     }
   }
@@ -223,14 +190,26 @@ window.SchoolCampus = class SchoolCampus {
   }
   tick(dt){
     this.clock+=dt;const g=this.g,p=this.player,area=this.rules.areaAt(p[0]);
+    this.art.update(p[0]);
+    this.relays.forEach((light,i)=>{
+      const color=this.shared?.gate?0x8ddeae:(this.shared?.switches?.[i]?0xfbd371:this.orange);
+      if(light.material.emissive.getHex()!==color){light.material.color.setHex(color);light.material.emissive.setHex(color);}
+    });
     this.syncProps(dt);this.fileMesh.visible=!!this.online&&!this.shared?.file;
     this.secrets.forEach(s=>{s.mesh.visible=!g.estado.skins.includes(s.id);s.mesh.rotation.y+=dt;});
     this.points.filter(d=>d.gate).forEach(d=>{d.panel.visible=!this.shared?.gate;});
     if(area){
       g.ui.sala(area.name);
-      if(!this.firstVisit.has(area.name)){this.firstVisit.add(area.name);g.ui.toast({Pátio:'Siga as portas verdes. O aspersor liga em ciclos.',Cozinha:'Cuidado com o vapor. Pique a faxineira quando ela baixar a guarda.',Telhado:'Rajadas de vento passam pela antena. Procure uma fresta nas chaminés.'}[area.name]);}
+      if(!this.firstVisit.has(area.name)){this.firstVisit.add(area.name);g.ui.toast({Pátio:'A galeria coberta leva à cozinha. Cuidado com o aspersor.', 'Galeria coberta':'Atravesse a galeria para entrar na cozinha.', 'Escada de serviço':'Siga os degraus até o telhado.',Cozinha:'Cuidado com o vapor. Pique a faxineira quando ela baixar a guarda.',Telhado:'Rajadas de vento passam pela antena. Procure uma fresta nas chaminés.'}[area.name]);}
     }
-    const wet=Math.sin((this.shared?.time??this.clock)*1.4)>.1;this.water.visible=wet;this.steam.visible=!wet;this.vane.rotation.y=this.clock;
+    const wet=Math.sin((this.shared?.time??this.clock)*1.4)>.1;this.water.visible=wet;this.steam.visible=!wet;
+    this.water.rotation.y=this.clock*1.45;
+    if(!wet && area?.name==='Cozinha')this.steam.children.forEach((puff,i)=>{
+      const t=(this.clock*.46+i/5)%1, size=.18+.56*t;
+      puff.position.set(.36*Math.sin(t*5+i),3.55*t,.23*Math.cos(t*5+i));
+      puff.scale.set(size,size*.8,size);puff.material.opacity=.34*(1-t);
+    });
+    this.vane.rotation.y=.6+Math.sin(this.clock*1.4)*.42;
     if(wet&&Math.hypot(p[0]-200,p[2]-2)<1.6&&p[1]<2)this.hurt(9);
     if(!wet&&Math.hypot(p[0]-246,p[2]+10)<1.6&&p[1]<4)this.hurt(13);
     if(area?.name==='Telhado'&&Math.abs(p[2]-3)<3&&wet)g.jogador.vel.x+=14*dt;

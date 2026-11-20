@@ -44,3 +44,25 @@ test('poderes, pote, mancha e faxineira pertencem à sala',()=>{
   place(b,campus.cleanerHead);step(.05);assert.equal(room.campus.cleaner.phase,'aviso');act(b,'cleaner-bite');assert.equal(room.campus.cleaner.hp,180);
   step(1.7);assert.ok(b.log.some(m=>m.type==='cleaner-hit'));act(b,'cleaner-bite');assert.equal(room.campus.cleaner.hp,160);act(b,'cleaner-bite');assert.equal(room.campus.cleaner.hp,160);
 });
+
+test('galeria e escada conectam as três áreas com a mesma posição válida no cliente e na sala',()=>{
+  const {sanitizeState}=require('../server/rooms.cjs');
+  const pos={x:185,y:-2.9,z:0},seen=new Set();
+  function move(step,count){
+    for(let i=0;i<count;i++){
+      pos.x+=step;
+      assert.ok(campus.constrain(pos,.18));
+      seen.add(campus.areaAt(pos.x).name);
+      const xyz=[pos.x,pos.y,pos.z];
+      assert.ok(sanitizeState({pos:xyz,rot:[0,0,0,1]}));
+    }
+  }
+  move(.25,500);assert.equal(pos.x,310);assert.ok(pos.y>1);
+  move(-.25,500);assert.equal(pos.x,185);
+  assert.deepEqual([...seen],['Pátio','Galeria coberta','Cozinha','Escada de serviço','Telhado']);
+  for(const invalid of [[225,0,9],[275,0,12],[300,-2,4],[250,9,0]]){
+    assert.equal(sanitizeState({pos:invalid,rot:[0,0,0,1]}),null);
+  }
+  const blocked={x:220,y:1,z:10};campus.constrain(blocked,.18);
+  assert.ok(blocked.x<218 && blocked.z===10);
+});

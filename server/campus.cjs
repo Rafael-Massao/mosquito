@@ -110,7 +110,7 @@ class Campus {
   snapshot(){
     return {time:this.service.now()/1000,humans:this.humans.map(h=>[+h.x.toFixed(2),+h.z.toFixed(2),+h.yaw.toFixed(2),h.stun>0]),
       pots:this.pots.flatMap((p,i)=>p.changed?[[i,...p.pos.map(n=>+n.toFixed(2)),+p.angle.toFixed(2),p.spilled]]:[]),
-      cleaner:this.cleaner,heals:this.heals.map(h=>({pos:h.pos,owner:h.owner})),file:this.file,gate:this.gate};
+      cleaner:this.cleaner,heals:this.heals.map(h=>({pos:h.pos,owner:h.owner})),switches:this.buttons.map(b=>Boolean(b&&b.until>this.service.now())),file:this.file,gate:this.gate};
   }
 }
 module.exports=Campus;

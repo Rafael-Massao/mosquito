@@ -11,7 +11,7 @@ const dist=(a,b)=>Math.hypot(...a.map((n,i)=>n-b[i]));
 function sanitizeState(s){
  if(!s||!Array.isArray(s.pos)||s.pos.length!==3||!s.pos.every(finite)||!Array.isArray(s.rot)||s.rot.length!==4||!s.rot.every(finite))return null;
  const norm=Math.hypot(...s.rot);if(norm<.9||norm>1.1)return null;
- if(s.pos[0]<-120||(s.pos[0]>159 && !(rules.areaAt(s.pos[0]) && Math.abs(s.pos[2])<16.5))||s.pos[1]<-4||s.pos[1]>14||Math.abs(s.pos[2])>110)return null;
+ if(s.pos[0]<-120||(s.pos[0]>159 && !rules.validPosition(s.pos))||s.pos[1]<-4||(s.pos[0]<=159&&s.pos[1]>14)||Math.abs(s.pos[2])>110)return null;
  const nv={};for(const k of ['asas','tromba','estomago','corpo'])nv[k]=clamp(Math.floor(Number(s.nv?.[k])||0),0,30);
  if(Object.values(nv).some(v=>!finite(v)))return null;
  return {pos:s.pos,rot:s.rot.map(v=>v/norm),nv,skin:SKINS.has(s.skin)?s.skin:null,mantis:PARTS.filter(id=>Array.isArray(s.mantis)&&s.mantis.includes(id)),pixelCor:/^#[\da-f]{6}$/i.test(s.pixelCor)?s.pixelCor:'#e8294b',auraTusk:s.auraTusk!==false,active:s.active===true,door:s.door===true,speed:finite(s.speed)?clamp(s.speed,0,80):0,health:finite(s.health)?clamp(s.health,0,1):1};

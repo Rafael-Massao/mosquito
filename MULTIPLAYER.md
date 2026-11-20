@@ -11,7 +11,7 @@ O jogo agora tem salas de até **4 jogadores**, com código de 6 caracteres. O m
 
 Na Sala 1, um jogador usa Pegar junto à professora enquanto outro recolhe a pasta da chamada. No pátio, dois jogadores acionam relés diferentes para abrir o atalho do telhado. O diário mostra o andamento dessas missões durante a sessão.
  
-Um aliado próximo pode usar Pegar para reanimar quem caiu em até 12 segundos. A tinta cura amigos na poça, o Cadeado concede escudo aos aliados próximos e o som da Carreta atordoa os inimigos. A cozinha abriga a faxineira e suas poças perigosas. As áreas e as três skins secretas também são acessíveis no solo pela entrada oeste do corredor.
+Um aliado próximo pode usar Pegar para reanimar quem caiu em até 12 segundos. A tinta cura amigos na poça, o Cadeado concede escudo aos aliados próximos e o som da Carreta atordoa os inimigos. A cozinha abriga a faxineira e suas poças perigosas. A porta na ponta oeste do corredor leva ao pátio. Atravesse a galeria coberta para chegar à cozinha e suba pela escada de serviço até o telhado. Esse percurso e as três skins secretas ficam disponíveis no solo. A aba Ala oeste do mapa mostra as passagens, os relés e a sua posição.
  
 Cada jogador mantém seu próprio sangue, upgrades, inventário, missões e conquistas no navegador. A sala compartilha os trajetos dos humanos, os potes do laboratório e da sala de artes e as poças derramadas. As coletas das missões individuais pertencem ao respectivo jogador. Não há combate entre jogadores.
 

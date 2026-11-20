@@ -6,7 +6,37 @@
     { name: 'Cozinha', x: 250, color: 0xb7c9bd },
     { name: 'Telhado', x: 300, color: 0xaa7764 }
   ];
-  const areaAt = x => areas.find(area => Math.abs(x - area.x) <= 19);
+  const gallery = { name:'Galeria coberta' }, stairs = { name:'Escada de serviço' };
+  function areaAt(x) {
+    if (x < 182 || x > 318) return;
+    if (x < 218) return areas[0];
+    if (x < 232) return gallery;
+    if (x <= 268) return areas[1];
+    if (x < 282) return stairs;
+    return areas[2];
+  }
+  // A escada tem quatorze degraus. A mesma cota orienta o voo, os efeitos e a rede.
+  const floorAt = x => -3.5 + Math.min(14, Math.max(0, Math.floor(x - 268) + 1)) * .32;
+  const ceilingAt = x => x>=232 && x<=268 ? 6.65 : floorAt(x)+13.45;
+  const footprint = [[182,218,16],[232,268,16],[282,318,16],[182,318,3.45]];
+  const clamp = (v,min,max) => Math.max(min,Math.min(max,v));
+  function constrain(pos,radius) {
+    if (pos.x < 175) return false;
+    let best=Infinity, x=pos.x, z=pos.z;
+    for (const [left,right,depth] of footprint) {
+      const px=clamp(pos.x,left+radius,right-radius);
+      const pz=clamp(pos.z,-depth+radius,depth-radius);
+      const distance=(px-pos.x)**2+(pz-pos.z)**2;
+      if (distance<best) { best=distance; x=px; z=pz; }
+    }
+    pos.x=x; pos.z=z;
+    pos.y=clamp(pos.y,floorAt(x)+radius+.02,ceilingAt(x)-radius);
+    return true;
+  }
+  function validPosition([x,y,z]) {
+    return footprint.some(([left,right,depth])=>x>=left && x<=right && Math.abs(z)<=depth)
+      && y>=floorAt(x)-.1 && y<=ceilingAt(x)+.1;
+  }
   const distance = (a,b) => Math.hypot(a[0]-b[0], a[1]-b[1], a[2]-b[2]);
   const switches = [[192,1,-10],[208,1,-10]];
   const folder = [-44,0,-82];
@@ -43,6 +73,6 @@
     c.hp=Math.max(0,c.hp-20-Math.min(15,level));if(!c.hp)c.phase='vencida';
     return true;
   }
-  const api={areas,areaAt,distance,switches,folder,cleanerHead,secrets,cleaner,stepCleaner,biteCleaner};
+  const api={areas,areaAt,floorAt,constrain,validPosition,distance,switches,folder,cleanerHead,secrets,cleaner,stepCleaner,biteCleaner};
   if(typeof module==='object'&&module.exports)module.exports=api;else root.EscolaCampus=api;
 })(globalThis);
