@@ -327,3 +327,57 @@ body.boss-active:not(.hx-mobile) #hx .hx-combo{top:110px}
 .puzzle-feedback{font-size:.8rem;line-height:1.35;color:#ffb5ad;margin:8px 0 0;min-height:1.35em}.puzzle-feedback[data-certo="true"]{color:#9bf0b4}.puzzle-close{display:block;width:100%;margin-top:14px}.puzzle-modal[data-modo="pistas"] .puzzle-entry{display:none}.puzzle-modal[data-modo="pistas"] .puzzle-content{grid-template-columns:1fr}
 @media(max-width:560px) and (orientation:portrait){.puzzle-modal section{padding:14px}.puzzle-content{grid-template-columns:1fr;gap:10px}.puzzle-notes{grid-template-columns:1fr 1fr}.puzzle-notes li{padding:7px}.puzzle-notes b{font-size:.75rem}.puzzle-notes small{font-size:.7rem}.puzzle-modal header p{margin-bottom:10px}}
 @media(max-aspect-ratio:11/10){.hx-mobile.boss-active #hx .hx-combo{top:calc(env(safe-area-inset-top) + 292px)}}
+
+/* HUD compacto para celulares: evolução no rodapé, sem cartões altos. */
+.hx-mobile{--joy-size:80px;--action-size:44px;--dock-gap:6px}
+.hx-mobile #hx .hx-status{height:54px;box-sizing:border-box;padding:6px 9px;gap:7px;border-radius:12px}
+.hx-mobile #hx .hx-skin{width:30px;height:30px;font-size:1.1rem;border-radius:8px}
+.hx-mobile #hx .hx-info b{font-size:.76rem}
+.hx-mobile #hx .hx-info small{font-size:.6rem}
+.hx-mobile #hx .hx-prog{height:3px;margin:3px 0 2px}
+.hx-mobile #hx .hx-sangue span{font-size:1.3rem}
+.hx-mobile #hx .hx-sangue small{font-size:.55rem}
+.hx-mobile #hx .hx-barras{top:calc(env(safe-area-inset-top) + 68px);left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));width:auto;max-width:none;padding:6px 9px;gap:4px;box-sizing:border-box;border-radius:10px}
+.hx-mobile #hx .hx-barra{font-size:.6rem;grid-template-columns:14px 1fr 44px}
+.hx-mobile #hx .hx-trilho{height:5px}
+.hx-mobile .mt-toolbar{top:calc(env(safe-area-inset-top) + 112px);gap:5px}
+.hx-mobile #hx-touch .mt-toolbar button{height:44px;min-height:44px;width:44px}
+.hx-mobile #hx-touch .mt-toolbar .mt-collection{width:auto;padding:0 8px;font-size:.65rem}
+.hx-mobile #mt-stick{bottom:calc(env(safe-area-inset-bottom) + 22px)}
+.hx-mobile .mt-actions{bottom:calc(env(safe-area-inset-bottom) + 12px)}
+.hx-mobile #hx-touch .mt-actions button{height:46px;min-height:44px;font-size:.6rem}
+.hx-mobile .mt-actions span{font-size:1.1rem}
+.hx-mobile #hx .hx-ups{left:calc(max(8px,env(safe-area-inset-left)) + var(--joy-size) + 6px);right:calc(max(8px,env(safe-area-inset-right)) + var(--action-size)*2 + 10px);bottom:calc(env(safe-area-inset-bottom) + 12px);grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;max-width:440px}
+.hx-mobile #hx .hx-up{height:46px;min-height:46px;box-sizing:border-box;padding:4px;gap:1px;border-radius:8px;grid-template-columns:1fr auto;align-content:center;box-shadow:none}
+.hx-mobile #hx .hx-up-nome{grid-column:1/-1;font-size:.63rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hx-mobile #hx .hx-up-nivel{font-size:.55rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hx-mobile #hx .hx-up-custo{font-size:.57rem;white-space:nowrap}
+.hx-mobile #hx .hx-up-ico,.hx-mobile #hx .hx-pips{display:none}
+.hx-mobile #hx .hx-hab{bottom:calc(env(safe-area-inset-bottom) + 114px);padding:4px 7px;gap:4px;max-width:150px;border-radius:8px}
+.hx-mobile #hx .hx-hab-ring{display:none}
+.hx-mobile #hx .hx-hab b{font-size:.63rem}
+.hx-mobile #hx .hx-hab small{font-size:.57rem}
+.hx-mobile #hx #hx-fps,.hx-mobile #mt-look-hint{display:none}
+.hx-mobile #hx .hx-combo,.hx-mobile.boss-active #hx .hx-combo{top:calc(env(safe-area-inset-top) + 114px);left:8px;right:auto;min-width:66px;padding:3px 7px}
+.hx-mobile #hx .hx-combo b{font-size:.9rem}
+.hx-mobile #hx .hx-combo span{font-size:.56rem}
+.hx-mobile #hud-alerta{top:calc(env(safe-area-inset-top) + 166px)!important;font-size:.72rem!important}
+.hx-mobile #mt-panel{top:calc(env(safe-area-inset-top) + 162px);max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 176px)}
+.hx-mobile .boss-hud{top:calc(env(safe-area-inset-top) + 192px);padding:6px 9px}
+.hx-mobile .boss-hud>div:first-child{font-size:.68rem}
+.hx-mobile .boss-hud small{font-size:.6rem}
+.hx-mobile .boss-track{margin:4px 0;height:5px}
+@media(min-aspect-ratio:11/10){
+ .hx-mobile #hx .hx-status{width:min(310px,40vw);right:auto}
+ .hx-mobile #hx .hx-barras{left:auto;right:max(8px,env(safe-area-inset-right));top:calc(env(safe-area-inset-top) + 8px);width:min(240px,34vw)}
+ .hx-mobile .mt-toolbar{top:calc(env(safe-area-inset-top) + 60px)}
+ .hx-mobile #hx .hx-ups{grid-template-columns:repeat(4,minmax(0,1fr));bottom:calc(env(safe-area-inset-bottom) + 12px)}
+ .hx-mobile #hx .hx-up{height:52px;min-height:52px;grid-template-columns:1fr;padding:4px 5px}
+ .hx-mobile #hx .hx-up-nome{font-size:.66rem}
+ .hx-mobile #hx .hx-up-nivel,.hx-mobile #hx .hx-up-custo{font-size:.6rem}
+ .hx-mobile #hx .hx-hab{bottom:calc(env(safe-area-inset-bottom) + 112px)}
+ .hx-mobile #hx .hx-combo,.hx-mobile.boss-active #hx .hx-combo{top:calc(env(safe-area-inset-top) + 66px)}
+ .hx-mobile #hud-alerta{top:calc(env(safe-area-inset-top) + 108px)!important}
+ .hx-mobile #mt-panel{top:calc(env(safe-area-inset-top) + 110px);max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 122px)}
+ .hx-mobile .boss-hud{top:auto;bottom:calc(env(safe-area-inset-bottom) + 110px);width:min(300px,44vw)}
+}
