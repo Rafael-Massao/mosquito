@@ -1,6 +1,6 @@
 'use strict';
 const {randomInt,randomUUID}=require('node:crypto');
-const SKINS=new Set('pixel dengue relojoeiro radioativo jogador fantasma vampiro mosquito carreta eletrizado pintado extintor cadeado tusk mosquito8000 encadernado raquete astronauta'.split(' '));
+const SKINS=new Set('pixel dengue relojoeiro radioativo jogador fantasma vampiro mosquito carreta eletrizado pintado extintor cadeado tusk mosquito8000 encadernado raquete astronauta faxineira'.split(' '));
 const Campus = require('./campus.cjs');
 const rules = require('../campus-rules.js');
 for (const [id] of rules.secrets) SKINS.add(id);
@@ -36,7 +36,7 @@ class RoomService{
   room.players.set(peer.id,peer);room.emptySince=0;
   this.send(peer,{type:'welcome',id:peer.id,code:room.code,maxPlayers:4,protocol:rules.protocol});this.snapshot(room);
  }
- leave(peer){const room=peer.room;if(!room)return;room.players.delete(peer.id);peer.room=null;if(!room.players.size)room.emptySince=this.now();else this.snapshot(room);}
+ leave(peer){const room=peer.room;if(!room)return;room.players.delete(peer.id);room.campus.cleanerParticipants.delete(peer.id);peer.room=null;if(!room.players.size)room.emptySince=this.now();else this.snapshot(room);}
  message(peer,m){
   if(!m||typeof m!=='object')return;
   if(m.type==='create'||m.type==='join'){

@@ -40,11 +40,11 @@ window.CampusScenery = class CampusScenery {
   }
   block(...args){this.piece('block',...args);}
   drum(...args){this.piece('drum',...args);}
-  beam(a,b,width,depth,color){
+  beam(a,b,width,depth,color,solid=false){
     const start=new THREE.Vector3(...a), end=new THREE.Vector3(...b), delta=end.clone().sub(start);
     const mid=start.add(end).multiplyScalar(.5),rot=new THREE.Euler().setFromQuaternion(
       new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),delta.clone().normalize()));
-    this.block(mid.x,mid.y,mid.z,width,delta.length(),depth,color,false,rot.y,rot.z,rot.x);
+    this.block(mid.x,mid.y,mid.z,width,delta.length(),depth,color,solid,rot.y,rot.z,rot.x);
   }
   finish(){
     for(const {sector,shape,parts} of this.batches.values()){
@@ -611,10 +611,10 @@ window.CampusScenery = class CampusScenery {
       this.beam([flight.from,low-.64,z],[flight.to,low+flight.rise-.64,z],.35,w,0xa6a095);
       for(const side of [-1,1]){
         const edge=z+side*(w/2-.095);
-        this.beam([flight.from,low+1.78,edge],[flight.to,low+flight.rise+1.78,edge],.13,.13,iron);
+        this.beam([flight.from,low+1.78,edge],[flight.to,low+flight.rise+1.78,edge],.13,.13,iron,true);
         for(let i=0;i<=flight.steps;i+=4){
           const x=flight.from+i*dx,top=low+i*rise;
-          this.block(x,top+.85,edge,.13,1.8,.13,iron);
+          this.block(x,top+.85,edge,.13,1.8,.13,iron,true);
         }
       }
       const up=flight.from>flight.to,finish=up?flight.to:flight.from;

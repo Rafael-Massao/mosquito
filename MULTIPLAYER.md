@@ -11,7 +11,7 @@ O jogo agora tem salas de até **4 jogadores**, com código de 6 caracteres. O m
 
 Na Sala 1, um jogador usa Pegar junto à professora enquanto outro recolhe a pasta da chamada. No pátio, dois jogadores acionam relés diferentes para liberar a grade do duto entre o térreo e o terraço. O diário mostra o andamento dessas missões durante a sessão.
  
-Um aliado próximo pode usar Pegar para reanimar quem caiu em até 12 segundos. A tinta cura amigos na poça, o Cadeado concede escudo aos aliados próximos e o som da Carreta atordoa os inimigos. A faxineira está na zeladoria, no fundo do pátio do térreo. O vapor do fogão fica na cozinha ao lado da quadra.
+Um aliado próximo pode usar Pegar para reanimar quem caiu em até 12 segundos. A tinta cura amigos na poça, o Cadeado concede escudo aos aliados próximos e o som da Carreta atordoa os inimigos. A faxineira está na zeladoria, no fundo do pátio do térreo. Ao vencê-la, os participantes conectados recebem a Mosquita da Faxina. O Banho de Espuma limpa as poças próximas na zeladoria para toda a sala. O Vaga-lume Neon fica escondido atrás dos armários. O vapor do fogão fica na cozinha ao lado da quadra.
 
 O jogo começa no corredor do **1º andar**. Na ponta oposta à Sala 3 fica a escada central. Ela desce para o **térreo**, onde ficam o pátio, a cozinha e a zeladoria, e sobe para o **terraço**, sobre o corredor. A escada dá acesso aos três níveis tanto no solo quanto no cooperativo. Os relés liberam um segundo caminho pelo duto. A planta abre no andar atual e permite consultar os outros dois. As três skins secretas podem ser obtidas no solo.
 

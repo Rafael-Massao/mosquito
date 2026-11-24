@@ -125,3 +125,42 @@ test('a altura máxima segue o teto do terraço e o raio usado para colidir',()=
   assert.equal(campus.atFlightCeiling([campus.shaft.x,campus.roof.top-.18,campus.shaft.z],.18),false);
   assert.equal(campus.validPosition([4,campus.roof.top+1,0]),false);
 });
+
+test('a superfície da escada acompanha o voo sem saltos nos espelhos dos degraus',()=>{
+  for(const flight of campus.flights){
+    for(const radius of [.075,.18,.1875]){
+      const p={x:flight.from,y:flight.floor+radius+.01,z:flight.z};
+      for(let i=1;i<=200;i++){
+        const old=p.y;
+        p.x=flight.from+(flight.to-flight.from)*i/200;
+        campus.constrain(p,radius);
+        assert.ok(p.y-old<.055,'salto ao subir o degrau');
+        assert.ok(p.y>=flight.floor+campus.stepOffset(flight,p.x)+radius-.001);
+        assert.ok(campus.validPosition([p.x,p.y,p.z]));
+      }
+      assert.ok(Math.abs(p.y-flight.floor-flight.rise-radius-.01)<.055);
+    }
+  }
+});
+
+test('a vitória da faxineira premia uma vez cada participante conectado',()=>{
+  const {a,b,room,service,place,act,join,step}=setup();join();
+  const spectator={log:[]};service.join(spectator,room.code,'C');place(spectator,[0,2,0]);
+  place(a,campus.cleanerHead);place(b,campus.cleanerHead);step(.1);
+  room.campus.cleaner.hp=20;room.campus.cleaner.phase='cansada';
+  act(a,'cleaner-bite');step(1);act(b,'cleaner-bite');
+  for(const p of [a,b])assert.equal(p.log.filter(m=>m.type==='cleaner-win').length,1);
+  assert.ok(!spectator.log.some(m=>m.type==='cleaner-win'));
+  for(const skin of ['neon','faxineira']){
+    place(a,campus.cleanerHead,skin);assert.equal(a.state.skin,skin);
+  }
+});
+
+test('espuma limpa as poças próximas para a sala e respeita a recarga',()=>{
+  const {a,room,place,act}=setup();
+  place(a,campus.cleanerHead,'faxineira');
+  room.campus.cleaner.pools=[{x:66,z:1,time:7},{x:77,z:5,time:7}];
+  act(a,'team-power');assert.deepEqual(room.campus.snapshot().cleaner.pools.map(p=>p.x),[77]);
+  place(a,[77,campus.cleanerHead[1],5],'faxineira');act(a,'team-power');
+  assert.equal(room.campus.cleaner.pools.length,1);
+});

@@ -75,6 +75,7 @@
    else if(m.type==='revived' && this.active && this.fallen){this.fallen=false;this.g.jogador.vida=this.g.estado.vidaMax*.45;this.g.jogador.invul=3;this.g.ui.toast('Seu amigo te reanimou!');}
    else if(m.type==='shield' && this.active){this.g.jogador.escudo=Math.max(this.g.jogador.escudo,5);this.g.ui.toast('Cadeado aliado • escudo por 5 s');}
    else if(m.type==='lab-fall' && this.active)this.g.ganhar('pote_caido');
+   else if(m.type==='cleaner-win' && this.active)this.g.desbloquear('faxineira');
    else if(m.type==='cleaner-hit' && this.active && this.g.jogando && !this.g.menuAberto)this.g.campus.hurt(m.damage);
    else if(m.type==='notice')this.g.ui.toast(m.message);
    else if(m.type==='hit'&&this.active&&this.g.jogando&&!this.g.menuAberto&&!document.hidden){

@@ -19,7 +19,7 @@ function makePots(){
 class Campus {
   constructor(service){
     this.service=service;this.humans=routes.map(([x,z])=>({x,z,forward:true,yaw:0,stun:0}));
-    this.pots=makePots();this.cleaner=rules.cleaner();this.heals=[];
+    this.pots=makePots();this.cleaner=rules.cleaner();this.cleanerParticipants=new Set();this.heals=[];
     this.file=false;this.gate=false;this.buttons=[null,null];this.distraction=null;
   }
   live(room){return [...room.players.values()].filter(p=>this.service.active(p));}
@@ -40,9 +40,10 @@ class Campus {
         ally.downUntil=0;ally.state.health=.45;this.service.send(ally,{type:'revived'});this.notice(p,'Amigo de volta ao voo!');
       }
     }else if(m.type==='team-power'){
-      const skin=p.state.skin,cd={carreta:20,cadeado:20,pintado:24}[skin];
+      const skin=p.state.skin,cd={carreta:20,cadeado:20,pintado:24,faxineira:22}[skin];
       if(!cd || now<(p.powerAt||0))return;
       p.powerAt=now+cd*1000;
+      if(skin==='faxineira')rules.clearCleanerPools(this.cleaner,pos);
       if(skin==='pintado')this.heals.push({pos:[...pos],end:now+8000,owner:p.id});
       if(skin==='cadeado')for(const ally of teammates)if(ally!==p&&rules.sameLevel(pos,ally.state.pos)&&distance(pos,ally.state.pos)<9)this.service.send(ally,{type:'shield'});
       if(skin==='carreta'){
@@ -50,7 +51,13 @@ class Campus {
         if(rules.areaAt(...pos)===rules.cleaning&&distance(pos,rules.cleanerHead)<22&&this.cleaner.hp>0){this.cleaner.stun=2;this.cleaner.phase='cansada';}
       }
     }else if(m.type==='cleaner-bite' && now>=(p.cleanerBiteAt||0)){
-      if(rules.biteCleaner(this.cleaner,pos,p.state.nv.tromba)){p.cleanerBiteAt=now+850;this.notice(p,this.cleaner.hp?'Picada certeira!':'Faxineira vencida!');}
+      if(rules.biteCleaner(this.cleaner,pos,p.state.nv.tromba)){
+        p.cleanerBiteAt=now+850;this.cleanerParticipants.add(p.id);
+        if(this.cleaner.hp)this.notice(p,'Picada certeira!');
+        else for(const peer of room.players.values()){
+          if(this.cleanerParticipants.has(peer.id))this.service.send(peer,{type:'cleaner-win'});
+        }
+      }
     }else if(m.type==='campus-task'){
       if(teammates.length<2)return this.notice(p,'Esta missão precisa de dois jogadores ativos na sala.');
       const h=this.humans[0];
@@ -103,6 +110,7 @@ class Campus {
       pot.angle+=Math.hypot(v[0],v[2])*dt*1.1;
     }
     const targets=players.filter(p=>rules.areaAt(...p.state.pos)===rules.cleaning).map(p=>({p,pos:p.state.pos}));
+    if(this.cleaner.hp>0)for(const {p} of targets)this.cleanerParticipants.add(p.id);
     rules.stepCleaner(this.cleaner,dt,targets,({p},damage)=>{
       if(now<(p.wetUntil||0))return;p.wetUntil=now+950;this.service.send(p,{type:'cleaner-hit',damage});
     });

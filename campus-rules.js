@@ -1,7 +1,7 @@
 // A escada, a planta e a simulação da sala usam as mesmas cotas e o mesmo espaço de voo.
 (function (root) {
   'use strict';
-  const protocol=4;
+  const protocol=5;
   const ground=-21.5, first=-3.5, terrace=14.12;
   const levels=[
     {id:'ground',name:'Térreo',floor:ground},
@@ -29,13 +29,13 @@
   const landings=[], flights=[];
   const east=-126,west=-146,steps=20,flightHeight=7.7;
   for(const level of levels){
-    landings.push(room('Escada central',level.id,[-127,-120,-8,8],level.floor,level.floor+flightHeight));
+    landings.push(room('Escada central',level.id,[east,-120,-8,8],level.floor,level.floor+flightHeight));
     entrances.push(room('Entrada da escada',level.id,[-121.5,-116,-3.8,3.8],level.floor,level.floor+7.1));
     if(level.id!=='first')entrances.push(room('Acesso ao duto',level.id,[-124.5,-116,12,16.8],level.floor,level.floor+6.5));
   }
   for(let i=0;i<levels.length-1;i++){
     const bottom=levels[i],upper=levels[i+1],half=(bottom.floor+upper.floor)/2;
-    landings.push(room('Patamar da escada',bottom.id,[-154,-145,-8,8],half,half+flightHeight));
+    landings.push(room('Patamar da escada',bottom.id,[-154,west,-8,8],half,half+flightHeight));
     for(const outward of [true,false]){
       const low=outward?bottom.floor:half,high=outward?half:upper.floor;
       const flight=room('Escada central',outward?bottom.id:upper.id,
@@ -54,10 +54,14 @@
     const t=clamp((x-cell.from)/(cell.to-cell.from),0,1);
     return Math.min(cell.steps,Math.floor(t*cell.steps+1e-8))*cell.rise/cell.steps;
   }
+  // A rampa de contato acompanha o topo dos degraus sem prender a esfera no espelho.
+  function rampOffset(cell,x){
+    return cell.steps?clamp((x-cell.from)/(cell.to-cell.from),0,1)*cell.rise:0;
+  }
   function locate(x,y,z,cells,tolerance=0){
     for(const cell of cells){
       if(!contains(cell.box,x,z))continue;
-      const dy=stepOffset(cell,x);
+      const dy=rampOffset(cell,x);
       if(y>=cell.floor+dy-tolerance&&y<=cell.top+dy+tolerance)return cell;
     }
   }
@@ -68,7 +72,7 @@
   }
   function floorAt(x,y,z){
     const cell=areaAt(x,y,z);
-    return cell?cell.floor+stepOffset(cell,x):first;
+    return cell?cell.floor+rampOffset(cell,x):first;
   }
   function sameLevel(a,b){return levelAt(...a)===levelAt(...b);}
   function atFlightCeiling([x,y,z],radius){
@@ -84,7 +88,7 @@
       const pz=clamp(pos.z,b[2]+radius,b[3]-radius);
       const flat=(px-pos.x)**2+(pz-pos.z)**2;
       if(flat>=best)continue;
-      const dy=stepOffset(cell,px),py=clamp(pos.y,cell.floor+dy+radius+.01,cell.top+dy-radius);
+      const dy=rampOffset(cell,px),py=clamp(pos.y,cell.floor+dy+radius+.01,cell.top+dy-radius);
       const cost=flat+(py-pos.y)**2;
       if(cost===0)return true;
       // Ao sair do patamar, um espelho de degrau deve levantar o mosquito antes que
@@ -101,11 +105,15 @@
   const sprinkler=[-80,ground+.58,-13],steam=[-34.25,ground+3.9,36],vane=[57,terrace+5.45,-10];
   const secrets=[
     ['folhagem','Folha Seca',0x4d8049,0xbadc87,'Procure o duto verde junto aos bancos do pátio, no térreo.'],
-    ['cobre','Cobre Polido',0xa9603a,0xffb569,'Vença a faxineira e procure atrás dos armários da zeladoria no térreo.'],
+    ['neon','Vaga-lume Neon',0x25515c,0xcfef56,'Vença a faxineira e procure atrás dos armários da zeladoria no térreo.'],
     ['ardosia','Asa de Ardósia',0x435274,0xb8dafa,'Passe pela fresta entre os respiradouros perto do mirante do terraço.']
   ];
   const hidingPlaces=[[-67,ground+1.52,13],[77.2,ground+1.6,-10],[77,terrace+1.65,9]];
   function cleaner() { return { hp:180, phase:'espera', time:0, turn:0, aim:[...cleanerHead], pools:[], stun:0 }; }
+  function clearCleanerPools(c,pos){
+    if(areaAt(...pos)!==cleaning)return;
+    c.pools=c.pools.filter(pool=>Math.hypot(pool.x-pos[0],pool.z-pos[2])>7);
+  }
   function stepCleaner(c,dt,targets,hit) {
     c.pools.forEach(p=>p.time-=dt);
     c.pools=c.pools.filter(p=>p.time>0);
@@ -134,6 +142,6 @@
   }
   const api={protocol,levels,ground,first,terrace,main,arena,courtyard,kitchen,cleaning,roof,shaft,
     landings,flights,gateY,gateDepth,stepOffset,areaAt,levelAt,inSchool,floorAt,sameLevel,constrain,
-    validPosition,atFlightCeiling,distance,switches,folder,cleanerHead,secrets,hidingPlaces,sprinkler,steam,vane,cleaner,stepCleaner,biteCleaner};
+    validPosition,atFlightCeiling,distance,switches,folder,cleanerHead,secrets,hidingPlaces,sprinkler,steam,vane,cleaner,clearCleanerPools,stepCleaner,biteCleaner};
   if(typeof module==='object'&&module.exports)module.exports=api;else root.EscolaCampus=api;
 })(globalThis);

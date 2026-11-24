@@ -15,6 +15,15 @@ window.SchoolCampus = class SchoolCampus {
     this.orange=0xf3a545;
     this.materials=new Map();
     this.createRooms();
+    this.cleanerHud=game.mundo.chefe.hud.cloneNode(true);
+    this.cleanerHud.setAttribute('aria-label','Chefe da zeladoria');
+    this.cleanerHud.querySelector('b').textContent='🧹 FAXINEIRA';
+    this.cleanerTrack=this.cleanerHud.querySelector('[role="progressbar"]');
+    this.cleanerTrack.setAttribute('aria-valuemax',String(this.localCleaner.hp));
+    this.cleanerLife=this.cleanerHud.querySelector('.boss-hp');
+    this.cleanerBar=this.cleanerTrack.querySelector('i');
+    this.cleanerHint=this.cleanerHud.querySelector('small');
+    document.body.appendChild(this.cleanerHud);
     this.bodies=[...game.mundo.lab.corpos,...game.mundo.tintas.corpos];
     this.origins=this.bodies.map(b=>b.g.position.clone());
   }
@@ -119,8 +128,8 @@ window.SchoolCampus = class SchoolCampus {
     const ally=peers.find(p=>p.down&&p.id!==this.online.id&&p.state&&this.nearby(p.state.pos,3.5)&&this.rules.sameLevel(this.player,p.state.pos));
     if(ally)return {text:'Reanimar '+ally.name,run:()=>this.online.send({type:'rescue',id:ally.id})};
     const secret=this.secrets.find(s=>s.mesh.visible&&this.nearby(s.pos,1.25));
-    if(secret?.id==='cobre' && (this.shared?.cleaner||this.localCleaner).hp>0){
-      return {text:'Armário vigiado pela faxineira',run:()=>this.g.ui.toast('Vença a faxineira para recuperar o Cobre Polido.')};
+    if(secret?.id==='neon' && (this.shared?.cleaner||this.localCleaner).hp>0){
+      return {text:'Armário vigiado pela faxineira',run:()=>this.g.ui.toast('Vença a faxineira para encontrar o Vaga-lume Neon.')};
     }
     if(secret)return {text:'Descoberta • '+this.rules.secrets.find(s=>s[0]===secret.id)[1],run:()=>this.g.desbloquear(secret.id)};
     if(!this.online || peers.filter(p=>p.state?.active&&!p.down).length<2)return null;
@@ -137,8 +146,27 @@ window.SchoolCampus = class SchoolCampus {
     const c=this.shared?.cleaner||this.localCleaner;if(!c.hp)return false;
     if(c.phase!=='cansada'){this.g.ui.toast('Espere a faxineira baixar o spray.');return true;}
     if(this.online){this.online.sendState();this.online.send({type:'cleaner-bite'});}
-    else if(this.clock>=this.biteAt||!this.biteAt){this.rules.biteCleaner(c,this.player,this.g.estado.nv.tromba);this.biteAt=this.clock+.85;this.g.audio.picada();}
+    else if(this.clock>=this.biteAt||!this.biteAt){if(this.rules.biteCleaner(c,this.player,this.g.estado.nv.tromba)&&!c.hp)this.g.desbloquear('faxineira');this.biteAt=this.clock+.85;this.g.audio.picada();}
     return true;
+  }
+  showCleanerHud(playing){
+    const c=this.shared?.cleaner||this.localCleaner;
+    const visible=playing&&c.hp>0&&this.rules.areaAt(...this.player)===this.rules.cleaning;
+    this.cleanerHud.hidden=!visible;
+    if(visible){
+      const key=c.hp+'|'+c.phase+'|'+c.attack;
+      if(this.cleanerHudKey!==key){
+        this.cleanerHudKey=key;
+        const max=this.cleanerTrack.getAttribute('aria-valuemax');
+        this.cleanerLife.textContent=c.hp+'/'+max;
+        this.cleanerTrack.setAttribute('aria-valuenow',String(c.hp));
+        this.cleanerBar.style.width=(100*c.hp/max)+'%';
+        this.cleanerHud.dataset.fase=c.phase==='cansada'?'cansado':c.phase;
+        this.cleanerHint.textContent=c.phase==='cansada'?'🩸 Vulnerável! Pique a cabeça agora.':
+          c.phase==='aviso'?(c.attack==='spray'?'⚠ Spray! Saia da área marcada.':'⚠ Pano! Afaste-se da faxineira.'):'Desvie dos ataques e espere a abertura.';
+      }
+    }
+    return visible;
   }
   hurt(amount){
     if(this.clock<this.hitAt||this.g.online?.fallen)return;
@@ -247,6 +275,6 @@ window.SchoolCampus = class SchoolCampus {
     else if(area===roof&&!g.estado.skins.includes('astronauta')&&p[1]>roof.floor+9){
       g.eggMsg='Teto de Voo · altitude '+Math.floor(p[1]-roof.floor)+' / '+(roof.top-roof.floor);
     }
-    else if(area===this.rules.cleaning)g.eggMsg=c.hp?'Faxineira · '+c.hp+'/180 · '+(c.phase==='aviso'?'Desvie do '+c.attack:c.phase==='cansada'?'Pique agora!':'Prepare-se'):'Faxineira vencida • zeladoria livre';
+    else if(area===this.rules.cleaning&&!c.hp)g.eggMsg='Faxineira vencida • zeladoria livre';
   }
 };

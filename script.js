@@ -210,13 +210,27 @@ const skinsDaPlatina = Object.keys(CFG.SKINS);
 const poderesDaPlatina = Object.keys(HABS);
 for (const [id,nome,corpo,brilho,dica] of window.EscolaCampus?.secrets || []) {
   CFG.SKINS[id]={nome,corpo,abd:corpo,perna:0x423c35,brilho,asa:brilho,ei:.18,dica,attr:{}};
-  SKIN_ICO[id]={folhagem:'🍃',cobre:'🟠',ardosia:'🪶'}[id];
-  HABS[id]=HABS.padrao;
+  SKIN_ICO[id]={folhagem:'🍃',neon:'💡',ardosia:'🪶'}[id];
 }
 if(window.EscolaCampus){
   CFG.SKINS.astronauta={nome:'Mosquito Astronauta',corpo:0xdce9e7,abd:0xe5dfd2,perna:0x364655,brilho:0x78cce4,asa:0xb9dfed,ei:.07,
-    dica:'Suba a escada até o terraço e voe até o limite de altura.',attr:{}};
-  SKIN_ICO.astronauta='👨‍🚀';HABS.astronauta=HABS.padrao;
+    dica:'Suba a escada até o terraço e voe até o limite de altura.',attr:{stam:1.35}};
+  SKIN_ICO.astronauta='👨‍🚀';
+  CFG.SKINS.folhagem.attr={combo:1.25};
+  CFG.SKINS.ardosia.attr={def:.18};
+  Object.assign(CFG.SKINS.neon,{abd:0xd1ee63,ei:.48,attr:{colhe:1.4}});
+  CFG.SKINS.faxineira={nome:'Mosquita da Faxina',corpo:0x328e90,abd:0x326e74,perna:0x354956,brilho:0x92e6db,asa:0xc4e8dc,ei:.12,
+    dica:'Vença a faxineira na zeladoria do térreo.',attr:{vida:20,gas:.65}};
+  SKIN_ICO.faxineira='🧹';
+  Object.assign(HABS,{
+    folhagem:{nome:'Folha ao vento',ico:'🍃',cd:18,dur:4,desc:'Por 4 s, acelera o voo e permite picar sem irritar humanos.',usar(g){g.buff.vel=4;g.buff.invis=4;}},
+    neon:{nome:'Pulso luminoso',ico:'💡',cd:16,dur:4,desc:'Recolhe gotas num raio de 12 e realça as próximas por 4 s.',usar(g){g.mundo.coletarRaio(g.jogador.pos,12,g);g.buff.scan=4;}},
+    ardosia:{nome:'Casca de pedra',ico:'🪨',cd:20,dur:3,desc:'Ganha um escudo por 3 s e recupera 20 de stamina.',usar(g){const j=g.jogador;j.escudo=Math.max(j.escudo,3);j.stamina=Math.min(g.estado.staminaMax,j.stamina+20);}},
+    astronauta:{nome:'Propulsor orbital',ico:'🚀',cd:15,dur:4,desc:'Dá impulso para cima e permite correr sem gastar stamina por 4 s.',usar(g){g.jogador.vel.y+=28;g.buff.stamInf=4;}},
+    faxineira:{nome:'Banho de espuma',ico:'🫧',cd:22,dur:5,desc:'Recupera 25 de vida e protege contra gás e poças tóxicas por 5 s. Na zeladoria, limpa poças num raio de 7.',usar(g){g.jogador.vida=Math.min(g.estado.vidaMax,g.jogador.vida+25);g.buff.gas=5;
+      if(!g.online?.active)g.campus.rules.clearCleanerPools(g.campus.localCleaner,g.campus.player);
+    }}
+  });
   CFG.CONQ.push({id:'skin_astronauta',nome:'Teto de Voo',ico:'🚀',cat:'Exploração',r:'o',premio:250,
     desc:'Atinja a altura máxima acima do terraço para ganhar o Mosquito Astronauta.'});
 }
@@ -296,7 +310,8 @@ class GameState {
     try {
       const s = dados === undefined ? JSON.parse(localStorage.getItem(CFG.SAVE)) : dados;
       if (s && s.nv) { this.sangue = +s.sangue || 0; for (const k in this.nv) this.nv[k] = clamp(Math.floor(Number(s.nv[k]) || 0), 0, CFG.UP_MAX); }
-      if (s) { this.auraTusk = s.auraTusk !== false; this.pixelCor = corPixelValida(s.pixelCor) ? s.pixelCor.toLowerCase() : COR_PIXEL_PADRAO; const mig = (k) => (k === "arcoiris" ? "pixel" : k); this.skins = Array.isArray(s.skins) ? s.skins.map(mig).filter((k) => CFG.SKINS[k]) : []; this.skin = CFG.SKINS[mig(s.skin)] ? mig(s.skin) : null; this.picadas = +s.picadas || 0; this.conq = Array.isArray(s.conq) ? s.conq.filter((id) => CFG.CONQ.some((c) => c.id === id)) : []; this.salas = Array.isArray(s.salas) ? s.salas : []; this.carteiras = +s.carteiras || 0; this.livroDevolvido = s.livroDevolvido === true; this.habs = Array.isArray(s.habs) ? s.habs : []; this.mantis = Array.isArray(s.mantis) ? s.mantis.filter((i) => ["cabeca", "foices", "torax", "abdomen"].includes(i)) : []; }
+      if (s) { this.auraTusk = s.auraTusk !== false; this.pixelCor = corPixelValida(s.pixelCor) ? s.pixelCor.toLowerCase() : COR_PIXEL_PADRAO; const mig = (k) => (k === "arcoiris" ? "pixel" : k === "cobre" ? "neon" : k); this.skins = Array.isArray(s.skins) ? s.skins.map(mig).filter((k) => CFG.SKINS[k]) : []; this.skin = CFG.SKINS[mig(s.skin)] ? mig(s.skin) : null; this.picadas = +s.picadas || 0; this.conq = Array.isArray(s.conq) ? s.conq.filter((id) => CFG.CONQ.some((c) => c.id === id)) : []; this.salas = Array.isArray(s.salas) ? s.salas : []; this.carteiras = +s.carteiras || 0; this.livroDevolvido = s.livroDevolvido === true; this.habs = Array.isArray(s.habs) ? s.habs : []; this.mantis = Array.isArray(s.mantis) ? s.mantis.filter((i) => ["cabeca", "foices", "torax", "abdomen"].includes(i)) : []; }
+      if(CFG.SKINS.faxineira&&s?.skins?.includes('cobre'))this.skins=[...new Set([...this.skins,'faxineira'])];
       if(s){this.portaSala3Aberta=s.portaSala3Aberta===true;this.pistasSala3=Array.isArray(s.pistasSala3)?[...new Set(s.pistasSala3.filter(n=>[1,2,3,4].includes(n)))]:[];}
       if(s&&Number.isFinite(s.recordeVoo)&&s.recordeVoo>0&&s.recordeVoo<=120)this.recordeVoo=s.recordeVoo;
       for(const q of MISSOES){const m=s?.missoes?.[q.id];if(m&&m.aceita===true)this.missoes[q.id]={aceita:true,entregue:m.entregue===true,itens:Array.isArray(m.itens)?[...new Set(m.itens.filter(x=>itensDaMissao(q.id).includes(x)))]:[]};}
@@ -321,7 +336,7 @@ class GameState {
     for(const k of Object.keys(CFG.UPS))if(!Number.isInteger(s.nv[k])||!numero(s.nv[k],CFG.UP_MAX))erro();
     for(const k of ['sangue','picadas','carteiras'])if(!numero(s[k]))erro();
     const lista=(v,permitidos,obrigatoria=true)=>{if(v===undefined&&!obrigatoria)return;if(!Array.isArray(v)||v.length>200||v.some(x=>!permitidos.includes(x))||new Set(v).size!==v.length)erro();};
-    lista(s.skins,Object.keys(CFG.SKINS));lista(s.conq,CFG.CONQ.map(c=>c.id));lista(s.salas,CFG.SALAS.map(x=>x[0]));
+    lista(s.skins,[...Object.keys(CFG.SKINS),'cobre']);lista(s.conq,CFG.CONQ.map(c=>c.id));lista(s.salas,CFG.SALAS.map(x=>x[0]));
     lista(s.mantis,['cabeca','foices','torax','abdomen'],false);lista(s.habs,Object.keys(HABS),false);lista(s.pistasSala3,[1,2,3,4],false);
     if(s.skin!==null&&!s.skins.includes(s.skin))erro();
     for(const k of ['livroDevolvido','auraTusk','portaSala3Aberta'])if(s[k]!==undefined&&typeof s[k]!=='boolean')erro();
@@ -1188,7 +1203,21 @@ for (let i = 0; i < 6; i++) {
 corpoG.add(espinhos, presas, coroa);
 
 // O traje usa a mesma ancoragem do tórax. As asas, o ferrão e o abdômen mantêm suas articulações.
-let trajeAstronauta;
+let trajeAstronauta,trajeFaxina;
+function criarTrajeFaxina(){
+  const roupa=new THREE.Group();roupa.name='uniforme-faxina';
+  const tecido=mat(0xead5a9),bolso=mat(0xbb976e),verde=mat(0x318e90),cabelo=mat(0x49332f);
+  roupa.add(elipsoide(.21,1.03,.86,1.23,verde,0,0,0));
+  roupa.add(elipsoide(.17,1.15,.85,.68,tecido,0,-.025,-.12));
+  roupa.add(elipsoide(.08,1.22,.63,.45,bolso,0,-.045,-.219));
+  roupa.add(elipsoide(.12,1.25,.58,1.1,cabelo,0,.15,-.27));
+  roupa.add(elipsoide(.084,1,1,1,cabelo,0,.23,-.19));
+  const frasco=elipsoide(.077,.76,1.45,.7,mat(0x72d9d7),.2,.035,.064);
+  roupa.add(frasco);
+  const gatilho=new THREE.Mesh(new THREE.BoxGeometry(.07,.035,.10),bolso);
+  gatilho.position.set(.20,.15,.04);roupa.add(gatilho);
+  corpoG.add(roupa);return roupa;
+}
 function criarTrajeAstronauta(){
   const traje=new THREE.Group();traje.name='traje-astronauta';
   const tecido=mat(0xece7da,{roughness:.63}),junta=mat(0x304252);
@@ -1998,6 +2027,9 @@ function aplicarEvolucaoVisual() {
     pxAsas[i].visible = px;
     encAsas[i].visible = enc;
   }
+  const faxina=S.skin==='faxineira';
+  if(faxina&&!trajeFaxina)trajeFaxina=criarTrajeFaxina();
+  if(trajeFaxina)trajeFaxina.visible=faxina;
   const astronauta=S.skin==='astronauta';
   if(astronauta&&!trajeAstronauta)trajeAstronauta=criarTrajeAstronauta();
   if(trajeAstronauta)trajeAstronauta.visible=astronauta;
@@ -2475,7 +2507,8 @@ class RacketBoss {
   dentro(p){const a=CFG.ARENA;return p.x>a.x0+2&&p.x<a.x1-.5&&p.z>a.z0+.5&&p.z<a.z1-.5;}
   visivel(jogo){
     this.hud.hidden=!(this.ativo||this.fase==='caindo')||!jogo.jogando||jogo.menuAberto||(jogo.online?.active&&!this.dentro(jogo.jogador.pos));
-    document.body.classList.toggle('boss-active',!this.hud.hidden);
+    const cleaner=jogo.campus?.showCleanerHud(jogo.jogando&&!jogo.menuAberto&&!jogo.online?.fallen);
+    document.body.classList.toggle('boss-active',!this.hud.hidden||!!cleaner);
   }
   atualizarHUD(){
     this.hp.textContent=this.vida+'/'+this.vidaMax;this.barra.style.width=(100*this.vida/this.vidaMax)+'%';
@@ -4294,6 +4327,11 @@ class WorldManager {
     const p = jogo.jogador.pos, e = (cor, n=18, f=5, tipo='') => this.emitir(p, cor, n, f, tipo);
     const an = (cor, raio=5, dur=0.8) => { this.ondaHabilidade(p, cor, raio, dur); if (this.anelsPorHabilidade > 1) this.ondaHabilidade(p, cor, raio * 0.7, dur * 1.2, Math.PI / 3); };
     switch (id) {
+      case 'folhagem': e(0x9fc86c); break;
+      case 'neon': an(0xceef51,12); break;
+      case 'ardosia': an(0xa5bace,2); break;
+      case 'astronauta': e(0xffad57,25,6,'espuma'); break;
+      case 'faxineira': e(0xa8eee8,32,5,'espuma'); break;
       case 'padrao': e(0xf3ffff, 20, 8, 'espuma'); an(0xffffff, 4, 0.45); break;
       case 'pixel': e(0x33ff66, 32, 7); an(0x33ff66, 4, 0.45); break;
       case 'encadernado': e(0xffe6b9, 34, 6); an(0x627bc6, 11, 0.95); break;
@@ -5634,14 +5672,13 @@ class GameManager {
     const S = this.estado, id = S.skin || "padrao", H = HABS[id];
     if (this.hab.cd > 0) { this.ui.toast(`⏳ ${H.nome} recarregando (${Math.ceil(this.hab.cd)}s)`); return; }
     if (H.usar(this) === false) return;
-    if(this.online?.active && ['pintado','cadeado','carreta'].includes(id)){this.online.sendState();this.online.send({type:'team-power'});}
+    if(this.online?.active && ['pintado','cadeado','carreta','faxineira'].includes(id)){this.online.sendState();this.online.send({type:'team-power'});}
     this.mundo.fxHabilidade(id, this);
     const cd = id === "tusk" ? [10, 8, 6, 4][Math.max(1, S.mantis.length) - 1] : H.cd;
     this.hab.cd = this.hab.cdTotal = cd; this.hab.ativo = H.dur || 0;
     this.audio.tom(520, 880, 0.18, "triangle", 0.18); this.audio.tom(880, 1320, 0.2, "sine", 0.12, 0.08);
     this.ui.toast(`${H.ico} ${H.nome}!`); this.jogador.modelo.punch = 0.6;
-    const poderRegistrado = poderesDaPlatina.includes(id) ? id : 'padrao';
-    if (!S.habs.includes(poderRegistrado)) { S.habs.push(poderRegistrado); S.salvar(); this.ganhar("poder1"); if (poderesDaPlatina.every(k=>S.habs.includes(k))) this.ganhar("poderes"); }
+    if (!S.habs.includes(id)) { S.habs.push(id); S.salvar(); this.ganhar("poder1"); if (poderesDaPlatina.every(k=>S.habs.includes(k))) this.ganhar("poderes"); }
   }
   atualizarHab(dt) {   // recargas, duração dos efeitos, poça de cura e stamina infinita
     for (const k in this.buff) if (this.buff[k] > 0) this.buff[k] = Math.max(0, this.buff[k] - dt);
