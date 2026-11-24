@@ -187,6 +187,12 @@ window.SchoolCampus = class SchoolCampus {
   tick(dt){
     this.clock+=dt;const g=this.g,p=this.player,area=this.rules.areaAt(...p);
     this.art.update(g.jogador.pos);
+    const roof=this.rules.roof;
+    if(area===roof&&!g.estado.skins.includes('astronauta')){
+      // Fantasma usa o raio dos limites gerais enquanto atravessa os móveis.
+      const radius=g.estado.attr.intang ? .18 : g.jogador.raio;
+      if(this.rules.atFlightCeiling(p,radius))g.desbloquear('astronauta');
+    }
     this.relays.forEach((light,i)=>{
       const color=this.shared?.gate?0x8ddeae:(this.shared?.switches?.[i]?0xfbd371:this.orange);
       if(light.material.emissive.getHex()!==color){light.material.color.setHex(color);light.material.emissive.setHex(color);}
@@ -203,7 +209,7 @@ window.SchoolCampus = class SchoolCampus {
         this.firstVisit.add(area.name);
         const hint={'Escada central':'A escada liga o pátio, o corredor e o terraço.',Pátio:'A cozinha abre ao lado da quadra. A zeladoria fica no fundo do pátio.',
           Cozinha:'Cuidado com o vapor do fogão.',Zeladoria:'Desvie do spray e pique a faxineira quando ela baixar a guarda.',
-          Terraço:'Procure o mirante e os respiradouros. Cuidado com o vento perto do cata-vento.',
+          Terraço:'Do terraço, voe até o limite do céu para ganhar a skin Astronauta.',
           'Duto dos relés':this.shared?.gate?'Duto aberto entre o térreo e o terraço.':'A grade do duto abre com os dois relés do pátio.'}[area.name];
         if(hint)g.ui.toast(hint);
       }
@@ -238,6 +244,9 @@ window.SchoolCampus = class SchoolCampus {
     const action=this.action();
     this.prompt=action?.text;
     if(action)g.eggMsg='B / Pegar · '+action.text;
+    else if(area===roof&&!g.estado.skins.includes('astronauta')&&p[1]>roof.floor+9){
+      g.eggMsg='Teto de Voo · altitude '+Math.floor(p[1]-roof.floor)+' / '+(roof.top-roof.floor);
+    }
     else if(area===this.rules.cleaning)g.eggMsg=c.hp?'Faxineira · '+c.hp+'/180 · '+(c.phase==='aviso'?'Desvie do '+c.attack:c.phase==='cansada'?'Pique agora!':'Prepare-se'):'Faxineira vencida • zeladoria livre';
   }
 };

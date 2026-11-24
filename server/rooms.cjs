@@ -1,6 +1,6 @@
 'use strict';
 const {randomInt,randomUUID}=require('node:crypto');
-const SKINS=new Set('pixel dengue relojoeiro radioativo jogador fantasma vampiro mosquito carreta eletrizado pintado extintor cadeado tusk mosquito8000 encadernado raquete'.split(' '));
+const SKINS=new Set('pixel dengue relojoeiro radioativo jogador fantasma vampiro mosquito carreta eletrizado pintado extintor cadeado tusk mosquito8000 encadernado raquete astronauta'.split(' '));
 const Campus = require('./campus.cjs');
 const rules = require('../campus-rules.js');
 for (const [id] of rules.secrets) SKINS.add(id);

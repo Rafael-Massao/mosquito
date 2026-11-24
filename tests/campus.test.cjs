@@ -105,3 +105,23 @@ test('faxineira, resgate e escudo só afetam o andar em que acontecem',()=>{
   act(b,'fall');act(a,'rescue',{id:b.id});assert.ok(b.downUntil);
   place(a,[0,campus.terrace+.25,1]);act(a,'rescue',{id:b.id});assert.equal(b.downUntil,0);
 });
+test('a altura máxima segue o teto do terraço e o raio usado para colidir',()=>{
+  const {sanitizeState}=require('../server/rooms.cjs');
+  for(const radius of [.075,.18,.1875]){
+    for(const x of [-104,0,83]){
+      const p={x,y:campus.roof.floor+1,z:5};
+      while(p.y<campus.roof.top-radius){
+        assert.equal(campus.atFlightCeiling([p.x,p.y,p.z],radius),false);
+        p.y+=.53;campus.constrain(p,radius);
+      }
+      const pos=[p.x,p.y,p.z];
+      assert.equal(campus.areaAt(...pos),campus.roof);
+      assert.equal(campus.atFlightCeiling(pos,radius),true);
+      assert.equal(sanitizeState({pos,rot:[0,0,0,1],skin:'astronauta'}).skin,'astronauta');
+    }
+  }
+  assert.equal(campus.atFlightCeiling([0,campus.main.top,0],.18),false);
+  assert.equal(campus.atFlightCeiling([0,campus.courtyard.top,0],.18),false);
+  assert.equal(campus.atFlightCeiling([campus.shaft.x,campus.roof.top-.18,campus.shaft.z],.18),false);
+  assert.equal(campus.validPosition([4,campus.roof.top+1,0]),false);
+});

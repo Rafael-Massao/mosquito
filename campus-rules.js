@@ -1,7 +1,7 @@
 // A escada, a planta e a simulação da sala usam as mesmas cotas e o mesmo espaço de voo.
 (function (root) {
   'use strict';
-  const protocol=3;
+  const protocol=4;
   const ground=-21.5, first=-3.5, terrace=14.12;
   const levels=[
     {id:'ground',name:'Térreo',floor:ground},
@@ -18,7 +18,7 @@
   const courtyard=room('Pátio','ground',[-118,46,-22,22],ground,-5.53);
   const kitchen=room('Cozinha','ground',[-61,-29,22,58],ground,ground+10.17);
   const cleaning=room('Zeladoria','ground',[46,82,-16,16],ground,ground+11.8);
-  const roof=room('Terraço','terrace',[-118,94,-18,18],terrace,terrace+15);
+  const roof=room('Terraço','terrace',[-118,94,-18,18],terrace,terrace+40);
   const gateY=2,gateDepth=1.24;
   const shaft=room('Duto dos relés',null,[-132,-123,11,18],ground,terrace+6.5);
   const entrances=[
@@ -71,6 +71,9 @@
     return cell?cell.floor+stepOffset(cell,x):first;
   }
   function sameLevel(a,b){return levelAt(...a)===levelAt(...b);}
+  function atFlightCeiling([x,y,z],radius){
+    return contains(roof.box,x,z)&&y<=roof.top+.001&&y>=roof.top-radius-.001;
+  }
   function inSchool(pos){
     return pos.x>=-118&&pos.x<=158&&pos.y>=first-.1&&pos.y<=12.1;
   }
@@ -131,6 +134,6 @@
   }
   const api={protocol,levels,ground,first,terrace,main,arena,courtyard,kitchen,cleaning,roof,shaft,
     landings,flights,gateY,gateDepth,stepOffset,areaAt,levelAt,inSchool,floorAt,sameLevel,constrain,
-    validPosition,distance,switches,folder,cleanerHead,secrets,hidingPlaces,sprinkler,steam,vane,cleaner,stepCleaner,biteCleaner};
+    validPosition,atFlightCeiling,distance,switches,folder,cleanerHead,secrets,hidingPlaces,sprinkler,steam,vane,cleaner,stepCleaner,biteCleaner};
   if(typeof module==='object'&&module.exports)module.exports=api;else root.EscolaCampus=api;
 })(globalThis);

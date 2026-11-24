@@ -213,6 +213,13 @@ for (const [id,nome,corpo,brilho,dica] of window.EscolaCampus?.secrets || []) {
   SKIN_ICO[id]={folhagem:'🍃',cobre:'🟠',ardosia:'🪶'}[id];
   HABS[id]=HABS.padrao;
 }
+if(window.EscolaCampus){
+  CFG.SKINS.astronauta={nome:'Mosquito Astronauta',corpo:0xdce9e7,abd:0xe5dfd2,perna:0x364655,brilho:0x78cce4,asa:0xb9dfed,ei:.07,
+    dica:'Suba a escada até o terraço e voe até o limite de altura.',attr:{}};
+  SKIN_ICO.astronauta='👨‍🚀';HABS.astronauta=HABS.padrao;
+  CFG.CONQ.push({id:'skin_astronauta',nome:'Teto de Voo',ico:'🚀',cat:'Exploração',r:'o',premio:250,
+    desc:'Atinja a altura máxima acima do terraço para ganhar o Mosquito Astronauta.'});
+}
 const $ = (id) => document.getElementById(id);
 const { clamp } = THREE.MathUtils;
 const amort = (k, dt) => 1 - Math.exp(-k * dt);   // amortecimento independente de FPS
@@ -294,6 +301,9 @@ class GameState {
       if(s&&Number.isFinite(s.recordeVoo)&&s.recordeVoo>0&&s.recordeVoo<=120)this.recordeVoo=s.recordeVoo;
       for(const q of MISSOES){const m=s?.missoes?.[q.id];if(m&&m.aceita===true)this.missoes[q.id]={aceita:true,entregue:m.entregue===true,itens:Array.isArray(m.itens)?[...new Set(m.itens.filter(x=>itensDaMissao(q.id).includes(x)))]:[]};}
     } catch (e) { /* sem save */ }
+    if(this.conq.includes('skin_astronauta')&&CFG.SKINS.astronauta&&!this.skins.includes('astronauta')){
+      this.skins.push('astronauta');if(dados===undefined)this.salvar();
+    }
     // Quem já venceu o chefe recebe a recompensa nova sem perder a skin equipada.
     if(this.conq.includes('boss_raquete')&&!this.skins.includes('raquete')){
       this.skins.push('raquete');if(!this.conq.includes('skin_raquete'))this.conq.push('skin_raquete');if(dados===undefined)this.salvar();
@@ -799,7 +809,7 @@ ${sel === "tusk" && liberada ? `<button id="sk-aura-tusk" type="button" aria-pre
     m.mosquito.traverseVisible(o=>{if(!o.geometry)return;if(o.isInstancedMesh){for(let i=0;i<o.count;i++){o.getMatrixAt(i,instancia);medirMalha(o.geometry,matriz.multiplyMatrices(o.matrixWorld,instancia));}}else medirMalha(o.geometry,o.matrixWorld);});
     pv.raioModelo=raio+.1;
     if(this.skCompararBase){pe.nv={asas:0,tromba:0,estomago:0,corpo:0};m.aplicar();}
-    pv.modelo = m; pv.raiz.add(m.mosquito); m.mosquito.position.set(0, 0, 0); m.mosquito.rotation.set(0.25, id === "mosquito8000" ? Math.PI : 0, 0);
+    pv.modelo = m; pv.raiz.add(m.mosquito); m.mosquito.position.set(0, 0, 0); m.mosquito.rotation.set(0.25, id === "mosquito8000" ? Math.PI : id === "astronauta" ? Math.PI*.78 : 0, 0);
     if (bloqueada) m.mosquito.traverse((o) => { if (o.isLine) o.visible = false; });
     pv.cena.overrideMaterial = bloqueada ? new THREE.MeshBasicMaterial({ color: 0x0b0a14 }) : null;   // skin trancada aparece só como silhueta
     this.enquadrarPreview();
@@ -1176,6 +1186,62 @@ for (let i = 0; i < 6; i++) {
   coroa.add(cone(0.02, 0.1, matOuro, Math.cos(a) * 0.07, 0.04, Math.sin(a) * 0.07));
 }
 corpoG.add(espinhos, presas, coroa);
+
+// O traje usa a mesma ancoragem do tórax. As asas, o ferrão e o abdômen mantêm suas articulações.
+let trajeAstronauta;
+function criarTrajeAstronauta(){
+  const traje=new THREE.Group();traje.name='traje-astronauta';
+  const tecido=mat(0xece7da,{roughness:.63}),junta=mat(0x304252);
+  const laranja=mat(0xdc6135),aro=mat(0xe1a556,{metalness:.35,roughness:.32});
+  const viseira=mat(0xb66c2e,{metalness:.36,roughness:.22,emissive:0x49210c,emissiveIntensity:.21});
+  const reflexo=mat(0xffedc5,{emissive:0xffbc77,emissiveIntensity:.23});
+  const luz=mat(0x78e0e2,{emissive:0x3fbdc3,emissiveIntensity:.45});
+  const caixa=(w,h,d,m,x,y,z)=>{
+    const obj=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);obj.position.set(x,y,z);traje.add(obj);return obj;
+  };
+  traje.add(elipsoide(.253,1.02,1,.99,tecido,0,.056,-.295));
+  // A viseira e as suas duas juntas seguem a mesma calota, inclusive nas têmporas.
+  const noCasco=(lon,lat,offset)=>V((.258+offset)*Math.sin(lon)*Math.cos(lat),
+    .056+(.253+offset)*Math.sin(lat),-.295-(.251+offset)*Math.cos(lon)*Math.cos(lat));
+  function painel(largura,baixo,alto,offset,material){
+    const pos=[],indices=[],cols=26,rows=12;
+    for(let j=0;j<=rows;j++){
+      const v=j/rows,lat=baixo+(alto-baixo)*v,borda=largura*(1-.15*Math.pow(Math.abs(2*v-1),5));
+      for(let i=0;i<=cols;i++){
+        const vtx=noCasco((2*i/cols-1)*borda,lat,offset);pos.push(vtx.x,vtx.y,vtx.z);
+        if(i===cols||j===rows)continue;
+        const k=j*(cols+1)+i;
+        indices.push(k,k+cols+1,k+1,k+1,k+cols+1,k+cols+2);
+      }
+    }
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setIndex(indices);geo.computeVertexNormals();
+    traje.add(new THREE.Mesh(geo,material));
+  }
+  painel(1.47,-.64,.90,.008,junta);painel(1.39,-.59,.84,.013,aro);painel(1.32,-.54,.79,.018,viseira);
+  const faixa=new THREE.CatmullRomCurve3([noCasco(-.91,.34,.023),noCasco(-.62,.49,.023),noCasco(-.21,.56,.023)]);
+  traje.add(new THREE.Mesh(new THREE.TubeGeometry(faixa,12,.007,6,false),reflexo));
+  for(const lado of [-1,1]){
+    traje.add(elipsoide(.068,.42,1,1,junta,lado*.248,.054,-.284),
+      elipsoide(.053,.40,1,1,laranja,lado*.269,.054,-.284));
+  }
+  traje.add(tubo(V(.135,.235,.16),V(.174,.39,.215),.008,junta),elipsoide(.016,1,1,1,luz,.174,.39,.215));
+  const colar=new THREE.Mesh(new THREE.TorusGeometry(.161,.022,7,20),junta);
+  colar.position.set(0,.015,-.123);traje.add(colar);
+  caixa(.265,.16,.286,junta,0,.203,.09);
+  caixa(.244,.15,.252,tecido,0,.23,.09);
+  caixa(.164,.015,.105,junta,0,.311,.064);
+  caixa(.092,.008,.021,luz,-.014,.323,.046);
+  for(const lado of [-1,1]){
+    const x=lado*.125;
+    traje.add(elipsoide(.060,1,1,2.15,tecido,x,.239,.137));
+    const cinta=new THREE.Mesh(new THREE.TorusGeometry(.060,.009,6,16),laranja);
+    cinta.position.set(x,.239,.142);traje.add(cinta);
+    traje.add(elipsoide(.047,1,1,.54,junta,x,.239,.257));
+  }
+  const mangueira=new THREE.CatmullRomCurve3([V(.13,.23,.08),V(.22,.19,.018),V(.233,.04,-.072),V(.208,.026,-.181)]);
+  traje.add(new THREE.Mesh(new THREE.TubeGeometry(mangueira,13,.015,6,false),junta));
+  corpoG.add(traje);return traje;
+}
 
 // Recompensa do chefe: mosquito com seis membros, camisa e jeans largos.
 const rqG=new THREE.Group();rqG.name='skin-raquete-corpo';mosquito.add(rqG);
@@ -1932,6 +1998,10 @@ function aplicarEvolucaoVisual() {
     pxAsas[i].visible = px;
     encAsas[i].visible = enc;
   }
+  const astronauta=S.skin==='astronauta';
+  if(astronauta&&!trajeAstronauta)trajeAstronauta=criarTrajeAstronauta();
+  if(trajeAstronauta)trajeAstronauta.visible=astronauta;
+  if(astronauta)espinhos.visible=presas.visible=coroa.visible=false;
   rqG.visible = rqAbd.visible = menino; rqG.scale.setScalar(cs); rqAbd.scale.set(abx,abx,abz);
   pxCorpo.scale.setScalar(cs);
   pxAbdomen.scale.set(abx, abx, abz);
@@ -5141,7 +5211,7 @@ class SchoolActivities {
         label(-61,2.3,'Mesas',4.8);label(-3,2.3,'Terraço',6.1);
         rect(73,-7.2,15.5,6.7,'#b39b78');label(78,-9,'Mirante',4.1);
         for(const x of [75,77.6])rect(x,7,1.5,4,'#7b9794');
-        note.textContent='O terraço fica sobre o corredor do 1º andar. Siga até o mirante ou explore os respiradouros. A escada leva de volta aos dois andares de baixo.';
+        note.textContent='O terraço fica sobre o corredor do 1º andar. Explore os respiradouros perto do mirante ou voe até a altura máxima para ganhar o Mosquito Astronauta.';
       }
       if(rules){
         rect(-154,-8,34,16,'#e8d6ad');
@@ -5376,6 +5446,10 @@ class GameManager {
     this.camera.far = opt.distancia; this.camera.updateProjectionMatrix();
     this.cena.fog.near = modo === 'leve' ? 38 : modo === 'medio' ? 55 : 60;
     this.cena.fog.far = modo === 'leve' ? 132 : modo === 'medio' ? 200 : 170;
+    if(this.campus){
+      this.campus.art.setViewDistances(opt.distancia,this.cena.fog.near,this.cena.fog.far);
+      this.campus.art.update(this.jogador.pos);
+    }
     this.mundo.qualidadeParticulas = opt.particulas;
     if (this.mundo.ajustarLivrosBiblioteca) this.mundo.ajustarLivrosBiblioteca(modo);
     this.mundo.limiteParticulas = opt.maxParticulas;

@@ -15,6 +15,8 @@ Um aliado próximo pode usar Pegar para reanimar quem caiu em até 12 segundos. 
 
 O jogo começa no corredor do **1º andar**. Na ponta oposta à Sala 3 fica a escada central. Ela desce para o **térreo**, onde ficam o pátio, a cozinha e a zeladoria, e sobe para o **terraço**, sobre o corredor. A escada dá acesso aos três níveis tanto no solo quanto no cooperativo. Os relés liberam um segundo caminho pelo duto. A planta abre no andar atual e permite consultar os outros dois. As três skins secretas podem ser obtidas no solo.
 
+Do terraço, voe para cima até o limite de altitude para ganhar a conquista **Teto de Voo**, a skin **Mosquito Astronauta** e 250 de sangue. No cooperativo, cada jogador ganha a recompensa pela própria subida. A conquista é opcional para a platina **Zé Picada**.
+
 Cada jogador mantém seu próprio sangue, upgrades, inventário, missões e conquistas no navegador. A sala compartilha os trajetos dos humanos, os potes do laboratório e da sala de artes e as poças derramadas. As coletas das missões individuais pertencem ao respectivo jogador. Não há combate entre jogadores.
 
 Abrir menus pausa o seu mosquito, mas a sala continua para os amigos. O chefe não ataca jogadores em menus ou com a aba oculta. Se a conexão cair, o jogo volta ao modo solo; entre novamente com o código. Salas vazias ficam disponíveis por até 90 segundos. O servidor mantém as salas em memória: reiniciá-lo encerra as sessões, sem apagar os saves dos navegadores.

@@ -11,6 +11,10 @@ window.CampusScenery = class CampusScenery {
       block:new THREE.BoxGeometry(1,1,1),drum:new THREE.CylinderGeometry(.5,.5,1,18),
       leaf:new THREE.IcosahedronGeometry(.54,1),cone:new THREE.ConeGeometry(.5,1,12)
     };
+    this.geo.glass=this.geo.block;
+    this.windowGlass=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.25,transparent:true,opacity:.28,depthWrite:false});
+    this.indoorFog=game.cena.fog.color.getHex();
+    this.setViewDistances(game.camera.far,game.cena.fog.near,game.cena.fog.far);
     this.root=new THREE.Group();game.cena.add(this.root);
     this.setRoom('exterior',0,0);
   }
@@ -44,11 +48,14 @@ window.CampusScenery = class CampusScenery {
   }
   finish(){
     for(const {sector,shape,parts} of this.batches.values()){
-      const mesh=new THREE.InstancedMesh(this.geo[shape],this.standard,parts.length);
+      const mesh=new THREE.InstancedMesh(this.geo[shape],shape==='glass'?this.windowGlass:this.standard,parts.length);
       parts.forEach(([matrix,tint],i)=>{mesh.setMatrixAt(i,matrix);mesh.setColorAt(i,new THREE.Color(tint));});
       this.sectors.get(sector).add(mesh);
     }
     this.batches.clear();this.update(this.game.jogador.pos);
+  }
+  setViewDistances(far,fogNear,fogFar){
+    this.viewDistances={far,fogNear,fogFar};
   }
   update(p){
     const ground=p.y<EscolaCampus.first-1,top=p.y>12.05,atStairs=p.x< -110;
@@ -58,6 +65,13 @@ window.CampusScenery = class CampusScenery {
     this.sectors.get('terraço').visible=top||atStairs;
     this.sectors.get('escada').visible=atStairs||ground||top||p.x< -20;
     this.sectors.get('exterior').visible=ground||top||p.x< -50;
+    const {camera,cena}=this.game,view=this.viewDistances;
+    // No terraço a rua oposta fica além do alcance usado para móveis no modo Desempenho.
+    const far=top?Math.max(view.far,246):view.far;
+    if(camera.far!==far){camera.far=far;camera.updateProjectionMatrix();}
+    cena.fog.near=top?72:view.fogNear;
+    cena.fog.far=top?242:view.fogFar;
+    cena.fog.color.setHex(top?0xb69ea4:ground||p.x< -118?0x807e81:this.indoorFog);
     this.sky.visible=this.sectors.get('exterior').visible;
     if(this.sky.visible)this.sky.position.copy(p);
   }
@@ -68,15 +82,19 @@ window.CampusScenery = class CampusScenery {
     c.fillStyle=bg;c.fillRect(0,0,1024,512);
     for(let i=1;i<=105;i++){const x=(i*431)%1024,y=(i*79+i*i)%218;c.fillStyle='rgba(255,245,218,'+(.16+i%5*.11)+')';c.fillRect(x,y,1+i%2,1);}
     c.fillStyle='#fff0ce';c.beginPath();c.ellipse(735,199,9,9,0,0,2*Math.PI);c.fill();
-    // O horizonte é contínuo mesmo no alcance curto de renderização do celular.
+    // Duas silhuetas ao fundo completam as ruas no alcance de visão mais curto do celular.
     for(let band=0;band<2;band++){
-      const base=259+band*7;let x=0,i=0;
+      const base=257+band*11;let x=0,i=0;
       while(x<1024){
-        const width=8+(17*i+band*3)%22,h=4+(i*13+band*7)%14;
-        c.fillStyle=band?'#997e85':'#ab9097';c.fillRect(x,base-h,width,h+12);
-        if(i%5===2)c.fillRect(x+width*.25,base-h-3,width*.46,3);
-        if(band)for(let j=3;j<width-2;j+=5){c.fillStyle=i%4===1?'#d7ac91':'#a68b90';c.fillRect(x+j,base-h+3,1.6,2);}
-        x+=width;i++;
+        const w=9+(i*17+band*7)%31,h=5+(i*11+band*4)%15,y=base-h,color=band?'#ac9199':'#bb9fa3';
+        c.fillStyle=color;c.fillRect(x,y,w,h+18);
+        switch((i+2*band)%4){
+          case 0:c.fillRect(x+w*.21,y-4,w*.58,5);c.fillRect(x+w*.35,y-7,w*.32,4);break;
+          case 1:c.beginPath();c.moveTo(x,y+1);c.lineTo(x+w*.49,y-5);c.lineTo(x+w,y+1);c.fill();break;
+          case 2:c.fillRect(x+3,y-5,1,6);c.fillRect(x+8,y-5,1,6);c.fillRect(x+2,y-8,8,4);break;
+        }
+        if(band)for(let j=3;j<w-2;j+=4){c.fillStyle=(i+j)%6?'#b79ba0':'#d1afa3';c.fillRect(x+j,y+3,1.4,1.8);}
+        x+=w+1+(i%3);i++;
       }
     }
     this.sky=new THREE.Mesh(new THREE.SphereGeometry(1,48,24),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(canvas),side:THREE.BackSide,fog:false,depthWrite:false,toneMapped:false}));
@@ -253,35 +271,16 @@ window.CampusScenery = class CampusScenery {
   }
   courtyard(){
     const rules=EscolaCampus,p=rules.courtyard,w=p.box[1]-p.box[0],d=p.box[3]-p.box[2];
-    const teal=0x547f77,clay=0xbd7e5e,cream=0xe5d4b5,beam=0xb7ada0;
+    const teal=0x547f77,clay=0xbd7e5e,beam=0xb7ada0;
     this.block(p.x,-.45,0,w,.9,d,0xc8b49b,'camera');this.floor(p.x,w,d,'paving',0);
     // O teto do pátio é a face inferior da laje do prédio onde o jogador começa.
     this.block(p.x,15.91,0,w,.15,d,0xd0c4ac);
+    this.courtyardWalls();
     for(const x of [-112,-88,-64,-40,-16,8,32]){
-      this.block(x,15.32,0,.96,1.05,d,beam);
-      for(const z of [-17.7,17.7]){
-        this.block(x,7.78,z,1.0,15.55,1.0,cream,true);
-        this.block(x,1.35,z,1.13,2.7,1.13,teal);
-        this.block(x,2.77,z,1.16,.13,1.16,clay);
-        this.shade(x+.28,z,3.1,2.55,0,.22);
-      }
+      this.block(x,15.33,0,1.12,1.16,d,beam);
       for(const z of [-7.6,7.6]){
-        this.block(x+.85,14.9,z,3.6,.21,.73,0x706e67);
-        this.block(x+.85,14.77,z,3.41,.07,.56,0xffdf9c);
-      }
-    }
-    // Cobogós de cerâmica, abertos para o jardim ao redor dos pilotis.
-    for(const z of [-22,22]){
-      for(let i=0;i<12;i++){
-        const x=-111+i*13.25;
-        if(z>0&&Math.abs(x-rules.kitchen.x)<10)continue;
-        this.block(x,.8,z,12.8,1.6,.46,0xd6b69a,true);
-        for(const y of [1.68,3.3,4.92])this.block(x,y,z,12.86,.18,.5,clay);
-        for(let j=0;j<8;j++){
-          const a=x-5.58+j*1.59;
-          this.beam([a-.67,1.72,z],[a+.67,3.26,z],.22,.48,clay);
-          this.beam([a+.67,3.37,z],[a-.67,4.86,z],.22,.48,clay);
-        }
+        this.block(x+.85,14.67,z,3.6,.21,.73,0x706e67);
+        this.block(x+.85,14.54,z,3.41,.07,.56,0xffdf9c);
       }
     }
     for(const z of [-18.9,18.9])this.block(p.x,.032,z,w-.5,.025,.18,teal);
@@ -320,6 +319,58 @@ window.CampusScenery = class CampusScenery {
     this.block(-106.8,.055,14.4,21.7,.09,.16,0xb48a57);
     this.archway(-117.5,0,0,Math.PI/2,'ESCADAS',7.6);
     this.sign('DUTO DOS RELÉS',-117.5,5.37,14.4,5.35,Math.PI/2);
+  }
+  courtyardWalls(){
+    const {courtyard,kitchen,cleaning}=EscolaCampus;
+    const [west,east,north,south]=courtyard.box,top=courtyard.top-courtyard.floor+.22;
+    const stucco=0xc5b597,tile=0x587e77,stone=0xb4a38b,brick=0xac7459,frame=0x3c5b5c;
+    const sill=4.85,lintel=10.85,depth=1.12;
+    // Une alvenaria, vergas e peitoris à laje. As janelas recuadas ocupam apenas o vão central de cada módulo.
+    const wallRun=(left,right,z,side)=>{
+      const width=right-left,cx=(left+right)/2,front=z-side*depth/2;
+      this.block(cx,sill/2,z,width,sill,depth,stucco,true);
+      this.block(cx,(top+lintel)/2,z,width,top-lintel,depth,stucco,true);
+      this.block(cx,1.65,front-side*.08,width,3.3,.16,tile);
+      this.block(cx,.28,front-side*.12,width,.56,.24,frame);
+      this.block(cx,3.42,front-side*.13,width,.17,.25,brick);
+      this.block(cx,top-.5,front-side*.19,width,.78,.38,stone);
+      const bays=Math.max(1,Math.round(width/17)),bay=width/bays;
+      for(let i=0;i<bays;i++){
+        const x=left+(i+.5)*bay,opening=bay*.61,pier=(bay-opening)/2;
+        for(const dir of [-1,1])this.block(x+dir*(opening+pier)/2,(sill+lintel)/2,z,pier,lintel-sill,depth,stucco,true);
+        this.block(x,sill,front,opening+.82,.26,1.24,stone);
+        this.block(x,lintel-.04,front,opening+.68,.24,.81,brick);
+        this.piece('glass',x,(sill+lintel)/2,z,opening,lintel-sill,.09,0xabc7c0,true);
+        for(const t of [-.5,-.25,0,.25,.5])this.block(x+t*opening,(sill+lintel)/2,z-side*.12,.12,lintel-sill,.19,frame);
+        for(const y of [sill+.16,lintel-1.47,lintel-.16])this.block(x,y,z-side*.13,opening,.14,.20,frame);
+        // Pilastra embutida e rodapé de ladrilhos dão espessura à parede vista da quadra.
+        const px=left+i*bay+.48;
+        this.block(px,top/2,front-side*.16,.97,top,.40,stone);
+        this.block(px,1.60,front-side*.22,1.06,3.2,.41,tile);
+        for(let joint=left+i*bay+.98;joint<px+bay-.45;joint+=1.58)this.block(joint,1.75,front-side*.17,.028,2.88,.036,0x698d82);
+      }
+    };
+    wallRun(west,east,north-depth*.40,-1);
+    // A fachada existente da cozinha já tem porta e janelas na face sul do pátio.
+    const [k0,k1]=kitchen.box;
+    wallRun(west,k0,south+depth*.40,1);wallRun(k1,east,south+depth*.40,1);
+    this.block(kitchen.x,(10.75+top)/2,south+.46,k1-k0,top-10.75,depth,stucco,true);
+    this.block(kitchen.x,11.04,south-.15,k1-k0,.38,.55,brick);
+    const endPanel=(x,z0,z1,base,height,side)=>{
+      const z=(z0+z1)/2,span=z1-z0;
+      this.block(x,base+height/2,z,depth,height,span,stucco,true);
+      if(base===0){
+        this.block(x+side*.62,1.65,z,.16,3.3,span,tile);
+        this.block(x+side*.70,3.42,z,.20,.17,span,brick);
+      }
+    };
+    const wx=west-.58,ex=east+.59;
+    for(const [z0,z1] of [[north,-3.95],[3.95,11.78],[17,south]])endPanel(wx,z0,z1,0,top,1);
+    endPanel(wx,-3.95,3.95,7.14,top-7.14,1);
+    endPanel(wx,11.78,17,6.56,top-6.56,1);
+    const [, ,cz0,cz1]=cleaning.box;
+    endPanel(ex,north,cz0,0,top,-1);endPanel(ex,cz1,south,0,top,-1);
+    endPanel(ex,cz0,cz1,12.30,top-12.30,-1);
   }
   courtMarkings(x,z){
     const c=document.createElement('canvas');c.width=1024;c.height=512;
@@ -623,7 +674,7 @@ window.CampusScenery = class CampusScenery {
   }
   surroundings(){
     const f=EscolaCampus.ground;
-    this.block(0,f-.81,0,447,1,340,0x7a8b76);
+    this.block(0,f-.81,0,1000,1,900,0x778071);
     for(const z of [-30.5,29.5]){
       for(let x=-112;x<=112;x+=15){
         if(z>0&&x>-67&&x<-23)continue;
@@ -631,30 +682,204 @@ window.CampusScenery = class CampusScenery {
         for(let i=0;i<6;i++)this.piece('leaf',x-5+i*2,f+1.25,z+.36*Math.cos(i),2.65,1.89,2.34,i%2?0x779370:0x5f7d67);
       }
     }
-    // Pavimentos recuados sustentam as alas de salas. Os vãos deixam o ar circular pelo pátio.
+    this.schoolBase(f);
+    this.neighborhood(f);
+  }
+  schoolBase(f){
+    const height=EscolaCampus.first-2-f,wall=0xb6a68e,base=0x607a72,cap=0xae8769;
+    const wing=(x0,x1,z0,z1)=>{
+      const x=(x0+x1)/2,z=(z0+z1)/2,w=x1-x0,d=z1-z0;
+      this.block(x,f+height/2,z,w,height,d,wall);
+      this.block(x,f+1.77,z,w+.18,3.54,d+.18,base);
+      this.block(x,f+height-.38,z,w+.36,.76,d+.36,cap);
+    };
+    // Volumes fechados sob as salas e sob a Sala 3. Os recuos iluminam a quadra e respeitam a cozinha.
+    wing(-118,118,-100,-44);wing(-118,118,62,100);
+    wing(82.5,118,-44,62);wing(118,158,-18,18);
+    wing(-118,-104,-44,-22.7);wing(-118,-104,22.7,62);
+    wing(46.7,82.5,-44,-16.3);wing(46.7,82.5,16.3,62);
+    for(const [z,face] of [[-44,1],[62,-1],[-100,-1],[100,1]]){
+      for(let x=-107;x<=110;x+=17.5){
+        if(z===62&&x>-64&&x<-26)continue;
+        this.windowBay(x,f+8.7,z+face*.19,10.4,3.9,0x82a1a0,face);
+        this.block(x,f+11.32,z+face*.48,11.4,.37,1.59,cap);
+      }
+    }
+    // A caixa da escada se apoia em paredes laterais desde a fundação.
+    for(const z of [-8.79,8.79]){
+      this.block(-137,f+2.32,z,34.5,4.64,.68,base);
+      this.block(-137,f+5.07,z,34.6,.40,.85,cap);
+      for(const x of [-153.7,-144.3,-119.9])this.block(x,f+8,z,1.05,16,.78,wall);
+    }
+  }
+  neighborhood(f){
+    const road=0x5d6369,pave=0xb7a594,paint=0xd2bb78;
+    const vertical=[-205,-163,167,205],horizontal=[-157,-109,109,157];
+    for(const z of horizontal){
+      this.block(0,f-.15,z,486,.28,10,road);
+      for(let i=1;i<vertical.length;i++){
+        const a=vertical[i-1]+5,b=vertical[i]-5;
+        for(const side of [-1,1])this.block((a+b)/2,f+.02,z+side*6.2,b-a,.48,2.4,pave);
+        for(let x=a+6;x<b-4;x+=13)this.block(x,f+.015,z,5.2,.04,.19,paint);
+      }
+    }
+    for(const x of vertical){
+      this.block(x,f-.17,0,9,.29,390,road);
+      for(let i=1;i<horizontal.length;i++){
+        const a=horizontal[i-1]+5,b=horizontal[i]-5;
+        for(const side of [-1,1])this.block(x+side*5.7,f+.02,(a+b)/2,2.4,.48,b-a,pave);
+        for(let z=a+5;z<b-4;z+=13)this.block(x,f+.015,z,.18,.04,5.2,paint);
+      }
+    }
+    for(const x of [-163,167])for(const z of [-109,109]){
+      for(let i=-3;i<=3;i++)this.block(x+i*1.12,f+.04,z-Math.sign(z)*7,.51,.06,2.8,0xc9c1a2);
+    }
+    // Cada fachada se volta para a rua. Os quarteirões têm ritmos, profundidades e silhuetas próprios.
+    const N=0,S=Math.PI,E=-Math.PI/2,W=Math.PI/2;
+    const lots=[
+      [-112,-131,N,'oficina',33,21,26],[-74,-132,N,'varandas',26,21,50],
+      [-34,-133,N,'cine',31,23,40],[7,-140,N,'torre',29,32,80],
+      [46,-131,N,'varandas',26,21,61],[83,-132,N,'oficina',34,23,32],[122,-131,N,'varandas',24,22,48],
+      [-118,132,S,'varandas',26,23,54],[-78,131,S,'cine',32,22,38],
+      [-38,138,S,'torre',27,29,74],[2,132,S,'oficina',33,22,29],
+      [42,130,S,'varandas',26,19,63],[81,134,S,'varandas',28,23,44],[123,136,S,'torre',26,27,67],
+      [-181,-79,W,'varandas',28,21,67],[-184,-37,W,'oficina',32,24,29],[-184,6,W,'cine',30,25,42],
+      [-183,49,W,'torre',28,25,75],[-182,89,W,'varandas',27,23,50],
+      [186,-78,E,'oficina',33,25,31],[187,-36,E,'torre',26,25,73],[185,5,E,'varandas',28,22,63],
+      [186,48,E,'cine',31,23,40],[185,89,E,'varandas',26,22,51]
+    ];
+    lots.forEach(([x,z,yaw,kind,w,d,h],i)=>this.cityBuilding(f,x,z,yaw,kind,w,d,h,i));
     for(const side of [-1,1]){
-      const z=side*47;
-      for(const x of [-102,-74,-46,-18,10,38,66,94]){
-        if(side>0&&x===-46)continue;
-        this.block(x,f+7.8,z,.95,15.6,1.05,0xaa9987);
-        this.block(x+13.6,f+14.97,z,27.2,1.28,1.06,0xb5a691);
-        if((x+102)%56===0){
-          this.block(x+8.1,f+5.17,z,15.9,10.34,.62,0xa89278);
-          this.block(x+8.1,f+2.10,z-side*.37,15.9,4.2,.16,0x678780);
-          for(const dx of [3.8,10.9])this.windowBay(x+dx,f+7.13,z-side*.42,5.7,2.05,0x849a9c,-side);
+      for(let i=0;i<13;i++){
+        const x=-189+i*31;
+        this.cityBuilding(f,x,side*(178+i%2*3),side<0?N:S,'casa',20+i%3*2,15,11+i%4*1.4,i);
+      }
+      for(let i=0;i<10;i++){
+        const z=-139+i*31;
+        this.cityBuilding(f,side*(225+i%2*3),z,side<0?W:E,'casa',20+i%3*2,15,11+i%4*1.4,i+3);
+      }
+      for(let i=0;i<9;i++){
+        const x=-144+i*36,z=side*117.9;
+        this.drum(x,f+2,z,.62,4,.62,0x726257);
+        this.piece('leaf',x,f+5.4,z,4.3+i%3,5.5,4.4,i%2?0x647b66:0x759073);
+      }
+      for(let i=0;i<6;i++){
+        const x=side<0?-170.7:174.7,z=-87+i*34;
+        this.drum(x,f+2,z,.62,4,.62,0x726257);
+        this.piece('leaf',x,f+5.4,z,4.6,5.4,4.7,0x758a71);
+      }
+    }
+  }
+  cityBuilding(f,cx,cz,yaw,kind,w,d,h,variant){
+    const sin=Math.sin(yaw),cos=Math.cos(yaw),front=d/2;
+    const at=(u,y,v)=>[cx+u*cos+v*sin,f+y,cz-u*sin+v*cos];
+    const block=(u,y,v,a,b,c,color)=>this.block(...at(u,y,v),a,b,c,color,false,yaw);
+    const drum=(u,y,v,a,b,c,color)=>this.drum(...at(u,y,v),a,b,c,color);
+    const cream=0xd2bca3,trim=0x5d7476,shale=0x66747e,brick=0xa56a59;
+    const glass=[0x607f8c,0x7d999c,0xb0b8aa,0xd8b385];
+    const walls=[0xb98066,0xbca693,0x95a49b,0xb79586];
+    const wall=walls[variant%walls.length];
+    block(0,.28,0,w+3,.56,d+3,0xbdac98);
+    if(kind==='casa'){
+      const eave=h*.7,peak=h-eave,roofColor=[0x966f61,0x667b81,0xb58770][variant%3];
+      block(0,eave/2,0,w,eave,d,wall);
+      if(variant%3===1){
+        block(0,eave+.32,0,w+.95,.64,d+.85,cream);
+        block(-w*.22,eave+1.4,-d*.16,w*.42,2.8,d*.55,wall);
+      }else{
+        for(let i=-2;i<=2;i++){
+          const extra=peak*(1-Math.abs(i)/2.5);
+          block(i*w/5,eave+extra/2,0,w/5+.02,extra,d,wall);
         }
+        const slope=Math.atan2(peak,w/2);
+        for(const side of [-1,1])this.block(...at(side*w/4,eave+peak/2,0),Math.hypot(w/2,peak)+.9,.48,d+1.5,roofColor,false,yaw,-side*slope);
+        block(w*.25,h-.1,-d*.2,1.35,2.7,1.45,brick);
       }
-    }
-    for(let i=0;i<38;i++){
-      const ring=i%4,along=Math.floor(i/4)*28-115,far=ring%2?139:174;
-      const x=ring%2?along:(ring===0?-far:far),z=ring%2?(ring===1?-far:far):along;
-      const h=17+(7*i)%32,w=12+i%5,wall=[0xaf9891,0x949ca1,0xb2a69a,0x9e949d][i%4];
-      this.block(x,f+h/2,z,w,h,11,wall);this.block(x,f+h+.17,z,w+.62,.39,11.4,0x7c8085);
-      for(let row=0;row<4;row++)for(let j=-1;j<=1;j++){
-        const tint=(row+j+i)%5?0x74828a:0xe6be86;
-        if(ring%2)this.block(x+j*3,f+h-2-row*2.8,z-Math.sign(z)*5.57,1.65,1.48,.13,tint);
-        else this.block(x-Math.sign(x)*(w/2+.08),f+h-2-row*2.8,z+j*2.62,.14,1.48,1.65,tint);
+      block(0,2,front+.16,2.1,4,.30,trim);
+      for(const side of [-1,1]){
+        block(side*w*.28,eave*.54,front+.16,w*.21,2.6,.30,glass[(variant+1)%4]);
+        block(side*w*.28,eave*.54-1.39,front+.28,w*.23,.23,.59,cream);
       }
+      return;
     }
+    if(kind==='oficina'){
+      const eave=h*.61;
+      block(0,eave/2,0,w,eave,d,brick);
+      for(const side of [-1,1]){
+        const u=side*w/4,peak=eave+w*.19,slope=Math.atan2(peak-eave,w/2);
+        this.block(...at(u,(eave+peak)/2,0),Math.hypot(w/2,peak-eave)+.7,.56,d+1.3,0x698386,false,yaw,-side*slope);
+      }
+      // Empena em madeira sob a cumeeira, com janelas altas no galpão.
+      for(let i=0;i<9;i++){
+        const u=(i-4)*w/9,extra=(1-Math.abs(u)/(w/2))*w*.19;
+        block(u,eave+extra/2,0,w/9+.015,extra,d,0xaf826b);
+      }
+      for(let i=-2;i<=2;i++){
+        const u=i*w*.178;
+        block(u,eave*.53,front+.11,w*.134,eave*.41,.22,shale);
+        block(u,eave*.54,front+.27,w*.108,eave*.34,.18,glass[(i+4)%3]);
+        block(u,eave*.53,front+.38,w*.13,.15,.14,cream);
+      }
+      const tankX=w*.27,tankZ=-d*.17,tankY=h+3;
+      for(const du of [-1.86,1.86])for(const dv of [-1.52,1.52]){
+        block(tankX+du,(tankY+eave)/2,tankZ+dv,.34,tankY-eave,.34,trim);
+      }
+      drum(tankX,tankY,tankZ,6.35,5.5,6.35,0x698986);
+      for(const y of [-2.52,0,2.5])drum(tankX,tankY+y,tankZ,6.52,.22,6.52,cream);
+      this.piece('cone',...at(tankX,tankY+3.3,tankZ),6.7,1.6,6.7,shale);
+      return;
+    }
+    if(kind==='torre'){
+      const low=h*.61,mid=h*.27,crown=h-low-mid;
+      block(0,low/2,0,w,low,d,0x77939a);
+      block(-w*.06,low+mid/2,-d*.05,w*.80,mid,d*.78,0x74929b);
+      block(-w*.10,low+mid+crown/2,-d*.08,w*.54,crown,d*.56,0x8ba2a2);
+      for(const [u,v,width,depth,bottom,high] of [[0,0,w,d,0,low],[-w*.06,-d*.05,w*.8,d*.78,low,mid],[-w*.10,-d*.08,w*.54,d*.56,low+mid,crown]]){
+        for(const side of [-1,1]){
+          for(let n=-2;n<=2;n++)block(u+n*width*.19,bottom+high/2,v+side*(depth/2+.12),.30,high,.26,cream);
+          for(let n=-1;n<=1;n++)block(u+side*(width/2+.1),bottom+high/2,v+n*depth*.35,.24,high,.29,shale);
+        }
+        for(let band=bottom+4;band<bottom+high-.7;band+=4.35)block(u,band,v,width+.21,.29,depth+.22,0x506a78);
+        block(u,bottom+high,v,width+.76,.65,depth+.75,cream);
+      }
+      drum(-w*.1,h+2.7,-d*.08,.31,5.5,.31,shale);
+      return;
+    }
+    if(kind==='cine'){
+      const base=h*.60,tower=w*.265;
+      block(0,base/2,0,w,base,d,0xb87763);
+      block(-w*.23,(base+2)/2,front-.25,w*.51,base+2,2.3,cream);
+      block(w*.22,h*.45,front-1.6,tower,h*.90,4.8,0xce9b73);
+      block(w*.22,h*.91,front-1.8,tower*.76,h*.13,4.0,cream);
+      block(w*.22,h*.99,front-1.8,tower*.47,1.0,3.2,trim);
+      for(let i=-1;i<=1;i++)block(w*.22+i*1.38,h*.61,front+.94,.61,h*.56,.65,0x82655d);
+      block(-w*.22,7.2,front+.8,w*.50,5.9,.43,0x42646b);
+      block(-w*.22,10.6,front+2.1,w*.69,1.25,4.75,trim);
+      block(-w*.22,11.5,front+2.1,w*.68,.46,4.6,0xe6c893);
+      for(let i=-1;i<=1;i++)block(-w*.22+i*3.35,base*.71,front+1.06,1.85,3.4,.36,0x81a3a4);
+      this.sign('CINE',...at(-w*.22,base*.91,front+1.16),8.65,yaw,'#396361');
+      for(const side of [-1,1])for(let j=-1;j<=1;j++){
+        block(side*(w/2+.16),base*.63,j*d*.28,.32,base*.6,.76,cream);
+        block(side*(w/2+.19),base*.44,(j+.39)*d*.25,.34,2.7,d*.13,shale);
+      }
+      return;
+    }
+    // Bloco residencial com galerias sombreadas, guarda-corpos e caixa de escada saliente.
+    block(0,h/2,0,w,h,d,wall);
+    block(w*.38,h*.52,-d*.04,w*.18,h*1.04,d*1.03,cream);
+    for(let row=1,y=5.5;y<h-2.3;y+=5.2,row++){
+      const balcony=(row+variant)%2===0,u=balcony?-w*.15:0;
+      for(let j=-2;j<=1;j++)block(j*w*.19,y,front+.13,w*.13,2.95,.30,glass[(row+j+variant+6)%4]);
+      if(balcony){
+        block(u,y-1.72,front+1.08,w*.64,.44,2.48,cream);
+        block(u,y-.69,front+2.22,w*.64,1.37,.24,0x89a09d);
+        block(u,y+.06,front+2.22,w*.65,.16,.29,cream);
+      }
+      for(const sign of [-1,1])for(const z of [-d*.25,d*.15])block(sign*(w/2+.11),y,z,.25,2.78,d*.17,glass[(row+variant)%3]);
+    }
+    block(0,h+.22,0,w+.87,.64,d+.8,cream);
+    block(w*.24,h+2.0,-d*.14,w*.37,3.6,d*.44,wall);
+    drum(-w*.21,h+2.0,-d*.22,3.47,3.8,3.47,0x6b8382);
+    drum(-w*.21,h+3.99,-d*.22,3.66,.29,3.66,shale);
   }
 };
