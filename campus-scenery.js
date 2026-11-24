@@ -588,8 +588,8 @@ window.CampusScenery = class CampusScenery {
       floorDeck(-126,-120,-8,8,y);floorDeck(-120,-118,-3.85,3.85,y);
       for(const side of [-1,1]){
         const z=side*8.22;
-        this.block(-123, y+.62,z,6.1,1.24,.36,0xb5886e);
-        this.block(-123,y+2.24,z,6.25,.13,.14,iron);
+        this.block(-123, y+.62,z,6.1,1.24,.36,0xb5886e,true);
+        this.block(-123,y+2.24,z,6.25,.13,.14,iron,true);
       }
       if(level.id!=='first')floorDeck(-123,-118,11.85,16.97,y);
       this.sign(level.name.toLocaleUpperCase('pt-BR'),-119.86,y+5.75,5.85,3.6,-Math.PI/2);
@@ -621,17 +621,29 @@ window.CampusScenery = class CampusScenery {
       // Platibanda contínua à base de cada lance.
       this.block(finish,low+(up?flight.rise:0)-.3,z,.55,.52,w,concrete);
     }
-    // Caixilharia dos janelões da escada. O muro acompanha toda a altura do prédio.
-    for(const x of [-154,-146,-136,-126,-120]){
-      for(const z of [-8.42,8.42])this.block(x,1.1,z,.51,45.5,.45,iron);
-    }
-    for(const z of [-8.47,8.47]){
+    // O fechamento externo fica além do corrimão: há ar dos dois lados das barras.
+    const [x0,x1,z0,z1]=rules.stairwell.box,base=rules.ground,top=rules.stairwell.top;
+    const width=x1-x0,depth=z1-z0,height=top-base,midY=(top+base)/2;
+    this.block(-137,base-.24,0,width,.48,depth,concrete,'camera');
+    for(const side of [-1,1]){
+      const z=side*(z1+.22);
+      this.piece('glass',-137,midY,z,width,height,.12,0x86aea9,'camera');
+      for(const x of [x0,-146,-136,-126,x1])this.block(x,midY,z,.51,height,.44,iron);
       for(const y of [-19.5,-12,-2.6,5.8,15.12,21.5]){
-        this.block(-137,y,z,34.45,.27,.32,iron);
-        this.block(-137,y+.56,z,34.45,.64,.30,0xc4a080);
+        this.block(-137,y,z,width+.45,.27,.32,iron);
+        this.block(-137,y+.56,z,width+.45,.64,.30,0xc4a080);
       }
     }
-    this.block(-137,22.57,0,34.8,.51,17.5,0xaf8770);
+    this.block(x0-.2,midY,0,.4,height,depth,concrete,'camera');
+    for(const side of [-1,1]){
+      const w=z1-3.8;
+      this.block(x1+.18,midY,side*(3.8+w/2),.36,height,w,concrete,'camera');
+    }
+    for(let i=0;i<rules.levels.length;i++){
+      const lintel=rules.levels[i].floor+7.1,next=rules.levels[i+1]?.floor??top;
+      this.block(x1+.18,(lintel+next)/2,0,.36,next-lintel,7.6,concrete,'camera');
+    }
+    this.block(-137,top+.255,0,width+.8,.51,depth+.9,0xaf8770);
     this.block(-120.04,rules.first+7.45,0,.20,.77,7.95,iron);
     this.sign('ESCADAS',-117.72,rules.first+7.64,0,5.8,Math.PI/2);
     for(const [z,name] of [[-4.6,'TERRAÇO  ↑'],[4.6,'TÉRREO  ↓']]){
@@ -706,7 +718,7 @@ window.CampusScenery = class CampusScenery {
       }
     }
     // A caixa da escada se apoia em paredes laterais desde a fundação.
-    for(const z of [-8.79,8.79]){
+    for(const z of [-11.03,11.03]){
       this.block(-137,f+2.32,z,34.5,4.64,.68,base);
       this.block(-137,f+5.07,z,34.6,.40,.85,cap);
       for(const x of [-153.7,-144.3,-119.9])this.block(x,f+8,z,1.05,16,.78,wall);

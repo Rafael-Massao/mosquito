@@ -1,7 +1,7 @@
 // A escada, a planta e a simulação da sala usam as mesmas cotas e o mesmo espaço de voo.
 (function (root) {
   'use strict';
-  const protocol=5;
+  const protocol=6;
   const ground=-21.5, first=-3.5, terrace=14.12;
   const levels=[
     {id:'ground',name:'Térreo',floor:ground},
@@ -44,9 +44,9 @@
       flights.push(flight);
     }
   }
-  // Mantém as lajes, a caixa da escada e as paredes externas válidas até para Fantasma.
-  const stairCells=new Set([...landings,...flights,...entrances.filter(c=>c.name==='Entrada da escada')]);
-  const fixed=[main,arena,courtyard,kitchen,cleaning,roof,...entrances,...landings,...flights];
+  const stairwell=room('Escada central',null,[-154,-120,-10.5,10.5],ground,22.315);
+  const stairSurfaces=[...landings,...flights];
+  const fixed=[main,arena,courtyard,kitchen,cleaning,roof,...entrances,stairwell];
   const unlocked=[...fixed,shaft],locked=[...fixed,{...shaft,top:gateY-gateDepth},{...shaft,floor:gateY+gateDepth}];
   const distance=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
   function stepOffset(cell,x){
@@ -58,20 +58,67 @@
   function rampOffset(cell,x){
     return cell.steps?clamp((x-cell.from)/(cell.to-cell.from),0,1)*cell.rise:0;
   }
+  // O vão compartilha o ar de toda a caixa. Só patamares e lances ocupam volume.
+  function touchesSlab(cell,x,z,r){
+    const x0=cell.steps?west:cell.box[0],x1=cell.steps?east:cell.box[1];
+    return x>=x0-r&&x<=x1+r&&z>=cell.box[2]-r&&z<=cell.box[3]+r;
+  }
+  function contactOffset(cell,x,r){
+    // O raio toca o patamar superior antes de o centro alcançar o último degrau.
+    const run=Math.abs(east-west);
+    return Math.min(cell.rise,rampOffset(cell,x)*run/(run-r));
+  }
+  function stairHeight(x,y,z,r){
+    let h=clamp(y,stairwell.floor+r+.01,stairwell.top-r);
+    for(const cell of stairSurfaces){
+      if(!touchesSlab(cell,x,z,r))continue;
+      const surface=cell.floor+rampOffset(cell,x);
+      const contact=cell.steps?contactOffset(cell,x,r):0;
+      const top=cell.floor+contact+r+.01;
+      const bottom=cell.steps?Math.min(surface-.82,cell.floor+stepOffset(cell,x)-.48)-r:surface-.46-r;
+      if(h>bottom&&h<top)h=top-h<=h-bottom?top:bottom;
+    }
+    return h;
+  }
+  const previousStairPosition=new WeakMap();
+  function followDescent(pos,last,radius){
+    if(Math.abs(pos.y-last.y)>.0001||Math.abs(pos.x-last.x)>.3)return;
+    for(const cell of flights){
+      if(!touchesSlab(cell,pos.x,pos.z,0)||!touchesSlab(cell,last.x,last.z,0))continue;
+      const offset=contactOffset(cell,last.x,radius),clearance=last.y-cell.floor-offset;
+      const delta=contactOffset(cell,pos.x,radius)-offset;
+      if(clearance>=0&&clearance<.35&&delta<0){pos.y+=delta;return;}
+    }
+  }
   function locate(x,y,z,cells,tolerance=0){
     for(const cell of cells){
       if(!contains(cell.box,x,z))continue;
+      if(cell===stairwell){
+        if(Math.abs(stairHeight(x,y,z,0)-y)<=tolerance+.011)return cell;
+        continue;
+      }
       const dy=rampOffset(cell,x);
       if(y>=cell.floor+dy-tolerance&&y<=cell.top+dy+tolerance)return cell;
     }
   }
-  function areaAt(x,y,z){return locate(x,y,z,unlocked,.08);}
+  function areaAt(x,y,z){
+    const cell=locate(x,y,z,unlocked,.08);
+    return cell===stairwell?(locate(x,y,z,stairSurfaces,.08)||stairwell):cell;
+  }
   function levelAt(x,y,z){
     const area=areaAt(x,y,z);
     return area?.level||(y<first-2?'ground':y>=terrace-.12?'terrace':'first');
   }
   function floorAt(x,y,z){
     const cell=areaAt(x,y,z);
+    if(cell===stairwell){
+      let floor=ground;
+      for(const slab of stairSurfaces){
+        const h=slab.floor+rampOffset(slab,x);
+        if(h<=y+.08&&h>floor&&touchesSlab(slab,x,z,0))floor=h;
+      }
+      return floor;
+    }
     return cell?cell.floor+rampOffset(cell,x):first;
   }
   function sameLevel(a,b){return levelAt(...a)===levelAt(...b);}
@@ -82,21 +129,31 @@
     return pos.x>=-118&&pos.x<=158&&pos.y>=first-.1&&pos.y<=12.1;
   }
   function constrain(pos,radius,gate=false){
-    let best=Infinity,x=pos.x,y=pos.y,z=pos.z,stairY=null;
+    const last=previousStairPosition.get(pos);
+    if(last)followDescent(pos,last,radius);
+    let best=Infinity,x=pos.x,y=pos.y,z=pos.z;
     for(const cell of gate?unlocked:locked){
       const b=cell.box,px=clamp(pos.x,b[0]+radius,b[1]-radius);
       const pz=clamp(pos.z,b[2]+radius,b[3]-radius);
       const flat=(px-pos.x)**2+(pz-pos.z)**2;
       if(flat>=best)continue;
-      const dy=rampOffset(cell,px),py=clamp(pos.y,cell.floor+dy+radius+.01,cell.top+dy-radius);
-      const cost=flat+(py-pos.y)**2;
-      if(cost===0)return true;
-      // Ao sair do patamar, um espelho de degrau deve levantar o mosquito antes que
-      // a borda do patamar o empurre horizontalmente de volta. Vale também na descida.
-      if(flat===0&&Math.abs(py-pos.y)<=.68&&stairCells.has(cell))stairY=py;
-      if(cost<best){best=cost;x=px;y=py;z=pz;}
+      let sx=px,sz=pz,py;
+      if(cell===stairwell){
+        py=stairHeight(px,pos.y,pz,radius);
+        // Ao entrar de lado numa laje, deslize pela borda em vez de saltar para cima dela.
+        if(last&&Math.abs(py-pos.y)>.12&&Math.hypot(pos.x-last.x,pos.y-last.y,pos.z-last.z)<.35){
+          if(stairHeight(px,pos.y,last.z,radius)===pos.y){sz=last.z;py=pos.y;}
+          else if(stairHeight(last.x,pos.y,pz,radius)===pos.y){sx=last.x;py=pos.y;}
+        }
+      }else py=clamp(pos.y,cell.floor+radius+.01,cell.top-radius);
+      const cost=(sx-pos.x)**2+(sz-pos.z)**2+(py-pos.y)**2;
+      if(cost<best){best=cost;x=sx;y=py;z=sz;}
+      if(cost===0)break;
     }
-    if(stairY!==null){pos.y=stairY;return true;}
+    if(contains(stairwell.box,x,z)){
+      const saved=last||{};saved.x=x;saved.y=y;saved.z=z;
+      if(!last)previousStairPosition.set(pos,saved);
+    }else if(last)previousStairPosition.delete(pos);
     pos.x=x;pos.y=y;pos.z=z;return true;
   }
   function validPosition([x,y,z],gate=false){return !!locate(x,y,z,gate?unlocked:locked,.08);}
@@ -141,7 +198,7 @@
     return true;
   }
   const api={protocol,levels,ground,first,terrace,main,arena,courtyard,kitchen,cleaning,roof,shaft,
-    landings,flights,gateY,gateDepth,stepOffset,areaAt,levelAt,inSchool,floorAt,sameLevel,constrain,
+    landings,flights,stairwell,gateY,gateDepth,stepOffset,areaAt,levelAt,inSchool,floorAt,sameLevel,constrain,
     validPosition,atFlightCeiling,distance,switches,folder,cleanerHead,secrets,hidingPlaces,sprinkler,steam,vane,cleaner,clearCleanerPools,stepCleaner,biteCleaner};
   if(typeof module==='object'&&module.exports)module.exports=api;else root.EscolaCampus=api;
 })(globalThis);

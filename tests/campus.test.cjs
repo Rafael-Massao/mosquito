@@ -164,3 +164,24 @@ test('espuma limpa as poças próximas para a sala e respeita a recarga',()=>{
   place(a,[77,campus.cleanerHead[1],5],'faxineira');act(a,'team-power');
   assert.equal(room.campus.cleaner.pools.length,1);
 });
+
+test('voo atravessa os vãos centrais e laterais nos quatro lances, inclusive online',()=>{
+  const {sanitizeState}=require('../server/rooms.cjs');
+  for(const f of campus.flights)for(const r of [.075,.1875]){
+    const side=Math.sign(f.z),x=(f.from+f.to)/2,y=f.floor+f.rise/2+1;
+    const p={x,y,z:side*9.5};
+    for(const dir of [-side,side]){
+      for(let i=0;i<160;i++){
+        p.z+=dir*.1;campus.constrain(p,r);
+        assert.ok(Math.abs(p.y-y)<.001);
+        assert.ok(sanitizeState({pos:[p.x,p.y,p.z],rot:[0,0,0,1]}));
+      }
+      assert.ok(Math.abs(p.z-(dir===side?9.5:-6.5)*side)<.001);
+    }
+    assert.equal(campus.validPosition([x,y,side*11]),false);
+    assert.equal(campus.validPosition([x,f.floor+f.rise/2-.3,f.z]),false);
+  }
+  const p={x:-136,y:campus.ground+.2,z:0};
+  for(let i=0;i<500;i++){p.y+=.1;campus.constrain(p,.18);}
+  assert.ok(Math.abs(p.y-campus.stairwell.top+.18)<.001);
+});
