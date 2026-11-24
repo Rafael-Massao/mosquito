@@ -139,7 +139,7 @@
     const m=r.model,o=m.mosquito;if(o.position.distanceTo(r.pos)>12)o.position.copy(r.pos);else o.position.lerp(r.pos,k);o.quaternion.slerp(r.rot,k);
     const beat=Math.sin(this.elapsed*40)*.55;m.asas[0].rotation.z=beat;m.asas[1].rotation.z=-beat;m.tick(this.elapsed,dt);m.luzSkin.intensity=Math.min(m.luzSkin.intensity,.1);
     r.project.copy(o.position).add(new T.Vector3(0,.5,0)).project(this.g.camera);
-    const shown=this.g.jogando&&!this.g.menuAberto&&r.project.z>-1&&r.project.z<1&&Math.abs(r.project.x)<1.1&&Math.abs(r.project.y)<1.1&&o.position.distanceTo(this.g.jogador.pos)<40;
+    const shown=this.g.jogando&&!this.g.menuAberto&&r.project.z>-1&&r.project.z<1&&Math.abs(r.project.x)<1.1&&Math.abs(r.project.y)<1.1&&o.position.distanceTo(this.g.jogador.pos)<40&&window.EscolaCampus.sameLevel(r.pos.toArray(),this.g.jogador.pos.toArray());
     r.label.hidden=!shown;if(shown){r.label.style.left=((r.project.x+1)*innerWidth/2)+'px';r.label.style.top=((-r.project.y+1)*innerHeight/2)+'px';}
    }
    this.bossVisual(dt);

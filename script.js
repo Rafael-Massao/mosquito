@@ -194,7 +194,7 @@ const HABS = {
   mosquito:   { nome: "Chamado do Enxame", ico: "🪰", cd: 30, dur: 0, desc: "Faz surgir 12 gotas de sangue ao seu redor.", usar(g) { g.mundo.gotasPerto(g.jogador.pos, 12); } },
   carreta:    { nome: "Grave Ensurdecedor", ico: "🔊", cd: 20, dur: 6, desc: "Humanos num raio de 22 dançam por 6 s (sem tapas) e rendem +50% por picada.", usar(g) { g.atordoar(22, 6); g.audio.tom(70, 30, 0.7, "sawtooth", 0.5); g.jogador.shake = 1; g.mundo.emitir(g.jogador.pos, 0xff44cc, 30, 7); } },
   eletrizado: { nome: "Descarga", ico: "⚡", cd: 18, dur: 0, desc: "Coleta na hora as gotas num raio de 14 e paralisa humanos próximos por 4 s.", usar(g) { g.mundo.coletarRaio(g.jogador.pos, 14, g); g.atordoar(10, 4); g.ui.flash("rgba(120,200,255,.6)"); g.mundo.emitir(g.jogador.pos, 0x9fe0ff, 40, 8); } },
-  pintado:    { nome: "Poça de Cura", ico: "🎨", cd: 24, dur: 8, desc: "Cria uma poça de tinta que cura 12 de vida por segundo e recarrega a stamina por 8 s.", usar(g) { g.zona = { x: g.jogador.pos.x, z: g.jogador.pos.z, r: 5, t: 8 }; } },
+  pintado:    { nome: "Poça de Cura", ico: "🎨", cd: 24, dur: 8, desc: "Cria uma poça de tinta que cura 12 de vida por segundo e recarrega a stamina por 8 s.", usar(g) { g.zona = { x: g.jogador.pos.x, y: window.EscolaCampus?.floorAt(...g.jogador.pos.toArray()) ?? CFG.YMIN, z: g.jogador.pos.z, r: 5, t: 8 }; } },
   extintor:   { nome: "Extinção", ico: "🧯", cd: 22, dur: 8, desc: "Apaga as nuvens de gás num raio de 22, dá imunidade a gás e poças por 8 s e assusta humanos próximos por 3 s.", usar(g) { g.mundo.apagarGas(g.jogador.pos, 22); g.buff.gas = 8; g.atordoar(8, 3); g.mundo.emitir(g.jogador.pos, 0xffffff, 40, 7, "espuma"); } },
   cadeado:    { nome: "Cadeado Fechado", ico: "🔒", cd: 20, dur: 5, desc: "Por 5 s você é invulnerável, mas anda 55% mais devagar.", usar(g) { g.jogador.escudo = 5; g.buff.pesado = 5; } },
   tusk:       { nome: "Rajada de Unhas", ico: "🦗", cd: 10, dur: 0, desc: "Dispara unhas douradas que picam humanos à distância sem irritá-los. Ato 1: 1 alvo, Ato 2: 2, Ato 3: 3, Ato 4: todos no raio de 25 (e a recarga cai de 10 para 4 s).", usar(g) { return g.rajadaTusk(); } },
@@ -2966,7 +2966,7 @@ class WorldManager {
     const cy = (YMAX + F) / 2, H = YMAX - F + 4, T = 1;
     caixa(MX * 2, 2, MZ * 2, m.piso, 0, F - 1, 0); caixaParede(MX * 2 + 4, 2, MZ * 2 + 4, m.teto, 0, YMAX + 1, 0);
     caixaParede(MX * 2 + 4, H, 4, m.par, 0, cy, -MZ - 2); caixaParede(MX * 2 + 4, H, 4, m.par, 0, cy, MZ + 2);
-    // A varanda continua o corredor para oeste. As salas laterais mantêm a parede externa.
+    // No 1º andar, o vão oeste leva ao patamar das escadas.
     for(const lado of [-1,1])caixaParede(2,H,MZ-3.8,m.par,-MX-1,cy,lado*(MZ+3.8)/2);
     caixaParede(2,YMAX-3.65,7.6,m.par,-MX-1,(YMAX+3.65)/2,0);
     // A parede leste agora tem um vão de 10 m no final do corredor.
@@ -3006,7 +3006,7 @@ class WorldManager {
       ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(texto,256,49,460);
       return new THREE.MeshBasicMaterial({map:tex(canvas)});
     };
-    const volta=destinos('PÁTIO   ↑'),ida=destinos('SALA 3   ↑');
+    const volta=destinos('ESCADAS   ↑'),ida=destinos('SALA 3   ↑');
     for(const x of [-67,5,75]){
       dbox(.72,.49,15.1,tabua,x,YMAX-.28,0);
       for(const lado of [-1,1]){
@@ -3849,9 +3849,10 @@ class WorldManager {
   }
 
   // Só raycasta contra malhas cuja AABB está perto (poda por bounding box)
-  malhasPerto(p, r) { this.perto.length = 0; for (const c of this.col) if (c.box.distanceToPoint(p) < r) this.perto.push(c.mesh); return this.perto; }
+  malhasPerto(p, r, camera=false) { this.perto.length = 0; for (const c of this.col) if ((camera||!c.cameraOnly)&&c.box.distanceToPoint(p) < r) this.perto.push(c.mesh); return this.perto; }
   resolver(pos, raio = 0.18) {
-    if(!this.campus?.bound(pos,raio))this.limitarSala3(pos,raio);
+    this.limitarSala3(pos,raio);
+    this.campus?.bound(pos,raio);
     const ms = this.malhasPerto(pos, raio + 0.4);
     if (!ms.length) return;
     this.raycaster.far = raio;
@@ -3935,12 +3936,13 @@ class WorldManager {
   }
   pingar(pos, vel) {
     const p = this.pingos.find((q) => !q.on); if (!p) return;
+    p.chao=(window.EscolaCampus?.floorAt(pos.x,pos.y,pos.z)??CFG.YMIN)+.1;
     p.on = true; p.m.visible = true; p.m.position.set(pos.x + (Math.random() - 0.5) * 0.5, pos.y - 0.1, pos.z + (Math.random() - 0.5) * 0.5);
     p.vx = vel.x * 0.3 + (Math.random() - 0.5) * 0.6; p.vy = -0.3; p.vz = vel.z * 0.3 + (Math.random() - 0.5) * 0.6;
   }
   atualizarPingos(dt) {
-    const chao = CFG.YMIN + 0.1;
     for (const p of this.pingos) {
+      const chao=p.chao;
       if (!p.on) continue;
       p.vy -= 20 * dt; p.m.position.x += p.vx * dt; p.m.position.y += p.vy * dt; p.m.position.z += p.vz * dt;
       if (p.m.position.y <= chao) {   // bateu no chão: vira uma mancha que fica
@@ -3953,15 +3955,18 @@ class WorldManager {
   }
   // ---- Apoio das habilidades ----
   gotasPerto(pos, n) { for (let i = 0; i < n; i++) this.nascerGota(pos); this.emitir(pos, 0xffd84d, 30, 6); }
+  mesmaAlturaDeColeta(a,b){
+    const rules=window.EscolaCampus;return !rules||rules.sameLevel(a.toArray(),b.toArray());
+  }
   coletarRaio(pos, r, jogo) {   // coleta na hora as gotas (menos as venenosas) dentro do raio
     let n = 0;
     for (let i = this.ativas.length - 1; i >= 0; i--) {
-      const g = this.ativas[i]; if (g.userData.tipo === "veneno" || g.position.distanceTo(pos) > r) continue;
+      const g = this.ativas[i]; if (g.userData.tipo === "veneno" || g.position.distanceTo(pos) > r || !this.mesmaAlturaDeColeta(pos,g.position)) continue;
       this.ativas[i] = this.ativas[this.ativas.length - 1]; this.ativas.pop(); g.visible = false; this.gotas.soltar(g); if (!g.userData.extra) this.fila.push(6); jogo.coletar(g); n++;
     }
     return n;
   }
-  apagarGas(pos, r) { for (const n of this.gasAtivos) if (n.position.distanceTo(pos) < r) { n.userData.fase = "ativo"; n.userData.t = 0.01; } }   // encerra as nuvens no raio
+  apagarGas(pos, r) { for (const n of this.gasAtivos) if (n.position.distanceTo(pos) < r && this.mesmaAlturaDeColeta(pos,n.position)) { n.userData.fase = "ativo"; n.userData.t = 0.01; } }   // encerra as nuvens no raio
   iniciarPontos(S) {   // estado salvo: armário arrombado e livro já devolvido
     if(S.portaSala3Aberta)this.abrirSala3(true);
     const A = this.armario; if (A && S.skins.includes("cadeado")) { A.aberto = true; A.cad.visible = false; A.pivo.rotation.y = -1.75; A.led.visible = false; }
@@ -3974,8 +3979,8 @@ class WorldManager {
     }
   }
   limitar(p) {
-    if(this.campus?.bound(p,.18))return;
     this.limitarSala3(p);
+    if(this.campus?.bound(p,.18))return;
     const a=CFG.ARENA;
     p.x=clamp(p.x,-CFG.MX+1,a.x1-1);p.z=clamp(p.z,-CFG.MZ+1,CFG.MZ-1);
     if(p.x>CFG.MX-1&&(p.z<a.z0+1||p.z>a.z1-1)){
@@ -4092,6 +4097,7 @@ class WorldManager {
   atualizarHumanos(dt, jogo) {
     const p = jogo.jogador.pos, F = CFG.YMIN, rc = jogo.estado.raioColeta + 0.9;
     const virar = (g, ang, k) => { g.rotation.y += Math.atan2(Math.sin(ang - g.rotation.y), Math.cos(ang - g.rotation.y)) * amort(k, dt); };
+    const noPredio=!jogo.campus||jogo.campus.rules.inSchool(p);
     this.humanoPerto = null; let melhor = rc * rc;
     for (const [index,h] of this.humanos.entries()) {
       const shared=jogo.online?.active && jogo.online.campus?.humans[index];
@@ -4133,16 +4139,17 @@ class WorldManager {
       }
       if(shared){g.position.x=shared[0];g.position.z=shared[1];g.rotation.y=shared[2];}
       const jaPicadasFrenesi = jogo.buff.frenesi > 0 ? (jogo.alvosFrenesi.get(h)?.qtd || 0) : 0;
-      h.marca.visible = h.pronto <= 0 && jaPicadasFrenesi < 2;
+      h.marca.visible = noPredio && h.pronto <= 0 && jaPicadasFrenesi < 2;
       h.marca.rotation.z += dt * 2; h.marca.position.y = 6.75 + Math.sin(jogo.t * 3 + h.passo) * 0.1;
       h.alvo.set(g.position.x, F + 5.65 + h.yo, g.position.z);
       const d2 = h.alvo.distanceToSquared(p);
-      if (h.pronto <= 0 && jaPicadasFrenesi < 2 && d2 < melhor) { melhor = d2; this.humanoPerto = h; }
+      if (noPredio && h.pronto <= 0 && jaPicadasFrenesi < 2 && d2 < melhor) { melhor = d2; this.humanoPerto = h; }
     }
   }
 
   encontrarHumanoParaPicar(jogo) {
     // Consulta a posição atual ao apertar o botão, sem depender do alvo do frame anterior.
+    if(jogo.campus&&!jogo.campus.rules.inSchool(jogo.jogador.pos))return null;
     let alvo=null,menor=(jogo.estado.raioColeta+.9)**2;
     for(const h of this.humanos){
       if(h.pronto>0||(jogo.buff.frenesi>0&&(jogo.alvosFrenesi.get(h)?.qtd||0)>=2))continue;
@@ -4175,7 +4182,7 @@ class WorldManager {
     u.halo.material.color.setHex(u.tipo === "veneno" ? 0x55ff55 : c);
     g.scale.setScalar(u.tipo === "dourada" ? 1.4 : 1);
     if (perto) {
-      g.position.set(perto.x+(Math.random()-.5)*22,clamp(perto.y+(Math.random()-.3)*5,CFG.YMIN+1,CFG.YMAX-1),perto.z+(Math.random()-.5)*22);
+      g.position.set(perto.x+(Math.random()-.5)*22,perto.y+(Math.random()-.3)*5,perto.z+(Math.random()-.5)*22);
       this.limitar(g.position);
     } else this.sorteio(g.position);
     g.userData.extra = !!perto; g.visible = true; this.ativas.push(g);
@@ -4313,11 +4320,11 @@ class WorldManager {
       m.rotation.x = -Math.PI / 2; m.position.set(x, CFG.YMIN + 0.08, z); this.cena.add(m); return { m, x, z, r };
     });
   }
-  iniciarGas(n) {
+  iniciarGas(n,audivel=true) {
     const u = n.userData; this.sorteio(n.position, CFG.YMIN + 1.5, 7);
     u.fase = "aviso"; u.t = 2.2; u.raio = 4.5 + Math.random() * 1.5; u.tocou = false;
     u.miolo.visible = false; u.rede.material.color.setHex(0xffcc33); n.scale.setScalar(u.raio); n.visible = true;
-    this.gasAtivos.push(n); this.audio.alerta();
+    this.gasAtivos.push(n); if(audivel)this.audio.alerta();
   }
 
   // Fala do Mosquitão (aparece quando você chega perto dele)
@@ -4333,6 +4340,7 @@ class WorldManager {
 
   update(dt, jogo) {
     const p = jogo.jogador.pos, S = jogo.estado;
+    const noPredio=!jogo.campus||jogo.campus.rules.inSchool(p);
     this.emPerigo = null; this.avisoGas = false;
     this.luz.intensity = (Math.sin(jogo.t * 3.1) * Math.sin(jogo.t * 17.3) > 0.93 ? 0.5 : 1.6) * (jogo.modoGrafico === 'ultra' ? 0.68 : 1);   // lâmpada falhando
     this.atualizarHumanos(dt * jogo.escalaTempo, jogo);   // tempo parado deixa humanos em câmera lenta
@@ -4350,7 +4358,7 @@ class WorldManager {
       if (L.shelf) { L.shelf.visible = L.carregando; L.shelf.scale.setScalar(1 + Math.sin(jogo.t * 4.2) * 0.06); }
     }
     this.atualizarPingos(dt);
-    { const Z = jogo.zona; this.zonaMesh.visible = !!Z; if (Z) { this.zonaMesh.position.set(Z.x, CFG.YMIN + 0.12, Z.z); this.zonaMesh.scale.set(Z.r, Z.r, 1); this.zonaMesh.material.opacity = 0.25 + 0.1 * Math.sin(jogo.t * 4); } }   // poça de cura da skin Meio pintado
+    { const Z = jogo.zona; this.zonaMesh.visible = !!Z; if (Z) { this.zonaMesh.position.set(Z.x, Z.y + 0.12, Z.z); this.zonaMesh.scale.set(Z.r, Z.r, 1); this.zonaMesh.material.opacity = 0.25 + 0.1 * Math.sin(jogo.t * 4); } }   // poça de cura da skin Meio pintado
     for (const m of this.pontos.mantis) { const tem = jogo.estado.mantis.includes(m.id); m.g.visible = !tem; if (!tem) { m.forma.rotation.y += dt * 1.5; m.g.position.y = m.base + Math.sin(jogo.t * 2 + m.pos.x) * 0.15; } }
     const A = this.armario;   // armário trancado: treme enquanto é arrombado, abre e o cadeado cai
     if (A) {
@@ -4367,7 +4375,7 @@ class WorldManager {
       // O objeto segue ativo e coletável mesmo quando sua representação 3D distante é ocultada.
       g.visible = d2 <= this.alcanceGotas * this.alcanceGotas;
       if (d2 < 1600) { u.fase += dt; u.nucleo.position.y = Math.sin(u.fase * 2) * 0.08; u.halo.scale.setScalar((1 + Math.sin(u.fase * 3) * 0.12) * (jogo.buff.scan > 0 ? 3 : 1)); }
-      if (d2 < r2) {
+      if (d2 < r2 && this.mesmaAlturaDeColeta(p,g.position)) {
         this.ativas[i] = this.ativas[this.ativas.length - 1]; this.ativas.pop();
         g.visible = false; this.gotas.soltar(g); if (!g.userData.extra) this.fila.push(6); jogo.coletar(g);
       }
@@ -4385,19 +4393,19 @@ class WorldManager {
     }
 
     // Nuvens de inseticida periódicas
-    if ((this.proxGas -= dt * jogo.escalaTempo) <= 0) { const n = this.nuvens.pegar(); if (n) this.iniciarGas(n); this.proxGas = 10 + Math.random() * 8; }
+    if ((this.proxGas -= dt * jogo.escalaTempo) <= 0) { const n = this.nuvens.pegar(); if (n) this.iniciarGas(n,noPredio); this.proxGas = 10 + Math.random() * 8; }
     for (let i = this.gasAtivos.length - 1; i >= 0; i--) {
       const n = this.gasAtivos[i], u = n.userData; u.t -= dt * jogo.escalaTempo;
       if (u.fase === "aviso") {
-        this.avisoGas = true; u.rede.material.opacity = 0.3 + 0.25 * Math.sin(jogo.t * 14);
+        this.avisoGas = noPredio; u.rede.material.opacity = 0.3 + 0.25 * Math.sin(jogo.t * 14);
         if (u.t <= 0) {
           u.fase = "ativo"; u.t = 6.5; u.miolo.visible = true; u.miolo.material.color.setHex(0x66ff55); u.rede.material.color.setHex(0x66ff55);
-          this.audio.spray(); this.emitir(n.position, 0x99ff77, 24, 8);
+          if(noPredio)this.audio.spray(); this.emitir(n.position, 0x99ff77, 24, 8);
         }
       } else {
         const fade = Math.min(1, u.t / 0.8);
         n.scale.setScalar(u.raio * (0.9 + 0.1 * fade)); u.miolo.material.opacity = 0.22 * fade + 0.04 * Math.sin(jogo.t * 5);
-        if (p.distanceToSquared(n.position) < (u.raio * 0.95) ** 2) {
+        if (noPredio && p.distanceToSquared(n.position) < (u.raio * 0.95) ** 2) {
           this.emPerigo = "gas"; if (!u.tocou) { u.tocou = true; jogo.kills.gas++; } jogo.dano(16 * dt * jogo.fatorGas(), true); jogo.jogador.stamina = Math.max(0, jogo.jogador.stamina - 30 * dt);
         }
         if (u.t <= 0) { u.fase = "off"; n.visible = false; this.gasAtivos[i] = this.gasAtivos[this.gasAtivos.length - 1]; this.gasAtivos.pop(); this.nuvens.soltar(n); }
@@ -4408,7 +4416,7 @@ class WorldManager {
     for (const z of this.pocas) {
       z.m.material.opacity = 0.3 + 0.1 * Math.sin(jogo.t * 3 + z.x);
       const dx = p.x - z.x, dz = p.z - z.z;
-      if (dx * dx + dz * dz < z.r * z.r && p.y < CFG.YMIN + 2.4) {
+      if (noPredio && dx * dx + dz * dz < z.r * z.r && p.y < CFG.YMIN + 2.4) {
         if (!this.emPerigo) this.emPerigo = "poca";
         jogo.jogador.stamina = Math.max(0, jogo.jogador.stamina - 28 * dt); jogo.dano(5 * dt * jogo.fatorGas(), true);
       }
@@ -4502,7 +4510,7 @@ class PlayerController {
     const dist = (4 + Math.min(this.vel.length() * 0.06, 1.2)) * z, desejo = this.tmp.set(0, 0.9 * z, dist).applyEuler(this.eul);
     const len = desejo.length(), dn = this.tmp2.copy(desejo).normalize();
     desejo.add(this.foco);
-    const ms = this.mundo.malhasPerto(this.foco, len + 1);
+    const ms = this.mundo.malhasPerto(this.foco, len + 1,true);
     if (ms.length && !this.estado.attr.intang) {
       this.rc.set(this.foco, dn); this.rc.far = len;
       const h = this.rc.intersectObjects(ms, false);
@@ -4962,6 +4970,7 @@ class QuestManager {
   }
   perto(){
     const p=this.g.jogador.pos,candidatos=[];
+    if(this.g.campus&&!this.g.campus.rules.inSchool(p))return null;
     for(const n of this.npcs){const d=p.distanceToSquared(n.alvo);if(d<25)candidatos.push({npc:n,alvo:n.alvo,d,id:n.q.id});}
     for(const i of this.itens){const m=this.estado(i.missao),d=p.distanceToSquared(i.alvo);if(d<20.25&&m.aceita&&!m.entregue&&!m.itens.includes(i.id))candidatos.push({item:i,alvo:i.alvo,d});}
     return candidatos.sort((a,b)=>a.d-b.d).find(c=>this.visivel(c.alvo,c.id));
@@ -4975,7 +4984,7 @@ class QuestManager {
   }
   dica(){const c=this.perto();return c?(c.npc?'💬 '+c.npc.q.nome+' · Pegar / B para conversar':'✨ '+c.item.nome+' · Pegar / B para '+(c.item.missao==='sensores'?'inspecionar':'recolher')):'';}
   atualizar(dt){if((this.timer-=dt)<=0){this.timer=.5;this.refresh();}}
-  podeFalar(q){const n=this.npcs.find(n=>n.q.id===q.id);return n&&n.alvo.distanceToSquared(this.g.jogador.pos)<25&&this.visivel(n.alvo,q.id);}
+  podeFalar(q){const n=this.npcs.find(n=>n.q.id===q.id);return (!this.g.campus||this.g.campus.rules.inSchool(this.g.jogador.pos))&&n&&n.alvo.distanceToSquared(this.g.jogador.pos)<25&&this.visivel(n.alvo,q.id);}
   aceitar(q){if(!this.podeFalar(q)||this.estado(q.id).aceita)return false;this.g.estado.missoes[q.id]={aceita:true,entregue:false,itens:[]};this.g.estado.salvar();this.refresh();return true;}
   medalhasPendentes(){return [['circuito_bronze',120],['circuito_prata',45],['circuito_ouro',28]].filter(([id,t])=>this.g.estado.recordeVoo!=null&&this.g.estado.recordeVoo<=t&&!this.g.estado.conq.includes(id));}
   entregar(q){
@@ -5013,7 +5022,7 @@ class QuestManager {
       const room=this.g.online.campus;
       e.parente(body,'h3','Missões da equipe');
       e.parente(body,'p',room?.file?'✓ Pasta recuperada':'Pasta da chamada · na Sala 1, use Pegar perto da professora. Enquanto ela estiver distraída, um amigo deve pegar a pasta amarela.');
-      e.parente(body,'p',room?.gate?'✓ Atalho de serviço aberto':'Relés do pátio · depois da pasta, acionem A e B em até cinco segundos. Cada jogador fica ao lado do seu relé.');
+      e.parente(body,'p',room?.gate?'✓ Duto aberto entre o térreo e o terraço':'Relés do pátio no térreo · depois da pasta, acionem A e B em até cinco segundos. Cada jogador fica ao lado do seu relé.');
     }
     for(const q of MISSOES){const card=e.parente(body,'article',undefined,'quest-card');e.parente(card,'h3',q.titulo);e.parente(card,'p',q.nome+' · '+q.sala+' · '+this.status(q));e.parente(card,'p',q.objetivo);e.parente(card,'small',this.progresso(q)+'/'+q.meta+' · '+q.premio+' sangue');}
   }
@@ -5073,61 +5082,83 @@ class SchoolActivities {
   abrirMapa(){
     const body=this.painel('Mapa da escola');if(!body)return;
     const g=this.g,S=g.estado,p=g.jogador.pos;
-    const campus=window.EscolaCampus?.areaAt(p.x,p.z);
-    const room=CFG.SALAS.find(s=>p.x>=s[1]&&p.x<=s[2]&&p.z>=s[3]&&p.z<=s[4]);
-    const location=campus?.name||room?.[0]||'Corredor';
-    this.parente(body,'p','Você está em '+location+' · '+S.salas.length+'/'+CFG.SALAS.length+' salas do prédio principal visitadas.','school-location');
+    const rules=window.EscolaCampus,here=rules?.levelAt(p.x,p.y,p.z)||'first',area=rules?.areaAt(p.x,p.y,p.z);
+    const levels=rules?.levels||[{id:'first',name:'1º andar'}];
+    const room=CFG.SALAS.find(([,x0,x1,z0,z1])=>p.x>=x0&&p.x<=x1&&p.z>=z0&&p.z<=z1);
+    const level=levels.find(item=>item.id===here);
+    const place=area===rules?.main?room?.[0]||'Corredor':area?.name;
+    const location=level.name+(place&&place!==level.name?' · '+place:'');
+    this.parente(body,'p','Sua posição · '+location+' · '+S.salas.length+'/'+CFG.SALAS.length+' salas do 1º andar visitadas.','school-location');
     const tabs=this.parente(body,'div',undefined,'school-map-tabs');
-    const tabSchool=this.botao(tabs,'Escola inteira',()=>draw(false));
-    const tabCampus=this.botao(tabs,'Ampliar ala oeste',()=>draw(true));
+    tabs.setAttribute('role','group');tabs.setAttribute('aria-label','Escolher andar');
+    const buttons=levels.map(l=>this.botao(tabs,l.name,()=>draw(l)));
     const frame=this.parente(body,'div',undefined,'school-map-frame');
-    const note=this.parente(body,'p',undefined,'school-map-note');
-    const ns='http://www.w3.org/2000/svg';
-    const draw=west=>{
-      tabSchool.setAttribute('aria-pressed',String(!west));tabCampus.setAttribute('aria-pressed',String(west));
+    const note=this.parente(body,'p',undefined,'school-map-note'),ns='http://www.w3.org/2000/svg';
+    const draw=l=>{
+      buttons.forEach((button,i)=>button.setAttribute('aria-pressed',String(levels[i]===l)));
       frame.replaceChildren();
       const svg=document.createElementNS(ns,'svg');svg.classList.add('school-map');
-      svg.setAttribute('viewBox',west?'-215 -25 104 92':'-218 -108 381 216');
-      svg.setAttribute('role','img');svg.setAttribute('aria-label',(west?'Planta da ala oeste':'Planta de toda a escola')+'. Você está em '+location);frame.appendChild(svg);
+      svg.setAttribute('viewBox',{ground:'-162 -30 253 96',first:'-162 -106 327 212',terrace:'-162 -32 265 64'}[l.id]);
+      svg.setAttribute('role','img');svg.setAttribute('aria-label','Planta · '+l.name+'. Sua posição · '+location);frame.appendChild(svg);
       const el=(name,attrs,text)=>{
         const n=document.createElementNS(ns,name);for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);
         if(text)n.textContent=text;svg.appendChild(n);return n;
       };
-      const rect=(x,y,w,h,fill,stroke='#485a5b')=>el('rect',{x,y,width:w,height:h,rx:1.1,fill,stroke,'stroke-width':.75});
+      const rect=(x,y,w,h,fill,stroke='#485a5b')=>el('rect',{x,y,width:w,height:h,rx:.8,fill,stroke,'stroke-width':.75});
       const line=(x1,y1,x2,y2,color,width=.9)=>el('line',{x1,y1,x2,y2,stroke:color,'stroke-width':width});
       const label=(x,y,text,size,attrs={})=>el('text',{x,y,fill:'#263e42','font-size':size,'font-weight':700,'text-anchor':'middle',...attrs},text);
-      const mark=(x,z,r,col)=>el('circle',{cx:x,cy:z,r,fill:col,stroke:'#fff6df','stroke-width':.8});
-      const rules=window.EscolaCampus,open=!!g.campus?.shared?.gate;
+      const mark=(x,z,r,col,title)=>{
+        const dot=el('circle',{cx:x,cy:z,r,fill:col,stroke:'#fff6df','stroke-width':.75});
+        dot.appendChild(document.createElementNS(ns,'title')).textContent=title;
+      };
+      const zone=(a,color)=>{const [x0,x1,z0,z1]=a.box;rect(x0,z0,x1-x0,z1-z0,color);};
+      const open=!!g.campus?.shared?.gate;
+      if(l.id==='first'){
+        CFG.SALAS.forEach(([name,x0,x1,z0,z1])=>{
+          const cx=(x0+x1)/2,cz=(z0+z1)/2;
+          rect(x0,z0,x1-x0,z1-z0,name==='Corredor'?'#e7d3ad':S.salas.includes(name)?'#a9c9c1':'#ced0c3');
+          const vertical=(z1-z0)>70&&(x1-x0)<53;
+          label(cx,cz+2,name,name==='Sala 3'?5.5:6.5,vertical?{transform:'rotate(-90 '+cx+' '+cz+')'}:{});
+        });
+        for(const x of [-94,-49,-7,28,56,94])line(x-5,-8,x+5,-8,'#f9edcf',2.4);
+        for(const x of [-40,17,57,94])line(x-5,8,x+5,8,'#f9edcf',2.4);
+        line(118,-5,118,5,S.portaSala3Aberta?'#469171':'#aa6d40',2.2);
+        for(const q of MISSOES)mark(q.pos[0],q.pos[1],2.55,'#bd7b21',q.nome+' · '+q.sala);
+        note.textContent=(rules?'A escada fica no fim do corredor, do lado oposto à Sala 3. ':'')+'Os pontos dourados indicam personagens de missão.';
+      }else if(l.id==='ground'){
+        zone(rules.courtyard,'#aac5b8');zone(rules.kitchen,'#e9c99c');zone(rules.cleaning,'#a9c8ca');
+        rect(-55.2,-12,40.4,24,'#c7886b','#a17763');line(-35,-12,-35,12,'#f7e0bb');
+        el('circle',{cx:-35,cy:0,r:4,fill:'none',stroke:'#f7e0bb','stroke-width':.7});
+        label(-35,2,'Quadra',4.2);label(-75,2,'Pátio',6);
+        label(rules.kitchen.x,42,'Cozinha',5.1);label(rules.cleaning.x,1,'Zeladoria',4.75);
+        label(rules.cleaning.x,7,'Faxineira',3.4);
+        line(-48.45,22,-41.55,22,'#fff3d2',2.1);line(46,-3.65,46,3.65,'#fff3d2',2.1);
+        for(const [i,[x,,z]] of rules.switches.entries())mark(x,z,1.5,'#c0802c','Relé '+(i?'B':'A'));
+        note.textContent='Do pátio, entre na cozinha pela lateral da quadra ou siga em frente até a zeladoria da faxineira. Os dois pontos dourados são os relés.';
+      }else{
+        zone(rules.roof,'#dec7a5');
+        for(const x of [-91,-13,43]){el('polygon',{points:(x-8)+',-11 '+(x+8)+',-10 '+(x-1)+',-1',fill:'#bf926f'});el('polygon',{points:(x+8)+',-10 '+(x+15)+',-2 '+(x-1)+',-1',fill:'#8eb3a3'});}
+        label(-61,2.3,'Mesas',4.8);label(-3,2.3,'Terraço',6.1);
+        rect(73,-7.2,15.5,6.7,'#b39b78');label(78,-9,'Mirante',4.1);
+        for(const x of [75,77.6])rect(x,7,1.5,4,'#7b9794');
+        note.textContent='O terraço fica sobre o corredor do 1º andar. Siga até o mirante ou explore os respiradouros. A escada leva de volta aos dois andares de baixo.';
+      }
       if(rules){
-        for(const zone of rules.zones){
-          const [x0,x1,z0,z1]=zone.box;
-          rect(x0,z0,x1-x0,z1-z0,zone===rules.bridge&&open?'#9cc5a8':zone.fill);
-        }
-        for(let z=17;z<30;z+=2)line(-201,z,-195,z,'#647976',.42);
-        line(-144.4,rules.gateZ,-139.6,rules.gateZ,open?'#43835e':'#a64637',1.25);
-        for(const a of [rules.courtyard,rules.kitchen,rules.roof])label(a.x,a.z+1,a.name,west?4.2:5);
-        for(const [x,,z] of rules.switches)mark(x,z,1.1,'#bf862c');
-        if(west){
-          label(-166.8,-6,'Galeria',2.9);label(-188,48.8,'Passarela',2.85);
-          label(-202.2,30,'Escada',2.85,{transform:'rotate(-90 -202.2 30)'});
-          label(-133,22,'Rampa',2.8);
+        rect(-154,-8,34,16,'#e8d6ad');
+        for(let x=-146;x<-126;x+=2){line(x,-7,x,-1,'#97886c',.55);line(x,1,x,7,'#97886c',.55);}
+        rect(-120,-3.6,2.5,7.2,'#e8d6ad');line(-118,-3.6,-118,3.6,'#f9edcf',1.6);
+        label(-137,-11,'Escada',l.id==='first'?5.8:4.8);
+        if(l.id==='first'){
+          const [x0,x1,z0,z1]=rules.shaft.box;
+          el('rect',{x:x0,y:z0,width:x1-x0,height:z1-z0,fill:'none',stroke:'#788579','stroke-width':.65,'stroke-dasharray':'1.6 1.4'});
+        }else{
+          zone(rules.shaft,open?'#9ac5a3':'#b9b6a7');line(-123,14.5,-118,14.5,'#778f84',1.6);
+          label(-128,23,'Duto',3.4);
         }
       }
-      CFG.SALAS.forEach(([nome,x0,x1,z0,z1])=>{
-        const cx=(x0+x1)/2,cz=(z0+z1)/2;
-        rect(x0,z0,x1-x0,z1-z0,nome==='Corredor'?'#e7d3ad':S.salas.includes(nome)?'#a9c9c1':'#ced0c3');
-        const vertical=(z1-z0)>70&&(x1-x0)<53;
-        label(cx,cz+2,nome,nome==='Sala 3'?5.8:6.9,vertical?{transform:'rotate(-90 '+cx+' '+cz+')'}:{});
-      });
-      for(const x of [-94,-49,-7,28,56,94])line(x-5,-8,x+5,-8,'#f9edcf',2.4);
-      for(const x of [-40,17,57,94])line(x-5,8,x+5,8,'#f9edcf',2.4);
-      line(118,-5,118,5,S.portaSala3Aberta?'#469171':'#aa6d40',2.2);
-      line(-118,-5,-118,5,'#467d73',2.2);
-      for(const q of MISSOES)mark(q.pos[0],q.pos[1],2.6,'#bd7b21').appendChild(document.createElementNS(ns,'title')).textContent=q.nome+' · '+q.sala;
-      note.textContent=west?(open?'A grade dos relés está aberta. A rampa liga o pátio diretamente ao telhado.':'A galeria, a cozinha e a escada estão abertas. Em dupla, recuperem a pasta na Sala 1 e acionem os relés para abrir a rampa.'):'A saída oeste do corredor dá no pátio. Os pontos dourados no prédio indicam personagens de missão.';
-      if(!west||campus||p.x<=-111)mark(p.x,p.z,west?1.8:3.2,'#c73755').appendChild(document.createElementNS(ns,'title')).textContent='Você';
+      if(l.id===here)mark(p.x,p.z,l.id==='first'?3.2:2.1,'#c73755','Você');
     };
-    draw(false);
+    draw(level);
     const metas=this.parente(body,'div',undefined,'school-objectives');this.parente(metas,'h3','O que explorar');
     const itens=[
       S.portaSala3Aberta?'🔓 Sala 3 aberta.':'🔒 Sala 3: '+S.pistasSala3.length+'/4 pistas anotadas. Procure os bilhetes na Sala 1, Biblioteca, Laboratório e Cantina.',
@@ -5547,7 +5578,7 @@ class GameManager {
     if (this.buff.stamInf > 0) j.stamina = S.staminaMax;
     if (this.zona) {
       this.zona.t -= dt; const dx = j.pos.x - this.zona.x, dz = j.pos.z - this.zona.z;
-      if (dx * dx + dz * dz < this.zona.r * this.zona.r && j.pos.y < CFG.YMIN + 6) { j.vida = Math.min(S.vidaMax, j.vida + 12 * dt); j.stamina = Math.min(S.staminaMax, j.stamina + 40 * dt); }
+      if (dx * dx + dz * dz < this.zona.r * this.zona.r && j.pos.y >= this.zona.y && j.pos.y < this.zona.y + 6) { j.vida = Math.min(S.vidaMax, j.vida + 12 * dt); j.stamina = Math.min(S.staminaMax, j.stamina + 40 * dt); }
       if (this.zona.t <= 0) this.zona = null;
     }
     this.ui.habilidade(S.skin, this.hab.cd, this.hab.cdTotal, this.hab.ativo);
@@ -5555,11 +5586,12 @@ class GameManager {
   multSangue() { return Math.min(4, (this.boost > 0 ? 2 : 1) * (this.buff.sangue > 0 ? 2 : 1) * (this.buff.frenesi > 0 ? 2 : 1)); } // limita empilhamento de bônus
   fatorGas() { return this.buff.gas > 0 ? 0 : this.estado.attr.gas; }
   fatorColeta() { return this.buff.scan > 0 ? 2.5 : 1; }
-  atordoar(r, seg) { const p = this.jogador.pos; if (this.online?.active) this.online.send({type:'stun'}); else if (this.mundo.chefe.alvo.distanceTo(p) < r) this.mundo.chefe.atordoar(seg); for (const h of this.mundo.humanos) if (h.alvo.distanceTo(p) < r) { h.atord = Math.max(h.atord || 0, seg); h.raiva = 0; } }
+  atordoar(r, seg) { const p = this.jogador.pos; if(this.campus&&!this.campus.rules.inSchool(p))return; if (this.online?.active) this.online.send({type:'stun'}); else if (this.mundo.chefe.alvo.distanceTo(p) < r) this.mundo.chefe.atordoar(seg); for (const h of this.mundo.humanos) if (h.alvo.distanceTo(p) < r) { h.atord = Math.max(h.atord || 0, seg); h.raiva = 0; } }
   rajadaTusk() {   // Unhas fisicas voam ate humanos e acertam so no impacto
     const S=this.estado, ato=Math.max(1,S.mantis.length), p=this.jogador.pos;
     const alcance=ato>=4?25:22;
-    const alvos=this.mundo.humanos.filter(h => h.pronto<=0 && !h.unhaPendente && h.alvo.distanceTo(p)<alcance)
+    const noPredio=!this.campus||this.campus.rules.inSchool(p);
+    const alvos=this.mundo.humanos.filter(h => noPredio && h.pronto<=0 && !h.unhaPendente && h.alvo.distanceTo(p)<alcance)
       .sort((a,b)=>a.alvo.distanceToSquared(p)-b.alvo.distanceToSquared(p))
       .slice(0,ato>=4?99:ato);
     if (!alvos.length) { this.ui.toast(`🦗 Nenhum humano ao alcance (${alcance} unidades)`); return false; }
@@ -5685,6 +5717,7 @@ class GameManager {
   }
   checarEggs(dt) {
     const p = this.jogador.pos, F = CFG.YMIN, e = this.egg, P = this.mundo.pontos, S = this.estado;
+    if(this.campus&&!this.campus.rules.inSchool(p)){e.tanque=e.espelho=e.tela=this.mundo.telaoProg=0;e.yAnt=p.y;this.checarArmario(dt);return;}
     // Relógio da sala de Biologia
     if (p.distanceToSquared(P.relogio) < 2.2 * 2.2) this.desbloquear("relojoeiro");
     // Pousar em cima do galão radioativo por 1 s (a posição vem do próprio galão no cenário)
@@ -5714,7 +5747,7 @@ class GameManager {
     if (!this.eggMsg && !S.skins.includes("mosquito8000") && p.z < -78 && p.distanceToSquared(P.quadroMat) < 22 * 22) this.eggMsg = "📝 Quadro de matemática: aperte Q para responder";
     // Salas visitadas
     const sala = CFG.SALAS.find(([, x0, x1, z0, z1]) => p.x >= x0 && p.x < x1 && p.z >= z0 && p.z < z1);
-    if (sala) this.ui.sala(sala[0]);
+    if (sala) this.ui.sala("1º andar · "+sala[0]);
     if (sala && !S.salas.includes(sala[0])) {
       S.salas.push(sala[0]); S.salvar(); this.ui.toast(`📍 ${sala[0]} (${S.salas.length}/${CFG.SALAS.length} salas)`);
       const id = { "Enfermaria": "enfermaria", "Auditório": "auditorio", "Artes": "artes", "Biblioteca": "biblioteca", "Laboratório": "laboratorio" }[sala[0]];
@@ -5725,7 +5758,7 @@ class GameManager {
 
   checarArmario(dt) {
     const A = this.mundo.armario; if (!A || A.aberto) return;
-    const perto = this.jogador.pos.distanceToSquared(A.pos) < 5.5 * 5.5;
+    const perto = (!this.campus||this.campus.rules.inSchool(this.jogador.pos)) && this.jogador.pos.distanceToSquared(A.pos) < 5.5 * 5.5;
     if (perto && (this.teclas.f || this.toque.teclas.f)) {
       A.prog = Math.min(1, A.prog + dt / 3.2); this.eggMsg = `🔓 Arrombando o armário... ${Math.round(A.prog * 100)}%`;
       this.fxT2 = (this.fxT2 || 0) - dt;
@@ -5930,6 +5963,7 @@ class GameManager {
   interagirComPerdidos() {
     if(!this.jogando||this.menuAberto)return;
     if(this.online?.fallen || this.campus?.interact())return;
+    if(this.campus&&!this.campus.rules.inSchool(this.jogador.pos)){this.ui.toast("Nenhum item ou comando por perto");return;}
     if(this.missoes?.interagir())return;
     if(this.interagirEnigmaSala3())return;
     const S = this.estado, p = this.jogador.pos, c = this.mundo.carteira, L = this.mundo.livroPerdido;
@@ -5959,7 +5993,7 @@ class GameManager {
       "NORTE: Artes · Sala 1 · Sala 2 · Biblioteca (estante de devolução, B) · Laboratório · Enfermaria\n" +
       "SUL: Cantina (livro perdido em uma mesa, B) · Ginásio · Banheiro · Auditório (palco e estátua)\n\n" +
       "LABORATÓRIO: voe contra os frascos para derrubá-los.\nSALA 3: a porta no fim direito do corredor pede uma senha. Procure quatro bilhetes na Sala 1, Biblioteca, Laboratório e Cantina. Use Pegar/B para ler e o painel para digitar. Vença o chefe para ganhar a skin Mosquito da Raquete!\n\n" +
-      "GINÁSIO: circuito de 8 aros. Converse com Tico (Pegar/B) para aceitar o desafio. Há outros cinco personagens de missão pela escola; J abre o diário.\nV abre o mapa · E pica · R habilidade · K skins · C conquistas\n" +
+      "ESCADA: na ponta oposta à Sala 3, desça ao pátio e à zeladoria ou suba ao terraço.\nGINÁSIO: circuito de 8 aros. Converse com Tico (Pegar/B) para aceitar o desafio. Há outros cinco personagens de missão pela escola; J abre o diário.\nV abre o mapa · E pica · R habilidade · K skins · C conquistas\n" +
       `Há ${Object.keys(CFG.SKINS).length} skins para achar. Devolver o livro libera o Mosquito Encadernado.`,
       "Feche com = ou clique aqui", 12000);
   }
@@ -6008,14 +6042,15 @@ class GameManager {
     this.extras?.atualizar(dt);
     this.missoes?.atualizar(dt);
     this.eggMsg = ""; this.checarEggs(dt); this.fxSkin(dt);
-    if(!this.eggMsg)this.eggMsg=this.mundo.dicaSala3(j.pos);
+    const noPredio=!this.campus||this.campus.rules.inSchool(j.pos);
+    if(noPredio&&!this.eggMsg)this.eggMsg=this.mundo.dicaSala3(j.pos);
     const dicaMissao=this.missoes?.dica();if(dicaMissao)this.eggMsg=dicaMissao;
     this.campus?.tick(dt);
     if (this.comboT > 0 && (this.comboT -= dt) <= 0) this.combo = 0;
     if (this.boost > 0) this.boost -= dt;
     this.ui.combo(this.combo, this.comboT, this.boost);
     this.ui.barras(j.stamina, S.staminaMax, j.vida, S.vidaMax);
-    this.ui.alerta(w.chefe.ativo ? "" : w.emPerigo === "gas" ? "☣ GÁS TÓXICO — saia!" : w.emPerigo === "poca" ? "☣ Poça tóxica — suba!" : w.avisoGas ? "⚠ INSETICIDA a caminho!" : this.extras?.aviso() ? this.extras.aviso() : this.campus?.prompt ? this.eggMsg : w.humanoPerto ? `🩸 Aperte E para picar ${w.humanoPerto.nome}` : this.eggMsg ? this.eggMsg : (w.livroPerdido && !w.livroPerdido.entregue && !w.livroPerdido.carregando && j.pos.distanceToSquared(w.livroPerdido.g.position) < 36) ? "📘 Aperte B para pegar o livro perdido" : (w.livroPerdido && w.livroPerdido.carregando && w.livroPerdido.shelf && j.pos.distanceToSquared(w.livroPerdido.shelf.position) < 49) ? "📚 Aperte B para devolver o livro à estante" : (w.carteira && w.carteira.visivel && j.pos.distanceToSquared(w.carteira.g.position) < 36) ? "🎒 Aperte B para pegar a carteira" : "",
+    this.ui.alerta(w.chefe.ativo ? "" : w.emPerigo === "gas" ? "☣ GÁS TÓXICO — saia!" : w.emPerigo === "poca" ? "☣ Poça tóxica — suba!" : w.avisoGas ? "⚠ INSETICIDA a caminho!" : this.extras?.aviso() ? this.extras.aviso() : this.campus?.prompt ? this.eggMsg : w.humanoPerto ? `🩸 Aperte E para picar ${w.humanoPerto.nome}` : this.eggMsg ? this.eggMsg : (noPredio && w.livroPerdido && !w.livroPerdido.entregue && !w.livroPerdido.carregando && j.pos.distanceToSquared(w.livroPerdido.g.position) < 36) ? "📘 Aperte B para pegar o livro perdido" : (noPredio && w.livroPerdido && w.livroPerdido.carregando && w.livroPerdido.shelf && j.pos.distanceToSquared(w.livroPerdido.shelf.position) < 49) ? "📚 Aperte B para devolver o livro à estante" : (noPredio && w.carteira && w.carteira.visivel && j.pos.distanceToSquared(w.carteira.g.position) < 36) ? "🎒 Aperte B para pegar a carteira" : "",
       w.emPerigo ? "#8dff6a" : w.avisoGas ? "#ffd84d" : this.eggMsg ? "#ff8ad8" : "#ff6b8a");
     this.ui.perigo("rgba(120,255,80,.7)", w.emPerigo ? 0.35 : 0);
     this.audio.zumbir(clamp(j.vel.length() / (S.velMax * 2), 0, 1), j.corre);

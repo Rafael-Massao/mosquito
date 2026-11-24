@@ -36,7 +36,7 @@ class Campus {
     const pos=p.state.pos;
     if(m.type==='rescue'){
       const ally=room.players.get(m.id);
-      if(ally && ally!==p && ally.downUntil>now && distance(pos,ally.state.pos)<3.5){
+      if(ally && ally!==p && ally.downUntil>now && rules.sameLevel(pos,ally.state.pos)&&distance(pos,ally.state.pos)<3.5){
         ally.downUntil=0;ally.state.health=.45;this.service.send(ally,{type:'revived'});this.notice(p,'Amigo de volta ao voo!');
       }
     }else if(m.type==='team-power'){
@@ -44,10 +44,10 @@ class Campus {
       if(!cd || now<(p.powerAt||0))return;
       p.powerAt=now+cd*1000;
       if(skin==='pintado')this.heals.push({pos:[...pos],end:now+8000,owner:p.id});
-      if(skin==='cadeado')for(const ally of teammates)if(ally!==p&&distance(pos,ally.state.pos)<9)this.service.send(ally,{type:'shield'});
+      if(skin==='cadeado')for(const ally of teammates)if(ally!==p&&rules.sameLevel(pos,ally.state.pos)&&distance(pos,ally.state.pos)<9)this.service.send(ally,{type:'shield'});
       if(skin==='carreta'){
-        this.humans.forEach((h,i)=>{if(distance([h.x,2.15+(routes[i][4]||0),h.z],pos)<22)h.stun=6;});
-        if(distance(pos,rules.cleanerHead)<22&&this.cleaner.hp>0){this.cleaner.stun=2;this.cleaner.phase='cansada';}
+        if(rules.levelAt(...pos)==='first')this.humans.forEach((h,i)=>{if(distance([h.x,2.15+(routes[i][4]||0),h.z],pos)<22)h.stun=6;});
+        if(rules.areaAt(...pos)===rules.cleaning&&distance(pos,rules.cleanerHead)<22&&this.cleaner.hp>0){this.cleaner.stun=2;this.cleaner.phase='cansada';}
       }
     }else if(m.type==='cleaner-bite' && now>=(p.cleanerBiteAt||0)){
       if(rules.biteCleaner(this.cleaner,pos,p.state.nv.tromba)){p.cleanerBiteAt=now+850;this.notice(p,this.cleaner.hp?'Picada certeira!':'Faxineira vencida!');}
@@ -64,7 +64,7 @@ class Campus {
       if(index>=0&&this.file&&!this.gate&&distance(pos,rules.switches[index])<3){
         this.buttons[index]={id:p.id,until:now+5000};const other=this.buttons[1-index];
         if(other&&other.until>now&&teammates.some(q=>q!==p&&q.id===other.id&&distance(q.state.pos,rules.switches[1-index])<3)){
-          this.gate=true;for(const q of room.players.values())this.notice(q,'Passagem de serviço aberta entre o pátio e o telhado!');
+          this.gate=true;for(const q of room.players.values())this.notice(q,'Grade aberta! O duto liga o pátio ao terraço.');
         }else this.notice(p,'Segure a posição. Seu amigo tem 5 s para ligar o outro interruptor.');
       }
     }else if(m.type==='push-pot'){
@@ -102,7 +102,7 @@ class Campus {
       }
       pot.angle+=Math.hypot(v[0],v[2])*dt*1.1;
     }
-    const targets=players.filter(p=>rules.areaAt(p.state.pos[0],p.state.pos[2])?.name==='Cozinha').map(p=>({p,pos:p.state.pos}));
+    const targets=players.filter(p=>rules.areaAt(...p.state.pos)===rules.cleaning).map(p=>({p,pos:p.state.pos}));
     rules.stepCleaner(this.cleaner,dt,targets,({p},damage)=>{
       if(now<(p.wetUntil||0))return;p.wetUntil=now+950;this.service.send(p,{type:'cleaner-hit',damage});
     });

@@ -9,10 +9,12 @@ O jogo agora tem salas de até **4 jogadores**, com código de 6 caracteres. O m
 - Vida, fases, alvo e ataques do chefe. No online, os golpes atingem a área indicada pelo aviso; saiam dela antes do ataque.
 - Vitória contra o chefe: quem participou da luta e continua conectado recebe a conquista e a skin. Recompensas já obtidas não são pagas novamente.
 
-Na Sala 1, um jogador usa Pegar junto à professora enquanto outro recolhe a pasta da chamada. No pátio, dois jogadores acionam relés diferentes para abrir o atalho do telhado. O diário mostra o andamento dessas missões durante a sessão.
+Na Sala 1, um jogador usa Pegar junto à professora enquanto outro recolhe a pasta da chamada. No pátio, dois jogadores acionam relés diferentes para liberar a grade do duto entre o térreo e o terraço. O diário mostra o andamento dessas missões durante a sessão.
  
-Um aliado próximo pode usar Pegar para reanimar quem caiu em até 12 segundos. A tinta cura amigos na poça, o Cadeado concede escudo aos aliados próximos e o som da Carreta atordoa os inimigos. A cozinha abriga a faxineira e suas poças perigosas. O corredor desemboca no pátio pela varanda oeste. Atravesse a galeria coberta para chegar à cozinha e suba pela escada de serviço até o telhado. Esse percurso e as três skins secretas ficam disponíveis no solo. A planta mostra a escola inteira. Ampliar ala oeste revela a escada e a rampa entre o pátio e a cobertura. A grade dessa rampa abre para a sala quando a dupla completa a missão dos relés.
- 
+Um aliado próximo pode usar Pegar para reanimar quem caiu em até 12 segundos. A tinta cura amigos na poça, o Cadeado concede escudo aos aliados próximos e o som da Carreta atordoa os inimigos. A faxineira está na zeladoria, no fundo do pátio do térreo. O vapor do fogão fica na cozinha ao lado da quadra.
+
+O jogo começa no corredor do **1º andar**. Na ponta oposta à Sala 3 fica a escada central. Ela desce para o **térreo**, onde ficam o pátio, a cozinha e a zeladoria, e sobe para o **terraço**, sobre o corredor. A escada dá acesso aos três níveis tanto no solo quanto no cooperativo. Os relés liberam um segundo caminho pelo duto. A planta abre no andar atual e permite consultar os outros dois. As três skins secretas podem ser obtidas no solo.
+
 Cada jogador mantém seu próprio sangue, upgrades, inventário, missões e conquistas no navegador. A sala compartilha os trajetos dos humanos, os potes do laboratório e da sala de artes e as poças derramadas. As coletas das missões individuais pertencem ao respectivo jogador. Não há combate entre jogadores.
 
 Abrir menus pausa o seu mosquito, mas a sala continua para os amigos. O chefe não ataca jogadores em menus ou com a aba oculta. Se a conexão cair, o jogo volta ao modo solo; entre novamente com o código. Salas vazias ficam disponíveis por até 90 segundos. O servidor mantém as salas em memória: reiniciá-lo encerra as sessões, sem apagar os saves dos navegadores.
@@ -24,7 +26,7 @@ Abrir menus pausa o seu mosquito, mas a sala continua para os amigos. O chefe n�
 Uma opção é o Render; o repositório já inclui `render.yaml`:
 
 1. Entre em sua conta no Render e escolha **New → Blueprint**.
-2. Conecte o repositório `Rafael-Massao/mobile-test`. Ele pode continuar privado; autorize o acesso na integração com o GitHub.
+2. Conecte o repositório `Rafael-Massao/mosquito`. Ele pode continuar privado; autorize o acesso na integração com o GitHub.
 3. Escolha a branch `main`, confira o serviço e o plano disponível na sua conta e confirme a criação.
 4. O serviço instala com `npm ci` e inicia com `npm start`. Após a publicação, abra o endereço HTTPS informado pelo Render.
 5. Compartilhe esse endereço com os amigos. No jogo, abra **Multijogador cooperativo → Criar sala** e envie o código. Os amigos usam **Entrar com código**.

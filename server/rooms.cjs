@@ -11,10 +11,7 @@ const dist=(a,b)=>Math.hypot(...a.map((n,i)=>n-b[i]));
 function sanitizeState(s,gate=false){
  if(!s||!Array.isArray(s.pos)||s.pos.length!==3||!s.pos.every(finite)||!Array.isArray(s.rot)||s.rot.length!==4||!s.rot.every(finite))return null;
  const norm=Math.hypot(...s.rot);if(norm<.9||norm>1.1)return null;
- const [x,y,z]=s.pos;
- if(x< -118){
-   if(!rules.validPosition(s.pos,gate))return null;
- }else if(x>159||y< -4||y>14||Math.abs(z)>110)return null;
+ if(!rules.validPosition(s.pos,gate))return null;
  const nv={};for(const k of ['asas','tromba','estomago','corpo'])nv[k]=clamp(Math.floor(Number(s.nv?.[k])||0),0,30);
  if(Object.values(nv).some(v=>!finite(v)))return null;
  return {pos:s.pos,rot:s.rot.map(v=>v/norm),nv,skin:SKINS.has(s.skin)?s.skin:null,mantis:PARTS.filter(id=>Array.isArray(s.mantis)&&s.mantis.includes(id)),pixelCor:/^#[\da-f]{6}$/i.test(s.pixelCor)?s.pixelCor:'#e8294b',auraTusk:s.auraTusk!==false,active:s.active===true,door:s.door===true,speed:finite(s.speed)?clamp(s.speed,0,80):0,health:finite(s.health)?clamp(s.health,0,1):1};

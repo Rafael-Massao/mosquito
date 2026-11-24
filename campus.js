@@ -1,4 +1,4 @@
-/* Ala oeste contínua. A planta e o servidor usam o mesmo espaço de voo. */
+/* Escola em três níveis. A planta e o servidor usam o mesmo espaço de voo. */
 window.SchoolCampus = class SchoolCampus {
   constructor(game) {
     this.g=game;
@@ -33,29 +33,20 @@ window.SchoolCampus = class SchoolCampus {
   }
   createRooms(){
     const art=this.art=new CampusScenery(this.g);
-    const {courtyard,kitchen,roof,roofLevel}=this.rules;
-    art.skybox();art.surroundings();art.connections();
-    art.setRoom('pátio',courtyard.x,courtyard.z,Math.PI);art.courtyard();
-    art.setRoom('galeria',(kitchen.x+courtyard.x)/2,0,Math.PI);art.gallery();
-    art.setRoom('cozinha',kitchen.x,kitchen.z,Math.PI);art.kitchen();
-    art.setRoom('telhado',roof.x,roof.z);art.roof();
-    art.setRoom('exterior',0,0);
-    this.relays=this.rules.switches.map(([x,y,z],i)=>{
-      // Conduítes ligam os dois comandos ao portão, inclusive vistos do ar.
-      art.block(x,-1.27,z,.51,4.45,.56,0x637678,true);
-      art.block(x,y,z,1.38,1.72,.68,0x345756,true);
-      art.block(x,y+.55,z-.36,1.04,.28,.06,0x718479);
-      art.sign(i?'RELÉ B':'RELÉ A',x,y+.56,z-.40,1.0,Math.PI);
-      art.block(x,-3.40,12.08,.14,.13,4.35,0x8c7253);
-      art.block((x+courtyard.x)/2,-3.40,14.21,8,.13,.15,0x8c7253);
-      const light=this.ball(x,y-.14,z-.43,.26,this.orange);
+    const rules=this.rules;
+    art.skybox();art.surroundings();
+    art.setRoom('escada',0,0);art.stairs();art.serviceShaft();
+    art.setRoom('pátio',0,0,rules.ground);art.courtyard();
+    art.setRoom('cozinha',rules.kitchen.x,rules.kitchen.z,rules.ground+3.5,-Math.PI/2);art.kitchen();
+    art.setRoom('zeladoria',0,0,rules.ground);art.cleaningRoom();
+    art.setRoom('terraço',0,0,rules.terrace);art.terraceDeck();
+    this.relays=rules.switches.map(([x,y,z])=>{
+      const light=this.ball(x,y-.14,z+.43,.26,this.orange);
       light.material=light.material.clone();light.material.emissiveIntensity=.22;
       return light;
     });
     this.fileMesh=this.box(...this.rules.folder,1.4,.25,.95,0xffbe59);
-    art.drum(courtyard.x,-3.38,-2,2.7,.21,2.7,0x788c7e);
-    art.drum(courtyard.x,-3.14,-2,.59,.48,.59,0x477f7c);
-    this.water=new THREE.Group();this.water.position.set(courtyard.x,-2.91,-2);this.g.cena.add(this.water);
+    this.water=new THREE.Group();this.water.position.fromArray(rules.sprinkler);this.g.cena.add(this.water);
     const jets=[];
     for(let j=0;j<5;j++){
       const angle=j*2*Math.PI/5;
@@ -66,32 +57,41 @@ window.SchoolCampus = class SchoolCampus {
     }
     const waterGeo=new THREE.BufferGeometry();waterGeo.setAttribute('position',new THREE.Float32BufferAttribute(jets,3));
     this.water.add(new THREE.LineSegments(waterGeo,new THREE.LineBasicMaterial({color:0x9ae8e7,transparent:true,opacity:.85})));
-    this.steam=new THREE.Group();this.steam.position.set(-188,.4,10.7);this.g.cena.add(this.steam);
+    this.steam=new THREE.Group();this.steam.position.fromArray(rules.steam);this.g.cena.add(this.steam);
     const puff=new THREE.IcosahedronGeometry(1,1);
     for(let i=0;i<5;i++){
       const cloud=new THREE.Mesh(puff,new THREE.MeshBasicMaterial({color:0xfff4df,transparent:true,depthWrite:false,opacity:.25}));
       this.steam.add(cloud);
     }
-    this.vane=new THREE.Group();this.vane.position.set(roof.x,roofLevel+5.5,45);this.g.cena.add(this.vane);
+    this.vane=new THREE.Group();this.vane.position.fromArray(rules.vane);this.g.cena.add(this.vane);
     this.box(0,0,0,3.8,.13,.12,0x8c6958,false,this.vane);
     this.box(-1.34,.23,0,.87,.61,.12,0xcf8558,false,this.vane);
     this.mesh(new THREE.ConeGeometry(.37,.82,3),0xe2a663,1.93,0,0,false,this.vane).rotation.z=-Math.PI/2;
-    // O duto é aberto nos dois extremos. Os outros esconderijos usam o próprio mobiliário.
-    art.block(-141,-.78,-9,4,.22,2.85,0x779384,true);
-    for(const dz of [-1.4,1.4])art.block(-141,-2.13,-9+dz,4,2.58,.21,0x688778,true);
-    for(const dx of [-1.9,0,1.9]){
-      art.block(-141+dx,-.61,-9,.18,.13,3.12,0x4e7169);
-      for(const dz of [-1.52,1.52])art.block(-141+dx,-2.12,-9+dz,.18,2.93,.14,0x4e7169);
-    }
-    this.hideSkin(0,[-141,-2,-9]);this.hideSkin(1,[-197,-1.9,-14.45]);this.hideSkin(2,[-141,roofLevel+1.65,46]);
+    rules.hidingPlaces.forEach((pos,i)=>this.hideSkin(i,pos));
     art.finish();
-    this.cleanerGroup=new THREE.Group();this.cleanerGroup.position.fromArray(this.rules.cleanerHead);this.cleanerGroup.position.y=-3.5;this.g.cena.add(this.cleanerGroup);
+    this.cleanerGroup=new THREE.Group();
+    this.cleanerGroup.position.set(rules.cleanerHead[0],rules.ground,rules.cleanerHead[2]);
+    this.cleanerGroup.rotation.y=-Math.PI/2;this.g.cena.add(this.cleanerGroup);
     const g=this.cleanerGroup;
     for(const x of [-.36,.36]){this.box(x,1.2,0,.55,2.4,.58,0x334660,false,g);this.box(x,.22,.18,.66,.4,.9,0x303342,false,g);}
-    this.mesh(new THREE.CylinderGeometry(.7,.95,2,16),0x318e90,0,3.5,0,false,g);
-    this.box(0,3.7,.67,1.22,1.65,.12,0xefd6a2,false,g);
-    this.ball(0,5.55,0,.66,0x9d654b,g);this.ball(0,5.96,-.12,.62,0x49332f,g);this.ball(0,6.22,-.48,.36,0x49332f,g);
-    for(const x of [-.23,.23])this.ball(x,5.64,.59,.075,0x281e22,g);
+    this.mesh(new THREE.CylinderGeometry(.72,.94,2.16,16),0x318e90,0,3.47,0,false,g);
+    this.mesh(new THREE.CylinderGeometry(.25,.32,.6,12),0x9d654b,0,4.76,-.02,false,g);
+    this.box(0,3.17,.84,1.0,1.4,.08,0xead5a9,false,g);
+    this.box(0,3.96,.76,.76,.74,.09,0xead5a9,false,g);
+    this.box(0,3.12,.90,.58,.36,.05,0xcfa977,false,g);
+    for(const x of [-.29,.29])this.box(x,4.34,.65,.11,.46,.08,0xead5a9,false,g);
+    this.ball(0,5.55,0,.66,0x9d654b,g);
+    this.mesh(new THREE.SphereGeometry(.69,16,10,0,Math.PI*2,0,1.47),0x49332f,0,5.60,-.04,false,g);
+    this.ball(0,6.07,-.48,.36,0x49332f,g);
+    for(const x of [-.23,.23]){
+      this.ball(x,5.63,.59,.092,0xf8dfbf,g).scale.set(1,.85,.54);
+      this.ball(x,5.63,.635,.052,0x392b2a,g);
+      this.box(x,5.77,.58,.18,.046,.057,0x46312c,false,g).rotation.z=x*.35;
+      this.ball(x*2.65,5.49,0,.13,0x9d654b,g).scale.set(.7,1,.79);
+      this.ball(x*3.40,4.26,.02,.34,0x327e81,g);
+    }
+    this.ball(0,5.47,.61,.104,0xaf7252,g);
+    this.box(0,5.29,.58,.18,.036,.045,0x653c36,false,g);
     this.arm=new THREE.Group();this.arm.position.set(.9,4.2,0);g.add(this.arm);
     this.box(0,-.5,.1,.38,1.1,.42,0x9d654b,false,this.arm);
     this.box(0,-1,.55,.55,.78,.4,0x5eb9ea,false,this.arm);
@@ -116,7 +116,7 @@ window.SchoolCampus = class SchoolCampus {
   }
   action(){
     const peers=this.online?.members||[];
-    const ally=peers.find(p=>p.down&&p.id!==this.online.id&&p.state&&this.nearby(p.state.pos,3.5));
+    const ally=peers.find(p=>p.down&&p.id!==this.online.id&&p.state&&this.nearby(p.state.pos,3.5)&&this.rules.sameLevel(this.player,p.state.pos));
     if(ally)return {text:'Reanimar '+ally.name,run:()=>this.online.send({type:'rescue',id:ally.id})};
     const secret=this.secrets.find(s=>s.mesh.visible&&this.nearby(s.pos,1.25));
     if(secret?.id==='cobre' && (this.shared?.cleaner||this.localCleaner).hp>0){
@@ -133,7 +133,7 @@ window.SchoolCampus = class SchoolCampus {
   }
   interact(){const a=this.action();if(!a)return false;a.run();return true;}
   bite(){
-    if(!this.nearby(this.rules.cleanerHead,3.1))return false;
+    if(this.rules.areaAt(...this.player)!==this.rules.cleaning||!this.nearby(this.rules.cleanerHead,3.1))return false;
     const c=this.shared?.cleaner||this.localCleaner;if(!c.hp)return false;
     if(c.phase!=='cansada'){this.g.ui.toast('Espere a faxineira baixar o spray.');return true;}
     if(this.online){this.online.sendState();this.online.send({type:'cleaner-bite'});}
@@ -166,10 +166,14 @@ window.SchoolCampus = class SchoolCampus {
         circle.material=new THREE.MeshBasicMaterial({color:0xf35589,transparent:true,opacity:.38,depthWrite:false});
         circle.rotation.x=-Math.PI/2;this.healMeshes.push(circle);
       }
-      this.healMeshes[i].position.set(h.pos[0],this.rules.floorAt(h.pos[0],h.pos[2])+.11,h.pos[2]);
+      this.healMeshes[i].position.set(h.pos[0],this.rules.floorAt(...h.pos)+.11,h.pos[2]);
     });
     this.healMeshes.forEach((mesh,i)=>mesh.visible=i<allied.length);
-    if(data.heals.some(h=>h.owner!==this.online.id&&Math.hypot(h.pos[0]-g.jogador.pos.x,h.pos[2]-g.jogador.pos.z)<5&&g.jogador.pos.y<this.rules.floorAt(h.pos[0],h.pos[2])+6)){
+    const pos=this.player;
+    if(allied.some(h=>{
+      const floor=this.rules.floorAt(...h.pos);
+      return this.rules.sameLevel(pos,h.pos)&&Math.hypot(h.pos[0]-pos[0],h.pos[2]-pos[2])<5&&pos[1]>=floor&&pos[1]<floor+6;
+    })){
       g.jogador.vida=Math.min(g.estado.vidaMax,g.jogador.vida+12*dt);
     }
   }
@@ -181,8 +185,8 @@ window.SchoolCampus = class SchoolCampus {
     this.g.mundo.tintas.gotas.forEach(d=>d.m.visible=false);
   }
   tick(dt){
-    this.clock+=dt;const g=this.g,p=this.player,area=this.rules.areaAt(p[0],p[2]);
-    this.art.update(p[0]);
+    this.clock+=dt;const g=this.g,p=this.player,area=this.rules.areaAt(...p);
+    this.art.update(g.jogador.pos);
     this.relays.forEach((light,i)=>{
       const color=this.shared?.gate?0x8ddeae:(this.shared?.switches?.[i]?0xfbd371:this.orange);
       if(light.material.emissive.getHex()!==color){light.material.color.setHex(color);light.material.emissive.setHex(color);}
@@ -190,42 +194,50 @@ window.SchoolCampus = class SchoolCampus {
     this.syncProps(dt);this.fileMesh.visible=!!this.online&&!this.shared?.file;
     this.secrets.forEach(s=>{s.mesh.visible=!g.estado.skins.includes(s.id);s.mesh.rotation.y+=dt;});
     this.gateLift=THREE.MathUtils.clamp(this.gateLift+(this.shared?.gate?2:-2)*dt,0,1);
-    this.art.shutter.scale.y=1-this.gateLift*.985;
-    this.art.shutter.position.y=this.art.shutterBottom+5.35*this.gateLift;
-    if(area){
-      g.ui.sala(area.name);
-      if(!this.firstVisit.has(area.name)){this.firstVisit.add(area.name);g.ui.toast({'Varanda do corredor':'O pátio fica logo à frente.',Passarela:'A passarela chega ao telhado.', 'Rampa dos relés':this.shared?.gate?'Rampa aberta para o pátio e o telhado.':'A grade abre com os dois relés. A escada da cozinha está livre.',Pátio:'A galeria coberta leva à cozinha. Cuidado com o aspersor.', 'Galeria coberta':'Atravesse a galeria para entrar na cozinha.', 'Escada de serviço':'Siga os degraus até o telhado.',Cozinha:'Cuidado com o vapor. Pique a faxineira quando ela baixar a guarda.',Telhado:'Rajadas de vento passam pela antena. Procure uma fresta nas chaminés.'}[area.name]);}
+    this.art.shutter.scale.x=1-this.gateLift*.985;
+    this.art.fan.rotation.y+=dt*1.4;
+    if(area&&area!==this.rules.main&&area!==this.rules.arena){
+      const level=this.rules.levels.find(level=>level.id===this.rules.levelAt(...p)).name;
+      g.ui.sala(level===area.name?level:level+' · '+area.name);
+      if(!this.firstVisit.has(area.name)){
+        this.firstVisit.add(area.name);
+        const hint={'Escada central':'A escada liga o pátio, o corredor e o terraço.',Pátio:'A cozinha abre ao lado da quadra. A zeladoria fica no fundo do pátio.',
+          Cozinha:'Cuidado com o vapor do fogão.',Zeladoria:'Desvie do spray e pique a faxineira quando ela baixar a guarda.',
+          Terraço:'Procure o mirante e os respiradouros. Cuidado com o vento perto do cata-vento.',
+          'Duto dos relés':this.shared?.gate?'Duto aberto entre o térreo e o terraço.':'A grade do duto abre com os dois relés do pátio.'}[area.name];
+        if(hint)g.ui.toast(hint);
+      }
     }
     const wet=Math.sin((this.shared?.time??this.clock)*1.4)>.1;this.water.visible=wet;this.steam.visible=!wet;
     this.water.rotation.y=this.clock*1.45;
-    if(!wet && area?.name==='Cozinha')this.steam.children.forEach((puff,i)=>{
+    if(!wet && area===this.rules.kitchen)this.steam.children.forEach((puff,i)=>{
       const t=(this.clock*.46+i/5)%1, size=.18+.56*t;
       puff.position.set(.36*Math.sin(t*5+i),3.55*t,.23*Math.cos(t*5+i));
       puff.scale.set(size,size*.8,size);puff.material.opacity=.34*(1-t);
     });
     this.vane.rotation.y=.6+Math.sin(this.clock*1.4)*.42;
-    if(wet&&Math.hypot(p[0]-this.water.position.x,p[2]-this.water.position.z)<1.6&&p[1]<2)this.hurt(9);
-    if(!wet&&Math.hypot(p[0]-this.steam.position.x,p[2]-this.steam.position.z)<1.6&&p[1]<4)this.hurt(13);
-    if(area?.name==='Telhado'&&Math.abs(p[2]-this.vane.position.z)<3&&wet)g.jogador.vel.x+=14*dt;
-    if(!this.online)this.rules.stepCleaner(this.localCleaner,dt,area?.name==='Cozinha'?[{pos:p}]:[],(_,n)=>this.hurt(n));
+    if(wet&&area===this.rules.courtyard&&Math.hypot(p[0]-this.water.position.x,p[2]-this.water.position.z)<1.6&&p[1]<this.rules.ground+5.5)this.hurt(9);
+    if(!wet&&area===this.rules.kitchen&&Math.hypot(p[0]-this.steam.position.x,p[2]-this.steam.position.z)<1.6&&p[1]>this.steam.position.y-.7&&p[1]<this.steam.position.y+4)this.hurt(13);
+    if(area===this.rules.roof&&this.nearby(this.rules.vane,8)&&wet)g.jogador.vel.x+=14*dt;
+    if(!this.online)this.rules.stepCleaner(this.localCleaner,dt,area===this.rules.cleaning?[{pos:p}]:[],(_,n)=>this.hurt(n));
     const c=this.shared?.cleaner||this.localCleaner;
-    this.cleanerGroup.rotation.z=c.hp?0:1.45;this.cleanerGroup.position.y=c.hp?-3.5:-2.8;
-    const [cx,,cz]=this.rules.cleanerHead;
+    this.cleanerGroup.rotation.z=c.hp?0:1.45;this.cleanerGroup.position.y=this.rules.ground+(c.hp?0:.7);
+    const [cx,cy,cz]=this.rules.cleanerHead;
     if(c.phase==='aviso')this.cleanerGroup.rotation.y=Math.atan2(c.aim[0]-cx,c.aim[2]-cz);
     this.mist.forEach((drop,i)=>{
       drop.visible=c.hp>0&&c.attack==='spray'&&c.phase==='cansada'&&c.time>1.7;
       if(drop.visible){
         const t=Math.min(1,(2.4-c.time)*2+i*.04);
-        drop.position.set(cx+(c.aim[0]-cx)*t+Math.sin(i*3)*t,1.8+(c.aim[1]-1.8)*t-i*.06,cz+(c.aim[2]-cz)*t+Math.cos(i*3)*t);
+        drop.position.set(cx+(c.aim[0]-cx)*t+Math.sin(i*3)*t,cy+(c.aim[1]-cy)*t-i*.06,cz+(c.aim[2]-cz)*t+Math.cos(i*3)*t);
       }
     });
     this.arm.rotation.x=c.phase==='aviso'?-1.35:.1;this.cloth.rotation.z=c.attack==='pano'&&c.phase==='aviso'?Math.sin(this.clock*9)*.65:0;
     this.warning.visible=c.phase==='aviso';this.warning.position.fromArray(c.attack==='spray'?c.aim:this.rules.cleanerHead);this.warning.scale.setScalar(c.attack==='spray'?3.3:5.8);
-    c.pools.forEach((pool,i)=>{if(!this.poolMeshes[i]){const mesh=this.mesh(new THREE.CircleGeometry(2.4,24),0x50b4a9,0,0,0);mesh.rotation.x=-Math.PI/2;this.poolMeshes.push(mesh);}this.poolMeshes[i].position.set(pool.x,-3.46,pool.z);});
+    c.pools.forEach((pool,i)=>{if(!this.poolMeshes[i]){const mesh=this.mesh(new THREE.CircleGeometry(2.4,24),0x50b4a9,0,0,0);mesh.rotation.x=-Math.PI/2;this.poolMeshes.push(mesh);}this.poolMeshes[i].position.set(pool.x,this.rules.ground+.055,pool.z);});
     this.poolMeshes.forEach((m,i)=>m.visible=i<c.pools.length);
     const action=this.action();
     this.prompt=action?.text;
     if(action)g.eggMsg='B / Pegar · '+action.text;
-    else if(area?.name==='Cozinha')g.eggMsg=c.hp?'Faxineira · '+c.hp+'/180 · '+(c.phase==='aviso'?'Desvie do '+c.attack:c.phase==='cansada'?'Pique agora!':'Prepare-se'):'Faxineira vencida • cozinha livre';
+    else if(area===this.rules.cleaning)g.eggMsg=c.hp?'Faxineira · '+c.hp+'/180 · '+(c.phase==='aviso'?'Desvie do '+c.attack:c.phase==='cansada'?'Pique agora!':'Prepare-se'):'Faxineira vencida • zeladoria livre';
   }
 };
