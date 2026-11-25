@@ -5201,7 +5201,7 @@ class QuestManager {
       const room=this.g.online.campus;
       e.parente(body,'h3','Missões da equipe');
       e.parente(body,'p',room?.file?'✓ Pasta recuperada':'Pasta da chamada · na Sala 1, use Pegar perto da professora. Enquanto ela estiver distraída, um amigo deve pegar a pasta amarela.');
-      e.parente(body,'p',room?.gate?'✓ Duto aberto entre o térreo e o terraço':'Relés do pátio no térreo · depois da pasta, acionem A e B em até cinco segundos. Cada jogador fica ao lado do seu relé.');
+      e.parente(body,'p',room?.gate?'✓ Duto aberto entre o térreo e o terraço':'Relés na parede do pátio, ao lado da escada · depois da pasta, acionem A e B em até cinco segundos. Cada jogador fica ao lado do seu relé.');
     }
     for(const q of MISSOES){const card=e.parente(body,'article',undefined,'quest-card');e.parente(card,'h3',q.titulo);e.parente(card,'p',q.nome+' · '+q.sala+' · '+this.status(q));e.parente(card,'p',q.objetivo);e.parente(card,'small',this.progresso(q)+'/'+q.meta+' · '+q.premio+' sangue');}
   }

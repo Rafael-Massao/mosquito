@@ -68,9 +68,9 @@ class Campus {
         this.file=true;for(const q of room.players.values())this.notice(q,'Pasta recuperada! Acionem os dois interruptores do pátio.');
       }
       const index=['left','right'].indexOf(m.action);
-      if(index>=0&&this.file&&!this.gate&&distance(pos,rules.switches[index])<3){
+      if(index>=0&&this.file&&!this.gate&&rules.atSwitch(pos,index)){
         this.buttons[index]={id:p.id,until:now+5000};const other=this.buttons[1-index];
-        if(other&&other.until>now&&teammates.some(q=>q!==p&&q.id===other.id&&distance(q.state.pos,rules.switches[1-index])<3)){
+        if(other&&other.until>now&&teammates.some(q=>q!==p&&q.id===other.id&&rules.atSwitch(q.state.pos,1-index))){
           this.gate=true;for(const q of room.players.values())this.notice(q,'Grade aberta! O duto liga o pátio ao terraço.');
         }else this.notice(p,'Segure a posição. Seu amigo tem 5 s para ligar o outro interruptor.');
       }

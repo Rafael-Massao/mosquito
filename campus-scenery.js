@@ -310,13 +310,15 @@ window.CampusScenery = class CampusScenery {
     for(const dx of [-2.85,0,2.85])this.block(hx+dx,2.95,hz,.14,.11,3.32,0x425e58);
     const [sx,,sz]=rules.sprinkler;
     this.drum(sx,.13,sz,2.8,.26,2.8,0x81908a);this.drum(sx,.4,sz,.55,.48,.55,teal);
-    for(const [x,,z] of rules.switches){
-      this.block(x,1.64,z,.55,3.28,.58,0x718b83,true);
-      this.block(x,3.05,z,1.32,1.56,.66,teal,true);
-      this.sign(z<0?'RELÉ A':'RELÉ B',x,3.53,z+.346,1.12);
-      this.block(x,.055,(z+14.4)/2,.14,.09,Math.abs(14.4-z),0xb48a57);
+    for(const [i,[x,worldY,z]] of rules.switches.entries()){
+      const y=worldY-rules.ground,top=p.top-rules.ground;
+      // Eletroduto, caixa e espelho do botão são fixados à mesma parede da escada.
+      this.block(x-.57,(y+top)/2,z,.18,top-y,.18,0x788581);
+      for(const h of [6.4,10.4,14.4])this.block(x-.55,h,z,.24,.12,.31,teal);
+      this.block(x-.49,y+.15,z,.70,1.83,1.53,0x475951,true);
+      this.block(x-.11,y+.15,z,.12,1.67,1.38,teal);
+      this.sign(i?'RELÉ B':'RELÉ A',x-.035,y+.64,z,1.23,Math.PI/2);
     }
-    this.block(-106.8,.055,14.4,21.7,.09,.16,0xb48a57);
     this.archway(-117.5,0,0,Math.PI/2,'ESCADAS',7.6);
     this.sign('DUTO DOS RELÉS',-117.5,5.37,14.4,5.35,Math.PI/2);
   }

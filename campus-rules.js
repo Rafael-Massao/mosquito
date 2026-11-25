@@ -1,7 +1,7 @@
 // A escada, a planta e a simulação da sala usam as mesmas cotas e o mesmo espaço de voo.
 (function (root) {
   'use strict';
-  const protocol=6;
+  const protocol=7;
   const ground=-21.5, first=-3.5, terrace=14.12;
   const levels=[
     {id:'ground',name:'Térreo',floor:ground},
@@ -157,7 +157,12 @@
     pos.x=x;pos.y=y;pos.z=z;return true;
   }
   function validPosition([x,y,z],gate=false){return !!locate(x,y,z,gate?unlocked:locked,.08);}
-  const switches=[[-96,ground+3.05,-11],[-96,ground+3.05,8]];
+  // Centro dos botões na face da parede voltada para o pátio.
+  const switches=[-11,8].map(z=>[courtyard.box[0]+.82,ground+3.05,z]);
+  function atSwitch(pos,index){
+    const button=switches[index];
+    return !!button&&pos[0]>=button[0]&&distance(pos,button)<3;
+  }
   const folder=[-44,0,-82], cleanerHead=[66,ground+5.55,0];
   const sprinkler=[-80,ground+.58,-13],steam=[-34.25,ground+3.9,36],vane=[57,terrace+5.45,-10];
   const secrets=[
@@ -199,6 +204,6 @@
   }
   const api={protocol,levels,ground,first,terrace,main,arena,courtyard,kitchen,cleaning,roof,shaft,
     landings,flights,stairwell,gateY,gateDepth,stepOffset,areaAt,levelAt,inSchool,floorAt,sameLevel,constrain,
-    validPosition,atFlightCeiling,distance,switches,folder,cleanerHead,secrets,hidingPlaces,sprinkler,steam,vane,cleaner,clearCleanerPools,stepCleaner,biteCleaner};
+    validPosition,atFlightCeiling,distance,switches,atSwitch,folder,cleanerHead,secrets,hidingPlaces,sprinkler,steam,vane,cleaner,clearCleanerPools,stepCleaner,biteCleaner};
   if(typeof module==='object'&&module.exports)module.exports=api;else root.EscolaCampus=api;
 })(globalThis);

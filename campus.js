@@ -50,7 +50,8 @@ window.SchoolCampus = class SchoolCampus {
     art.setRoom('zeladoria',0,0,rules.ground);art.cleaningRoom();
     art.setRoom('terraço',0,0,rules.terrace);art.terraceDeck();
     this.relays=rules.switches.map(([x,y,z])=>{
-      const light=this.ball(x,y-.14,z+.43,.26,this.orange);
+      const light=this.ball(x,y,z,.26,this.orange);
+      light.scale.x=.48;
       light.material=light.material.clone();light.material.emissiveIntensity=.22;
       return light;
     });
@@ -136,7 +137,7 @@ window.SchoolCampus = class SchoolCampus {
     let task,text;
     if(!this.shared?.file && this.nearby(this.rules.folder,3)){task='folder';text='Pegar a pasta enquanto um amigo distrai a professora';}
     else if(!this.shared?.file && this.nearby(this.g.mundo.humanos[0].alvo.toArray(),3.8)){task='distract';text='Distrair a professora para um amigo pegar a pasta';}
-    else if(!this.shared?.gate){const i=this.rules.switches.findIndex(pos=>this.nearby(pos,3));if(i>=0){task=i?'right':'left';text=this.shared?.file?'Acionar relé e manter a posição':'Recuperem a pasta na Sala 1';}}
+    else if(!this.shared?.gate){const i=this.rules.switches.findIndex((_,i)=>this.rules.atSwitch(this.player,i));if(i>=0){task=i?'right':'left';text=this.shared?.file?'Acionar relé e manter a posição':'Recuperem a pasta na Sala 1';}}
     if(task)return {text,run:()=>{this.online.sendState();this.online.send({type:'campus-task',action:task});}};
     return null;
   }

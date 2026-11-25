@@ -24,7 +24,11 @@ test('missões exigem dois jogadores distintos ativos e posições simultâneas'
   join();task(a,'distract');place(a,campus.folder);task(a,'folder');assert.equal(room.campus.file,false);
   place(a,[-56,2,-85]);place(b,campus.folder);step(.05);task(b,'folder');assert.equal(room.campus.file,true);
   place(a,campus.switches[0]);task(a,'left');place(a,campus.switches[1]);task(a,'right');assert.equal(room.campus.gate,false);
-  place(a,campus.switches[0]);task(a,'left');place(b,campus.switches[1]);task(b,'right');assert.equal(room.campus.gate,true);
+  const [x,y,z]=campus.switches[0];
+  assert.equal(campus.atSwitch([-96,y,z],0),false);
+  assert.equal(campus.atSwitch([x-.8,y,z],0),false);
+  assert.ok(campus.atSwitch([x+.8,y,z],0));
+  place(a,[x+.8,y,z]);task(a,'left');place(b,campus.switches[1]);task(b,'right');assert.equal(room.campus.gate,true);
 });
 test('resgate exige aliado próximo; prazo e desconexão nunca duplicam a morte',()=>{
   const {a,b,room,place,act,join,step}=setup();join();place(a,[-82,campus.ground+3,0]);act(a,'fall');
