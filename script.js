@@ -216,8 +216,8 @@ if(window.EscolaCampus){
   CFG.SKINS.astronauta={nome:'Mosquito Astronauta',corpo:0xdce9e7,abd:0xe5dfd2,perna:0x364655,brilho:0x78cce4,asa:0xb9dfed,ei:.07,
     dica:'Suba a escada até o terraço e voe até o limite de altura.',attr:{stam:1.35}};
   SKIN_ICO.astronauta='👨‍🚀';
-  CFG.SKINS.folhagem.attr={combo:1.25};
-  CFG.SKINS.ardosia.attr={def:.18};
+  Object.assign(CFG.SKINS.folhagem,{corpo:0x674c2c,abd:0x846138,perna:0x554530,brilho:0xd8ae59,attr:{combo:1.25}});
+  Object.assign(CFG.SKINS.ardosia,{corpo:0x384955,abd:0x526574,perna:0x34434f,brilho:0x96bdcc,attr:{def:.18}});
   Object.assign(CFG.SKINS.neon,{abd:0xd1ee63,ei:.48,attr:{colhe:1.4}});
   CFG.SKINS.faxineira={nome:'Mosquita da Faxina',corpo:0x328e90,abd:0x326e74,perna:0x354956,brilho:0x92e6db,asa:0xc4e8dc,ei:.12,
     dica:'Vença a faxineira na zeladoria do térreo.',attr:{vida:20,gas:.65}};
@@ -1203,6 +1203,74 @@ for (let i = 0; i < 6; i++) {
 corpoG.add(espinhos, presas, coroa);
 
 // O traje usa a mesma ancoragem do tórax. As asas, o ferrão e o abdômen mantêm suas articulações.
+// As duas peles usam os pivôs de voo e as escalas de evolução do modelo comum.
+const trajesDoCampus=new Map();
+function criarTrajeDoCampus(id){
+  const folha=id==='folhagem',pontos=[],cores=[];
+  const cor=new THREE.Color();
+  function face(a,b,c,tinta){
+    pontos.push(...a,...b,...c);cor.setHex(tinta);
+    for(let i=0;i<3;i++)cores.push(cor.r,cor.g,cor.b);
+  }
+  function faixa(a,b,largura,tinta){
+    // Fita da nervura sobre a superfície dobrada.
+    const len=Math.hypot(b[0]-a[0],b[2]-a[2]);
+    const dx=(b[2]-a[2])*largura/len,dz=(a[0]-b[0])*largura/len;
+    const canto=(v,l)=>[v[0]+dx*l,v[1]+.003,v[2]+dz*l];
+    face(canto(a,1),canto(b,1),canto(b,-1),tinta);
+    face(canto(a,1),canto(b,-1),canto(a,-1),tinta);
+  }
+  if(folha){
+    // Pares de dentes assimétricos e uma ponta recurvada de folha seca.
+    const perfil=[[0,.009],[.13,.084],[.26,.156],[.33,.123],[.42,.185],[.49,.149],
+      [.58,.194],[.66,.137],[.75,.152],[.80,.103],[.90,.107],[.94,.061],[1.12,.002]];
+    const bandas=perfil.map(([x,w])=>{
+      const t=x/1.12,z=.24*t*t,h=.074*Math.sin(Math.PI*t)-.059*t*t;
+      return [[x,h-w*.26,z-w],[x,h,z],[x,h-w*.38,z+w*.96]];
+    });
+    for(let i=1;i<bandas.length;i++){
+      const [a,b,c]=bandas[i-1],[d,e,f]=bandas[i];
+      face(a,b,d,0xab7831);face(b,e,d,i%2?0xc69846:0xbb8839);
+      face(b,c,e,0x917634);face(c,f,e,i%2?0xb69b49:0xa58a42);
+      faixa(b,e,.009,0xf1c976);
+      if(i%2===0){faixa(b,d,.004,0x73572b);faixa(b,f,.004,0x705b32);}
+    }
+  }else{
+    // Lâminas de xisto escalonadas: cada placa tem espessura e uma aresta de fratura.
+    const placas=[
+      [1.06,-.13,.129,.041,0x54778b,0x88a4b3],
+      [.97,.10,.135,.065,0x445666,0x7793a4],
+      [.77,.29,.120,.042,0x475467,0x8998ab]
+    ];
+    for(const [x,z,w,h,escura,clara] of placas){
+      const base=[.01,.002,0],ombro=[x*.49,h*.68,z*.42-w],bico=[x,h*.24,z],
+        corte=[x*.81,h*.28,z+w*.89],flanco=[x*.37,h*.32,z*.53+w],crista=[x*.57,h+.025,z*.45];
+      const borda=[base,ombro,bico,corte,flanco];
+      for(let i=0;i<borda.length;i++){
+        const a=borda[i],b=borda[(i+1)%borda.length],baixo=v=>[v[0],v[1]-.026,v[2]];
+        face(a,crista,b,i<2?clara:escura);face(a,b,baixo(b),0x303f51);face(a,baixo(b),baixo(a),0x303f51);
+      }
+      faixa(crista,bico,.009,0xb9d1db);
+    }
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(pontos,3));
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(cores,3));
+  geo.computeVertexNormals();
+  const material=new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.DoubleSide,roughness:folha?.93:.67,metalness:folha?0:.12});
+  const partes=[];
+  function placa(pai,x,y,z,sx,sy,sz,ang){
+    const m=new THREE.Mesh(geo,material);m.name=id+'-placa';m.position.set(x,y,z);
+    m.rotation.y=ang;m.scale.set(sx,sy,sz);pai.add(m);partes.push(m);
+  }
+  for(const asa of asas)placa(asa,0,0,0,asa.userData.lado,1,1,0);
+  placa(corpoG,0,.193,-.14,.42,.62,folha?.95:1.05,-Math.PI/2);
+  for(let i=0;i<(folha?2:4);i++){
+    const z=.06+i*(folha?.37:.19),lado=i%2?-1:1;
+    placa(abdomenCorpo,0,.15-z*.24,z,folha?.47:.32,.65,(1-z*.48)*lado,-Math.PI/2+lado*.10);
+  }
+  return partes;
+}
 let trajeAstronauta,trajeFaxina;
 function criarTrajeFaxina(){
   const roupa=new THREE.Group();roupa.name='uniforme-faxina';
@@ -2022,8 +2090,11 @@ function aplicarEvolucaoVisual() {
   if (px) aplicarCorPixel();
   pxAbdomen.visible = px;
   pxTromba.visible = px;
+  const trajeNatural=S.skin==='folhagem'||S.skin==='ardosia';
+  if(trajeNatural&&!trajesDoCampus.has(S.skin))trajesDoCampus.set(S.skin,criarTrajeDoCampus(S.skin));
+  for(const [id,partes] of trajesDoCampus)for(const parte of partes)parte.visible=id===S.skin;
   for (let i = 0; i < asas.length; i++) {
-    asas[i].children[0].visible = !(px || robo || enc); // sem sobreposição nas asas especiais
+    asas[i].children[0].visible = !(px || robo || enc || trajeNatural); // sem sobreposição nas asas especiais
     pxAsas[i].visible = px;
     encAsas[i].visible = enc;
   }
